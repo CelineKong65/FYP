@@ -1,0 +1,131 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+header {
+    background-color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 30px;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+.logo img{
+    width: 80px;
+    height: auto;
+}
+
+.home h2{
+    font-size: medium;
+    color: #000000;
+    font-weight: 300;
+    font-size: 18px;
+}
+
+.home a{
+    text-decoration: none;
+}
+
+.home a:hover, h2:hover{
+    transition: color 0.5s;
+    color: #007BFF;
+    cursor: pointer;
+}
+
+.home i{
+    color: black;
+    display: flex;
+    align-items: center;
+}
+
+.box{
+    background: url('image.png') no-repeat center center/cover;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    color: white;
+}
+
+.frame{
+    margin-right: 0;
+    max-width: 700px;
+    width: 100%;
+    max-height: 505px;
+    height: 100%;
+    padding-left: 180px;
+    padding-top: 20px;
+    background-color: rgba(255, 255, 255);
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    align-items: center;
+    justify-content: center;
+}
+
+.frame h2{
+    font-size: 18px;
+    font-weight: 300;
+    margin-bottom: 20px;
+    color: #000;
+}
+
+.frame label{
+    font-size: 12px;
+    display: block;
+    margin-bottom: 5px;
+    color: #000;
+}
+
+.frame button{
+    transition: 0.5s;
+    color: #fff;
+    width: 100px;
+    padding: 10px;
+    margin-top: 20px;
+    border-radius: 10px;
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    background-color: #007BFF;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.frame button:hover{
+    width: 150px;
+    transition: 0.5s;
+    background-color: #007bff94;
+}
+
+.frame input{
+    color: white;
+    max-width: 400px;
+    width: 100%;
+    padding: 6px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.frame input:hover{
+    border: 1px solid #4c5157;
+    background-color: #b3b0b0;
+}
+
+.frame input:focus{
+    background-color: #007bff94;
+    color: white;
+    outline: none;
+    border-color: #007BFF;
+}
+
+.frame input:not(:placeholder-shown){
+    background-color: #007bff94;
+    color: white;
+    outline: none;
+    border-color: #007BFF;
+}
