@@ -48,17 +48,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <html>
 <head>
     <title>Login</title>
+    <link rel="stylesheet" type="text/css" href="login.css">
+    <link rel="stylesheet" href="path/to/font-awesome/css/font-awesome.min.css">
 </head>
 <body>
-    <h2>Login</h2>
-    <form method="post" action="">
-        <label>Email:</label>
-        <input type="email" name="email" required><br>
+    <header>
+        <div class="logo">
+            <img src="logo.png" alt="Watersport Equipment Shop Logo">
+        </div>
+        <div class="home">
+            <i class="fa fa-home" aria-hidden="true"></i>
+            <a href="index.php"><h2>HOME</h2></a>
+        </div>
+    </header>
 
-        <label>Password:</label>
-        <input type="password" name="password" required><br>
+    <section class="box">
+        <div class="frame">
+        <h2>Log in</h2>
+            <form method="post" action="">
+                <label>Email:</label>
+                <input type="email" placeholder="example: 123@gmail.com" name="email" required><br>
 
-        <button type="submit">Login</button>
-    </form>
+                <label>Password:</label>
+                <input type="password" placeholder="example: 123%abc" name="password" required><br>
+
+                <button type="submit">Login</button>
+            </form>
+        </div>
+    </section>
 </body>
 </html>
