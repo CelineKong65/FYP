@@ -1,0 +1,143 @@
+
+/* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+
+.container-shop {
+    display: flex;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 150px 20px 20px;
+    gap: 20px;
+}
+
+/* Categories Section */
+/* Categories Section */
+.categories {
+    flex: 1;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.categories h2 {
+    font-size: 24px;
+    margin-bottom: 10px; 
+    transform: translate(-33%,15%);
+}
+
+.categories ul {
+    list-style: none;
+    padding: 0;
+    margin: 0; 
+    transform: translateY(-55%);
+}
+
+.categories ul li {
+    margin-bottom: 15px; 
+}
+
+.categories ul li a {
+    text-decoration: none;
+    color: #333;
+    font-size: 18px;
+}
+
+.categories ul li a:hover {
+    color: #007BFF;
+}
+
+/* Products Section */
+.products {
+    flex: 3;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.product {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 15px;
+    text-align: center;
+}
+
+.product h3 {
+    margin-top: 10px; 
+    margin-bottom: 5px; 
+    font-size: 18px; 
+    font-weight: bold; 
+}
+
+.product p {
+    color: red; 
+    font-size: 16px; 
+    font-weight: bold; 
+    margin: 0; 
+}
+
+.product-image {
+    position: relative;
+    overflow: hidden;
+    border-radius: 5px;
+}
+
+.product-image img {
+    width: 100%;
+    height: auto;
+    transition: transform 0.3s ease;
+}
+
+/* View Details Button */
+.view-details {
+    position: absolute;
+    bottom: -50px;
+    left: 0;
+    right: 0;
+    background-color: rgba(0, 123, 255, 0.8);
+    color: white;
+    text-align: center;
+    padding: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    transition: bottom 0.3s ease;
+    cursor: pointer;
+}
+
+/* Hover Effect */
+.product:hover .view-details {
+    bottom: 0;
+}
+
+.product:hover img {
+    transform: scale(1.1);
+}
+
+/* Pagination Section */
+.pagination {
+    text-align: center;
+    margin-top: 30px;
+    padding: 20px;
+}
+
+.pagination .page {
+    display: inline-block;
+    padding: 8px 12px;
+    margin: 0 5px;
+    text-decoration: none;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.pagination .page:hover {
+    background-color: #007BFF;
+    color: #fff;
+    border-color: #007BFF;
+}
