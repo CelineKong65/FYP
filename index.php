@@ -1,14 +1,6 @@
 <?php
-session_start();
-include("config.php");
-
-// Debugging: Print session values
-var_dump($_SESSION);
-
-// Check if user is logged in
-$isLoggedIn = isset($_SESSION['user_id']);
+    include 'header.php'; 
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -17,91 +9,6 @@ $isLoggedIn = isset($_SESSION['user_id']);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Watersport Equipment Shop</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        header {
-            background-color: white;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 15px 30px;
-            position: fixed;
-            top: 0;
-            width: 100%;
-            box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-        }
-
-        .logo img {
-            width: 80px;
-            height: auto;
-        }
-
-        nav {
-            margin-left: 65%;
-        }
-    
-        nav ul {
-            list-style: none;
-            display: flex;
-            gap: 20px;
-        }
-
-        nav ul li {
-            display: inline;
-        }
-
-        nav ul li a {
-            text-decoration: none;
-            color: black;
-            font-size: 18px;
-            font-weight: bold;
-            transition: color 0.3s;
-        }
-
-        nav ul li a:hover {
-            color: #007BFF;
-        }
-
-        .user-auth {
-            position: relative;
-        }
-
-        .user-icon {
-            width: 40px;
-            height: 40px;
-            cursor: pointer;
-        }
-
-        .user-menu {
-            display: none;
-            position: absolute;
-            right: 0;
-            background-color: white;
-            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-            border-radius: 5px;
-            width: 150px;
-            text-align: center;
-            padding: 10px;
-        }
-
-        .user-menu a {
-            display: block;
-            text-decoration: none;
-            color: black;
-            font-size: 14px;
-            padding: 8px;
-            transition: 0.3s;
-        }
-
-        .user-menu a:hover {
-            background-color: #f0f0f0;
-        }
-
-        /* Show dropdown on hover */
-        .user-auth:hover .user-menu {
-            display: block;
-        }
-    </style>
 </head>
 <body>
     <header>
@@ -198,21 +105,6 @@ $isLoggedIn = isset($_SESSION['user_id']);
     </section>
     
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const userIcon = document.querySelector(".user-icon");
-            const userMenu = document.querySelector(".user-menu");
-
-            userIcon.addEventListener("click", function () {
-                userMenu.style.display = userMenu.style.display === "block" ? "none" : "block";
-            });
-
-            document.addEventListener("click", function (event) {
-                if (!userIcon.contains(event.target) && !userMenu.contains(event.target)) {
-                    userMenu.style.display = "none";
-                }
-            });
-        });
-
         // Slideshow functionality
         var slideIndex = 0;
         showSlides();
@@ -304,3 +196,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
     </script>
 </body>
 </html>
+
+<?php
+include 'footer.php';
+?>
