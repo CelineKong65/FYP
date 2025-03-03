@@ -1,0 +1,174 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    background-color: #f9f9f9;
+}
+
+.categories {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    width: 400px; 
+    min-height: 440px; 
+}
+
+.categories h2 {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    transform: translate(32%,8%);
+}
+
+.categories h2 {
+    font-size: 24px;
+    margin-bottom: 15px;
+}
+
+.categories ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    transform: translate(-50%,20%);
+}
+
+.categories ul li {
+    margin-bottom: 15px;
+    text-align: left; /* Align items to the left */
+}
+
+.categories ul li a {
+    text-decoration: none;
+    color: #333;
+    font-size: 18px;
+    display: block; /* Make the entire link clickable */
+    padding: 5px 0;
+}
+
+.categories ul li a:hover {
+    color: #007BFF;
+}
+
+.product-details {
+    display: flex;
+    gap: 20px;
+    background-color: #fff;
+    padding: 50px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    width: 700px; /* Adjust width as needed */
+}
+
+.product-images {
+    text-align: center;
+}
+
+.main-image {
+    position: relative;
+    width: 250px;
+}
+
+.main-image img {
+    width: 100%;
+    border-radius: 10px;
+}
+
+.thumbnails {
+    display: flex;
+    gap: 5px;
+    margin-top: 10px;
+    justify-content: center;
+}
+
+.thumbnails img {
+    width: 60px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.thumbnails img.active {
+    border: 2px solid red;
+}
+
+.info {
+    max-width: 300px;
+}
+
+.info h2 {
+    font-size: 24px;
+    margin-bottom: 20px; 
+}
+
+.info p {
+    margin-top: 20px; 
+}
+
+
+.price {
+    color: red;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.quantity {
+    display: flex;
+    align-items: center;
+    margin: 10px 0;
+    margin-top: 20px; 
+}
+
+.quantity button {
+    width: 30px;
+    height: 30px;
+    border: none;
+    background: #ddd;
+    cursor: pointer;
+}
+
+.quantity input {
+    width: 40px;
+    text-align: center;
+    border: none;
+    font-size: 16px;
+}
+
+.sizes {
+    margin: 10px 0;
+    margin-top: 20px; 
+
+}
+
+.size {
+    border: 1px solid #000;
+    padding: 5px 15px;
+    cursor: pointer;
+    margin-right: 5px;
+    background: white;
+    transition: 0.3s;
+}
+
+.size.active {
+    background: black;
+    color: white;
+}
+
+
+button[type="submit"] {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 10px;
+    border-radius: 5px;
+    transition: background 0.3s ease;
+}
+
+button[type="submit"]:hover {
+    background: darkblue;
+}
