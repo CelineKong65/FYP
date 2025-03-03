@@ -157,8 +157,8 @@ body {
 }
 
 
-.add-to-cart {
-    background: red;
+button[type="submit"] {
+    background: #3498db;
     color: white;
     border: none;
     padding: 10px 20px;
@@ -166,4 +166,9 @@ body {
     font-size: 16px;
     margin-top: 10px;
     border-radius: 5px;
+    transition: background 0.3s ease;
+}
+
+button[type="submit"]:hover {
+    background: darkblue;
 }

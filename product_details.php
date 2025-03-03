@@ -1,5 +1,51 @@
 <?php
-    include 'header.php'; 
+include 'header.php';
+
+// Database connection
+$host = '127.0.0.1';
+$db = 'fyp';
+$user = 'root';
+$pass = '';
+$charset = 'utf8mb4';
+
+$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+$options = [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES => false,
+];
+
+try {
+    $pdo = new PDO($dsn, $user, $pass, $options);
+} catch (PDOException $e) {
+    die("Database connection failed: " . $e->getMessage());
+}
+
+// Check if ProductID is set in the URL
+if (!isset($_GET['id']) || empty($_GET['id'])) {
+    die("Product ID is missing.");
+}
+
+$productID = (int) $_GET['id'];
+
+// Fetch product details
+$stmt = $pdo->prepare("SELECT * FROM product WHERE ProductID = :productID");
+$stmt->execute(['productID' => $productID]);
+$product = $stmt->fetch();
+
+if (!$product) {
+    die("Product not found.");
+}
+
+// Fetch available colors and images
+$stmt = $pdo->prepare("SELECT Color, Picture FROM product_color WHERE ProductID = :productID");
+$stmt->execute(['productID' => $productID]);
+$colors = $stmt->fetchAll();
+
+// Fetch available sizes
+$stmt = $pdo->prepare("SELECT DISTINCT Size FROM product_size WHERE ProductID = :productID");
+$stmt->execute(['productID' => $productID]);
+$sizes = $stmt->fetchAll();
 ?>
 
 <!DOCTYPE html>
@@ -7,7 +53,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Details Page</title>
+    <title><?= htmlspecialchars($product['ProductName']) ?> - Product Details</title>
     <link rel="stylesheet" href="product_details.css">
     <style>
         .container-product-details {
@@ -18,8 +64,22 @@
             gap: 20px;
             justify-content: center;
             align-items: center;
-            position: relative;
-            transform: translateX(-10%);
+        }
+        .color-options {
+            display: flex;
+            justify-content: start;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .color-circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #ccc;
+            cursor: pointer;
+        }
+        .color-circle.active {
+            border-color: #000;
         }
     </style>
 </head>
@@ -37,21 +97,30 @@
 
         <div class="product-details">
             <div class="product-images">
+                <?php
+                // Default image
+                $imageSrc = !empty($colors) ? 'image/' . $colors[0]['Picture'] : 'image/default-image.png';
+                ?>
                 <div class="main-image">
-                    <img id="mainImg" src="Swimming/goggle.png" alt="Goggle">
+                    <img id="mainProductImage" src="<?= $imageSrc ?>" alt="<?= htmlspecialchars($product['ProductName']) ?>">
                 </div>
                 <div class="thumbnails">
-                    <img src="Swimming/goggle.png" alt="Thumbnail" class="active" onclick="changeImage(this)">
-                    <img src="Swimming/goggle2.png" alt="Thumbnail" onclick="changeImage(this)">
-                    <img src="Swimming/goggle3.png" alt="Thumbnail" onclick="changeImage(this)">
+                    <?php foreach ($colors as $color): ?>
+                        <img src="image/<?= $color['Picture'] ?>" alt="<?= $color['Color'] ?>" onclick="changeImage(this)">
+                    <?php endforeach; ?>
                 </div>
             </div>
-
             <div class="info">
-                <h2>Goggles</h2>
-                <p>Essential eyewear for swimmers, providing clear vision and eye protection while swimming.</p>
-                <p class="price">RM 19.00</p>
-                <p><strong>Category:</strong> Swimming</p>
+                <h2><?= htmlspecialchars($product['ProductName']) ?></h2>
+                <p class="price">RM <?= number_format($product['ProductPrice'], 2) ?></p>
+                <p><?= nl2br(htmlspecialchars($product['ProductDesc'])) ?></p>
+                
+                <!-- Color Selection -->
+                <div class="color-options">
+                    <?php foreach ($colors as $color): ?>
+                        <div class="color-circle" style="background-color: <?= $color['Color'] ?>;" onclick="changeImageByColor('image/<?= $color['Picture'] ?>')"></div>
+                    <?php endforeach; ?>
+                </div>
 
                 <div class="quantity">
                     <button onclick="decreaseQty()">-</button>
@@ -59,25 +128,32 @@
                     <button onclick="increaseQty()">+</button>
                 </div>
 
-                <div class="sizes">
-                    <button class="size">S</button>
-                    <button class="size">M</button>
-                    <button class="size">L</button>
-                    <button class="size">XL</button>
-                </div>
+                <!-- Display Sizes Only If Available -->
+                <?php if (!empty($sizes)): ?>
+                    <div class="sizes">
+                        <?php foreach ($sizes as $size): ?>
+                            <button class="size"><?= htmlspecialchars($size['Size']) ?></button>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
 
-                <button class="add-to-cart">ADD TO CART</button>
+                <!-- Add to Cart Button -->
+                <form action="cart.php" method="POST">
+                    <input type="hidden" name="productID" value="<?= $productID ?>">
+                    <button type="submit">Add to Cart</button>
+                </form>
             </div>
         </div>
     </div>
 
     <script>
-        function changeImage(element) {
-            document.getElementById('mainImg').src = element.src;
-            document.querySelectorAll('.thumbnails img').forEach(img => img.classList.remove('active'));
-            element.classList.add('active');
+        function changeImage(img) {
+            document.getElementById("mainProductImage").src = img.src;
         }
 
+        function changeImageByColor(imageSrc) {
+            document.getElementById("mainProductImage").src = imageSrc;
+        }
         function decreaseQty() {
             let qty = document.getElementById('qty');
             if (qty.value > 1) qty.value--;

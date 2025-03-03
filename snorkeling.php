@@ -26,13 +26,14 @@ $productsPerPage = 6;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($page - 1) * $productsPerPage;
 
-// Fetch total number of products
-$stmt = $pdo->query("SELECT COUNT(*) FROM product");
+// Fetch total number of products in category 1
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM product WHERE CategoryID = 3");
+$stmt->execute();
 $totalProducts = $stmt->fetchColumn();
 $totalPages = ceil($totalProducts / $productsPerPage);
 
-// Fetch products for the current page
-$stmt = $pdo->prepare("SELECT * FROM product LIMIT :limit OFFSET :offset");
+// Fetch products for the current page in category 1
+$stmt = $pdo->prepare("SELECT * FROM product WHERE CategoryID = 3 LIMIT :limit OFFSET :offset");
 $stmt->bindValue(':limit', $productsPerPage, PDO::PARAM_INT);
 $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();
@@ -47,12 +48,11 @@ $products = $stmt->fetchAll();
     <title>Product Page</title>
     <link rel="stylesheet" href="product.css">
     <style>
-
         .categories ul {
             list-style: none;
             padding: 0;
             margin: 0; 
-            transform: translateY(-55%);
+            transform: translateY(-60%);
         }
         /* Additional CSS for color circles */
         .color-options {
@@ -116,7 +116,7 @@ $products = $stmt->fetchAll();
                                 data-image="image/<?= $color['Picture'] ?>" 
                                 onclick="changeImage('product-image-<?= $product['ProductID'] ?>', 'image/<?= $color['Picture'] ?>')">
                             </div>              
-                    <?php endforeach; ?>
+                        <?php endforeach; ?>
                     </div>
                     <h3><?= $product['ProductName'] ?></h3>
                     <p>RM <?= number_format($product['ProductPrice'], 2) ?></p>

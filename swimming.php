@@ -1,5 +1,43 @@
 <?php
-    include 'header.php'; 
+include 'header.php';
+
+// Database connection
+$host = '127.0.0.1';
+$db = 'fyp';
+$user = 'root';
+$pass = '';
+$charset = 'utf8mb4';
+
+$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+$options = [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES => false,
+];
+
+try {
+    $pdo = new PDO($dsn, $user, $pass, $options);
+} catch (PDOException $e) {
+    throw new PDOException($e->getMessage(), (int)$e->getCode());
+}
+
+// Pagination logic
+$productsPerPage = 6;
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$offset = ($page - 1) * $productsPerPage;
+
+// Fetch total number of products in category 1
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM product WHERE CategoryID = 1");
+$stmt->execute();
+$totalProducts = $stmt->fetchColumn();
+$totalPages = ceil($totalProducts / $productsPerPage);
+
+// Fetch products for the current page in category 1
+$stmt = $pdo->prepare("SELECT * FROM product WHERE CategoryID = 1 LIMIT :limit OFFSET :offset");
+$stmt->bindValue(':limit', $productsPerPage, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+$stmt->execute();
+$products = $stmt->fetchAll();
 ?>
 
 <!DOCTYPE html>
@@ -10,6 +48,12 @@
     <title>Product Page</title>
     <link rel="stylesheet" href="product.css">
     <style>
+        .categories ul {
+            list-style: none;
+            padding: 0;
+            margin: 0; 
+            transform: translateY(-55%);
+        }
         /* Additional CSS for color circles */
         .color-options {
             display: flex;
@@ -27,6 +71,11 @@
         .color-circle.active {
             border-color: #000;
         }
+        .pagination .page.active {
+            background-color: #333;
+            color: #fff;
+            border-color: #333;
+        }
     </style>
 </head>
 <body>
@@ -42,89 +91,53 @@
         </div>
 
         <div class="products">
-            <div class="product">
-                <div class="product-image">
-                    <img id="boy-swimsuit-boxer-image" src="Swimming/boy-swimsuit-boxer2.png" alt="Boy Swimsuit Boxer">
-                    <button class="view-details">View Details</button>
+            <?php foreach ($products as $product): ?>
+                <div class="product">
+                    <div class="product-image">
+                        <?php
+                        // Fetch the first color image for the product
+                        $stmt = $pdo->prepare("SELECT Picture FROM product_color WHERE ProductID = :productId LIMIT 1");
+                        $stmt->execute(['productId' => $product['ProductID']]);
+                        $image = $stmt->fetch();
+                        $imageSrc = $image ? 'image/' . $image['Picture'] : 'image/default-image.png';
+                        ?>
+                        <img id="product-image-<?= $product['ProductID'] ?>" src="<?= $imageSrc ?>" alt="<?= $product['ProductName'] ?>">
+                        <a href="product_details.php?id=<?= $product['ProductID'] ?>"><button class="view-details">View Details</button></a>
+                    </div>
+                    <div class="color-options">
+                        <?php
+                        // Fetch all color options for the product
+                        $stmt = $pdo->prepare("SELECT Color, Picture FROM product_color WHERE ProductID = :productId");
+                        $stmt->execute(['productId' => $product['ProductID']]);
+                        $colors = $stmt->fetchAll();
+                        foreach ($colors as $color): ?>
+                            <div class="color-circle" 
+                                style="background-color: <?= $color['Color'] ?>;" 
+                                data-image="image/<?= $color['Picture'] ?>" 
+                                onclick="changeImage('product-image-<?= $product['ProductID'] ?>', 'image/<?= $color['Picture'] ?>')">
+                            </div>              
+                        <?php endforeach; ?>
+                    </div>
+                    <h3><?= $product['ProductName'] ?></h3>
+                    <p>RM <?= number_format($product['ProductPrice'], 2) ?></p>
                 </div>
-                <div class="color-options">
-                    <div class="color-circle" style="background-color: black;" data-image="Swimming/boy-swimsuit-boxer2.png" onclick="changeImage('boy-swimsuit-boxer-image', 'Swimming/boy-swimsuit-boxer2.png')"></div>
-                    <div class="color-circle" style="background-color: blue;" data-image="Swimming/boy-swimsuit-boxer3.png" onclick="changeImage('boy-swimsuit-boxer-image', 'Swimming/boy-swimsuit-boxer3.png')"></div>
-                </div>
-                <h3>Boy Swimsuit Boxer</h3>
-                <p>RM 35.00</p>
-            </div>
-
-            <div class="product">
-                <div class="product-image">
-                    <img id="boy-swimsuit-jammer-image" src="Swimming/boy-swimsuit-jammer.png" alt="Boy Swimsuit Jammer">
-                    <button class="view-details">View Details</button>
-                </div>
-                <div class="color-options">
-                    <div class="color-circle" style="background-color: blue;" data-image="Swimming/boy-swimsuit-jammer.png" onclick="changeImage('boy-swimsuit-jammer-image', 'Swimming/boy-swimsuit-jammer.png')"></div>
-                    <div class="color-circle" style="background-color: black;" data-image="Swimming/boy-swimsuit-jammer4.png" onclick="changeImage('boy-swimsuit-jammer-image', 'Swimming/boy-swimsuit-jammer4.png')"></div>
-                </div>
-                <h3>Boy Swimsuit Jammer</h3>
-                <p>RM 50.00</p>
-            </div>
-
-            <div class="product">
-                <div class="product-image">
-                    <img id="boy-swimsuit-long-image" src="Swimming/boy-swimsuit-long.png" alt="Boy Swimsuit Long Sleeved">
-                    <button class="view-details">View Details</button>
-                </div>
-                <div class="color-options">
-                    <div class="color-circle" style="background-color: green;" data-image="Swimming/women-swimsuit-bikini3.png" onclick="changeImage('boy-swimsuit-long-image', 'Swimming/boy-swimsuit-long.png')"></div>
-                </div>
-                <h3>Boy Swimsuit Long Sleeved</h3>
-                <p>RM 89.00</p>
-            </div>
-
-            <div class="product">
-                <div class="product-image">
-                    <img id="boy-swimsuit-short-image" src="Swimming/boy-swimsuit-short2.png" alt="Boy Swimsuit Short Sleeved">
-                    <button class="view-details">View Details</button>
-                </div>
-                <div class="color-options">
-                    <div class="color-circle" style="background-color: darkblue;" data-image="Swimming/boy-swimsuit-short2.png" onclick="changeImage('boy-swimsuit-short-image', 'Swimming/boy-swimsuit-short2.png')"></div>
-                </div>
-                <h3>Boy Swimsuit Short Sleeved</h3>
-                <p>RM 80.00</p>
-            </div>
-
-            <div class="product">
-                <div class="product-image">
-                    <img id="girl-swimsuit-one-piece1" src="Swimming/girl-swimsuit-onepiece2.png" alt="Girl Swimsuit One Piece 1">
-                    <button class="view-details">View Details</button>
-                </div>
-                <div class="color-options">
-                    <div class="color-circle" style="background-color: purple;" data-image="Swimming/girl-swimsuit-onepiece2.png" onclick="changeImage('girl-swimsuit-one-piece1', 'Swimming/girl-swimsuit-onepiece2.png')"></div>
-                </div>
-                <h3>Girl Swimsuit One Piece 1</h3>
-                <p>RM 80.00</p>
-            </div>
-
-            <div class="product">
-                <div class="product-image">
-                    <img id="girl-swimsuit-one-piece2" src="Swimming/girl-swimsuit-onepiece4.png" alt="Girl Swimsuit One Piece 2">
-                    <button class="view-details">View Details</button>
-                </div>
-                <div class="color-options">
-                    <div class="color-circle" style="background-color: pink;" data-image="Swimming/girl-swimsuit-onepiece4.png" onclick="changeImage('girl-swimsuit-one-piece2', 'Swimming/girl-swimsuit-onepiece4.png')"></div>
-                </div>
-                <h3>Girl Swimsuit One Piece 2</h3>
-                <p>RM 79.00</p>
-            </div>
+            <?php endforeach; ?>
         </div>
     </div>
 
     <!-- Pagination Section -->
     <div class="pagination">
-        <a href="#" class="page">1</a>
-        <a href="#" class="page">2</a>
-        <a href="#" class="page">3</a>
-        <span class="page">...</span>
-        <a href="#" class="page">Last</a>
+        <?php if ($page > 1): ?>
+            <a href="?page=<?= $page - 1 ?>" class="page">Previous</a>
+        <?php endif; ?>
+
+        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+            <a href="?page=<?= $i ?>" class="page <?= $i === $page ? 'active' : '' ?>"><?= $i ?></a>
+        <?php endfor; ?>
+
+        <?php if ($page < $totalPages): ?>
+            <a href="?page=<?= $page + 1 ?>" class="page">Next</a>
+        <?php endif; ?>
     </div>
 
     <script>
@@ -132,10 +145,24 @@
         function changeImage(imageId, newImageSrc) {
             document.getElementById(imageId).src = newImageSrc;
         }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const pages = document.querySelectorAll(".pagination .page");
+
+            pages.forEach(page => {
+                page.addEventListener("click", function () {
+                    // Remove 'active' class from all pages
+                    pages.forEach(p => p.classList.remove("active"));
+
+                    // Add 'active' class to the clicked page
+                    this.classList.add("active");
+                });
+            });
+        });
     </script>
 </body>
 </html>
 
 <?php
-    include 'footer.php'; 
+include 'footer.php';
 ?>
