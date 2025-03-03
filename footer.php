@@ -4,6 +4,16 @@
         background-color:black; 
         color: #ffffff; 
         padding: 50px 0;
+        width:100%;
+    }
+
+    .footer-section {
+        position: relative;
+        bottom: 0;
+        width: 100%;
+        background-color: black;
+        color: #ffffff;
+        padding: 50px 0;
     }
 
     .footer-section .container {
