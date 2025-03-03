@@ -62,18 +62,43 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
     </header>
 
-    <section class="box">
-        <div class="frame">
-        <h2>Log in</h2>
-            <form method="post" action="">
-                <label>Email:</label>
-                <input type="email" placeholder="example: 123@gmail.com" name="email" required><br>
+    <section class="container">
+        <div class="left-side">
+            <img src="Picture.png" alt="Side Picture">
+        </div>
+        <div class="right-side">
+            <div class="right-side-inner">
+                <div class="frame">
+                    <h2>Log in</h2>
+                    <form method="post" action="">
+                        <label>Email:</label>
+                        <input type="email" placeholder="example: 123@gmail.com" name="email" required><br>
 
-                <label>Password:</label>
-                <input type="password" placeholder="example: 123%abc" name="password" required><br>
+                        <label>Password:</label>
+                        <input type="password" placeholder="example: 123%abc" name="password" required><br>
 
-                <button type="submit">Login</button>
-            </form>
+                        <button type="submit">Continue</button>
+                    </form>
+                </div>
+            
+                <div class="option">
+                    <h4>Or continue with</h4>
+                    <div class="social-icon">
+                        <img src="facebook.png" alt="facebook">
+                        <img src="google.png" alt="google">
+                    </div>
+                </div>
+                <section class="bar">
+                    <div class="register">
+                        <h3>Don't have an account?</h3>
+                        <a href="register.php">Create account</a>
+                    </div>
+                    <div class="findback">
+                        <h3>Forgot you account or password?</h3>
+                        <a href="findback.php">Find back your account</a>
+                    </div>
+                </section>
+            </div>
         </div>
     </section>
 </body>

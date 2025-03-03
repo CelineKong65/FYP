@@ -17,77 +17,97 @@ header {
     z-index: 1000;
 }
 
-.logo img{
+.logo img {
     width: 80px;
     height: auto;
 }
 
-.home h2{
+.home h2 {
     font-size: medium;
     color: #000000;
     font-weight: 300;
     font-size: 18px;
 }
 
-.home a{
+.home a {
     text-decoration: none;
 }
 
-.home a:hover, h2:hover{
+.home a:hover, h2:hover {
     transition: color 0.5s;
     color: #007BFF;
     cursor: pointer;
 }
 
-.home i{
+.home i {
     color: black;
     display: flex;
     align-items: center;
 }
 
-.box{
-    background: url('image.png') no-repeat center center/cover;
-    height: 100vh;
+.container {
     display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    color: white;
-}
-
-.frame{
-    margin-right: 0;
-    max-width: 700px;
-    width: 100%;
-    max-height: 505px;
-    height: 100%;
-    padding-left: 180px;
-    padding-top: 20px;
-    background-color: rgba(255, 255, 255);
-    border: 2px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    align-items: center;
+    height: 100vh;
+    align-items: flex-start;
     justify-content: center;
+    padding-top: 0px;
 }
 
-.frame h2{
-    font-size: 18px;
-    font-weight: 300;
+.left-side {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: top;
+    
+}
+
+.left-side img {
+    max-width: 108.5%;
+    height: auto;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.right-side {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top: 120px;
+}
+
+.right-side-inner{
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+}
+
+.frame {
+    max-width: 500px;
+    width: 100%;
+    padding-top: 30px;
+    
+}
+
+.frame h2 {
+    font-size: 24px;
+    font-weight: 600;
     margin-bottom: 20px;
     color: #000;
 }
 
-.frame label{
-    font-size: 12px;
+.frame label {
+    font-size: 16px;
     display: block;
     margin-bottom: 5px;
     color: #000;
 }
 
-.frame button{
+.frame button {
+    font-size: 18px;
     transition: 0.5s;
     color: #fff;
-    width: 100px;
-    padding: 10px;
+    width: 500px;
+    padding: 8px;
     margin-top: 20px;
     border-radius: 10px;
     border: 2px solid rgba(0, 0, 0, 0.1);
@@ -95,36 +115,106 @@ header {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-.frame button:hover{
+.frame button:hover {
     transition: 0.5s;
     background-color: #007bff94;
 }
 
-.frame input{
+.frame input {
+    height: 35px;
     color: white;
-    max-width: 400px;
+    max-width: 500px;
     width: 100%;
     padding: 6px;
     margin-bottom: 15px;
     border: 1px solid #ccc;
-    border-radius: 5px;
 }
 
-.frame input:hover{
+.frame input:hover {
     border: 1px solid #4c5157;
     background-color: #b3b0b0;
 }
 
-.frame input:focus{
+.frame input:focus {
     background-color: #007bff94;
     color: white;
     outline: none;
     border-color: #007BFF;
 }
 
-.frame input:not(:placeholder-shown){
+.frame input:not(:placeholder-shown) {
     background-color: #007bff94;
     color: white;
     outline: none;
     border-color: #007BFF;
+}
+
+.option{
+    display: flex;
+    flex-direction: column;
+    padding-top: 30px; 
+}
+
+.option h4{
+    font-size: 13pt;
+    font-weight: 700;
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.social-icon{
+    gap: 10px;
+    display: flex; 
+}
+
+.social-icon img{
+    width: 40px;
+    padding: 5px;
+    background-color: #007BFF;
+    border-radius: 10px;
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.social-icon img:hover{
+    transition: 0.3s ease;
+    background-color: #007bff94;
+}
+
+.register{
+    margin-top: 30px;
+}
+
+.register h3, a{
+    font-size: 11pt;
+    font-weight: 600;
+}
+
+.register a{
+    padding-top: 20px;
+    color: #007BFF;
+}
+
+.register a:hover{
+    color: #007bff94;
+}
+
+.findback{
+    margin-top: 20px;
+}
+
+.findback h3, a{
+    font-size: 11pt;
+    font-weight: 600; 
+}
+
+.findback a{
+    padding-top: 20px;
+    color: #007BFF;   
+}
+
+.findback a:hover{
+    color: #007bff94;
 }
