@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- 主机： 127.0.0.1
--- 生成日期： 2025-03-03 09:38:57
+-- 生成日期： 2025-03-04 08:45:21
 -- 服务器版本： 10.4.32-MariaDB
 -- PHP 版本： 8.0.30
 
@@ -35,6 +35,13 @@ CREATE TABLE `admin` (
   `AdminPhoneNum` varchar(20) DEFAULT NULL,
   `AdminPosition` varchar(100) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- 转存表中的数据 `admin`
+--
+
+INSERT INTO `admin` (`AdminID`, `AdminName`, `AdminEmail`, `AdminPassword`, `AdminPhoneNum`, `AdminPosition`) VALUES
+(1, 'Zhi Xin', 'zhixin@gmail.com', '0729', '0123456789', 'Superadmin');
 
 -- --------------------------------------------------------
 
@@ -212,59 +219,59 @@ CREATE TABLE `product_color` (
 --
 
 INSERT INTO `product_color` (`ProductColorID`, `ProductID`, `Color`, `Picture`) VALUES
-(1, 1, 'black', 'boy-swimsuit-boxer2.png'),
+(1, 1, 'black', 'Boy-Swimsuit-Boxer.png'),
 (2, 1, 'blue', 'boy-swimsuit-boxer3.png'),
 (3, 2, 'blue', 'boy-swimsuit-jammer.png'),
 (4, 2, 'black', 'boy-swimsuit-jammer4.png'),
-(5, 3, 'green', 'boy-swimsuit-long.png'),
-(6, 4, 'darkblue', 'boy-swimsuit-short2.png'),
-(7, 5, 'purple', 'girl-swimsuit-onepiece2.png'),
-(8, 6, 'pink', 'girl-swimsuit-onepiece4.png'),
-(9, 7, 'green', 'girl-swimsuit-onepiece5.png'),
-(10, 8, 'black', 'girl-swimsuit-onepiece6.png'),
-(11, 9, 'lightgreen', 'goggle.png'),
+(5, 3, 'green', 'Boy-Swimsuit-Long-Sleeved.png'),
+(6, 4, 'darkblue', 'Boy-Swimsuit-Short-Sleeved.png'),
+(7, 5, 'purple', 'Girl-Swimsuit-One-Piece-1.png'),
+(8, 6, 'pink', 'Girl-Swimsuit-One-Piece-2.png'),
+(9, 7, 'green', 'Girl-Swimsuit-One-Piece-3.png'),
+(10, 8, 'black', 'Girl-Swimsuit-One-Piece-4.png'),
+(11, 9, 'lightgreen', 'Goggles.png'),
 (12, 9, 'pink', 'goggle2.png'),
 (13, 9, 'darkblue', 'goggle3.png'),
 (14, 10, 'black', 'men-swimsuit-brief.png'),
 (15, 10, 'darkblue', 'men-swimsuit-brief3.png'),
 (16, 11, 'lightgreen', 'men-swimsuit-short.png'),
 (17, 11, 'darkblue', 'men-swimsuit-short2.png'),
-(18, 12, 'pink', 'swimcap-longhair.png'),
+(18, 12, 'pink', 'Swim-Cap-Long-Hair.png'),
 (19, 12, 'black', 'swimcap-longhair2.png'),
-(20, 13, 'blue', 'swimcap4.png'),
+(20, 13, 'blue', 'Swim-Cap.png'),
 (21, 13, 'black', 'swimcap5.png'),
-(22, 14, 'black', 'women-swimsuit-bikini2.png'),
+(22, 14, 'black', 'Women-Swimsuit-Bikini.png'),
 (23, 14, 'pink', 'women-swimsuit-bikini3.png'),
-(24, 15, 'pink', 'women-swimsuit-longsleeve2.png'),
+(24, 15, 'pink', 'Women-Swimsuit-Long-Sleeved.png'),
 (25, 15, 'black', 'women-swimsuit-longsleeve3.png'),
-(26, 16, 'orange', 'women-swimsuit-onepiece.png'),
+(26, 16, 'orange', 'Women-Swimsuit-One-Piece.png'),
 (27, 16, 'green', 'women-swimsuit-onepiece2.png'),
-(28, 17, 'yellow', 'beach-volleyball-net3.jpg'),
-(29, 18, 'blue', 'beach-volleyball1.png'),
-(30, 19, 'green', 'bodyboards1.jpg'),
+(28, 17, 'yellow', 'Beach-Volleyball-Net.jpg'),
+(29, 18, 'blue', 'Beach-Volleyball.png'),
+(30, 19, 'green', 'Bodyboard.jpg'),
 (31, 19, 'darkblue', 'bodyboards2.jpg'),
 (32, 19, 'yellow', 'bodyboards3.jpg'),
-(33, 20, 'lightgreen', 'long-boards1.jpg'),
+(33, 20, 'lightgreen', 'Longboard.jpg'),
 (34, 20, 'skyblue', 'long-boards2.jpg'),
 (35, 20, 'darkblue', 'long-boards3.jpg'),
-(36, 21, 'yellow', 'shortboards1.jpg'),
+(36, 21, 'yellow', 'Shortboard.jpg'),
 (37, 21, 'green', 'shortboards2.jpg'),
 (38, 21, 'grey', 'shortboards3.jpg'),
-(39, 22, 'blue', 'Fins2.png'),
+(39, 22, 'blue', 'Fins.png'),
 (40, 22, 'black', 'Fins3.png'),
-(41, 23, 'black', 'Masks2.png'),
-(42, 24, 'black', 'Masks3.png'),
-(43, 25, 'black', 'Snorkels1.png'),
+(41, 23, 'black', 'Diving-Mask.png'),
+(42, 24, 'black', 'Easybreath-Surface-Mask.png'),
+(43, 25, 'black', 'Snorkels.png'),
 (44, 25, 'blue', 'Snorkels2.png'),
 (45, 25, 'red', 'Snorkels3.png'),
-(46, 26, 'blue', 'Wetsuits1.png'),
+(46, 26, 'blue', 'Wetsuit.png'),
 (47, 26, 'purple', 'Wetsuits2.png'),
 (48, 26, 'black', 'Wetsuits3.png'),
-(49, 27, 'black', 'kayak-paddle1.jpg'),
+(49, 27, 'black', 'Kayak-Paddle.jpg'),
 (50, 27, 'blue', 'kayak-paddle2.jpg'),
 (51, 27, 'yellow', 'kayak-paddle3.jpg'),
-(52, 28, 'blue', 'kayaks1.jpg'),
-(53, 29, 'orange', 'life-jacket3.jpg');
+(52, 28, 'blue', 'Kayak.jpg'),
+(53, 29, 'orange', 'Life-Jacket.jpg');
 
 -- --------------------------------------------------------
 
@@ -492,7 +499,7 @@ ALTER TABLE `wishlist`
 -- 使用表AUTO_INCREMENT `admin`
 --
 ALTER TABLE `admin`
-  MODIFY `AdminID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `AdminID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- 使用表AUTO_INCREMENT `cart`
