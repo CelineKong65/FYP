@@ -48,16 +48,16 @@
             <!-- Slideshow Advertisement -->
             <div class="slideshow-container">
                 <div class="mySlides fade">
-                    <img src="Swimming/goggle.png" alt="Goggles" style="width:55%;">
+                    <img src="image/Goggles.png" alt="Goggles" style="width:55%;">
                 </div>
                 <div class="mySlides fade">
-                    <img src="Surfing and beach sports/shortboards1.jpg" alt="Shortboard" style="width:55%;">
+                    <img src="image/Shortboard.jpg" alt="Shortboard" style="width:55%;">
                 </div>
                 <div class="mySlides fade">
-                    <img src="Kayaking/life-jacket1.jpg" alt="Life Jacket" style="width:55%;">
+                    <img src="image/Life-Jacket.jpg" alt="Life Jacket" style="width:55%;">
                 </div>
                 <div class="mySlides fade">
-                    <img src="Snorkeling/Masks3.png" alt="Snorkel Mask" style="width:55%;">
+                    <img src="image/Diving-Mask.png" alt="Snorkel Mask" style="width:55%;">
                 </div>
 
                 <!-- Navigation buttons -->
@@ -79,25 +79,25 @@
 
     <section class="categories">
         <div class="category">
-            <a href="swimming.html">
+            <a href="swimming.php">
                 <img src="swimming.jpg" alt="Swimming">
             </a>
             <span>Swimming</span>
         </div>
         <div class="category">
-            <a href="surfing.html">
+            <a href="surfing.php">
                 <img src="surfing.png" alt="Surfing and beach sports">
             </a>
             <span>Surfing and beach sports</span>
         </div>
         <div class="category">
-            <a href="scuba.html">
+            <a href="snorkeling.php">
                 <img src="scuba.png" alt="Snorkeling / Scuba diving">
             </a>
             <span>Snorkeling / Scuba diving</span>
         </div>
         <div class="category">
-            <a href="kayaking.html">
+            <a href="kayaking.php">
                 <img src="kayaking.png" alt="Kayaking">
             </a>
             <span>Kayaking</span>

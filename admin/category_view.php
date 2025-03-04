@@ -102,7 +102,6 @@ if (isset($_GET['search']) && !empty($_GET['search'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Categories</title>
     <link rel='stylesheet' href='category_view.css'>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -138,7 +137,7 @@ if (isset($_GET['search']) && !empty($_GET['search'])) {
                                 <td>{$row['CategoryID']}</td>
                                 <td>{$row['CategoryName']}</td>
                                 <td class='actions'>
-                                    <button onclick='openEditModal({$row['CategoryID']}, \"{$row['CategoryName']}\")' class='edit-btn'>Edit</button>
+                                    <button onclick='openEdit({$row['CategoryID']}, \"{$row['CategoryName']}\")' class='edit-btn'>Edit</button>
                                     <form method='POST' action='' style='display:inline;'>
                                         <input type='hidden' name='category_id' value='{$row['CategoryID']}'>
                                         <button type='submit' name='delete_category' class='delete-btn' onclick='return confirm(\"Are you sure you want to delete this category?\")'>Delete</button>
@@ -154,14 +153,14 @@ if (isset($_GET['search']) && !empty($_GET['search'])) {
         </table>
     </div>
 
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeEditModal()">&times;</span>
+    <div id="edit" class="edit">
+        <div class="edit-content">
+            <span class="close" onclick="closeEdit()">&times;</span>
             <h2>Edit Category</h2>
             <form method="POST" action="" onsubmit="return validateEditForm()">
                 <input type="hidden" name="category_id" id="editCategoryID">
-                <input type="text" name="new_category_name" id="editCategoryName" placeholder="Enter new category name" required>
-                <button type="submit" name="edit_category">Update</button>
+                <input type="text" name="new_category_name" id="editCategoryName" class="text-box"required>
+                <button type="submit" name="edit_category" class="update-btn">Update</button>
             </form>
         </div>
     </div>
@@ -169,15 +168,15 @@ if (isset($_GET['search']) && !empty($_GET['search'])) {
     <script>
         let currentCategoryName = "";
 
-        function openEditModal(id, name) {
+        function openEdit(id, name) {
             document.getElementById("editCategoryID").value = id;
             document.getElementById("editCategoryName").value = name;
             currentCategoryName = name;
-            document.getElementById("editModal").style.display = "block";
+            document.getElementById("edit").style.display = "block";
         }
 
-        function closeEditModal() {
-            document.getElementById("editModal").style.display = "none";
+        function closeEdit() {
+            document.getElementById("edit").style.display = "none";
         }
 
         function validateEditForm() {
