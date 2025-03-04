@@ -63,8 +63,14 @@ $sizes = $stmt->fetchAll();
             padding: 20px;
             gap: 20px;
             justify-content: center;
-            align-items: center;
+            align-items: stretch;
+            margin: auto; /* Centers the container */
+            position: absolute;
+            top: 55%;
+            left: 50%;
+            transform: translate(-50%, -50%); /* Centers the div perfectly */
         }
+
         .color-options {
             display: flex;
             justify-content: start;
@@ -132,7 +138,11 @@ $sizes = $stmt->fetchAll();
                 <?php if (!empty($sizes)): ?>
                     <div class="sizes">
                         <?php foreach ($sizes as $size): ?>
-                            <button class="size"><?= htmlspecialchars($size['Size']) ?></button>
+                            <?php if ($size['Size'] === null): ?>
+                                <button class="size">Standard Only</button>
+                            <?php else: ?>
+                                <button class="size"><?= htmlspecialchars($size['Size']) ?></button>
+                            <?php endif; ?>
                         <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
@@ -174,3 +184,4 @@ $sizes = $stmt->fetchAll();
     </script>
 </body>
 </html>
+
