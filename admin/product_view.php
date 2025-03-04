@@ -156,7 +156,22 @@ if (isset($_POST['add_product'])) {
             <?php while ($product = $product_result->fetch_assoc()): ?>
                 <tr>
                     <td><?php echo $product['ProductID']; ?></td>
-                    <td><img src="../image/<?php echo strtolower(str_replace(' ', '-', $product['ProductName'])); ?>.jpg" alt="<?php echo $product['ProductName']; ?>" width="50"></td>
+                    <td>
+                        <?php
+    $imageName = strtolower(str_replace(' ', '-', $product['ProductName']));
+    $jpgPath = "../image/{$imageName}.jpg";
+    $pngPath = "../image/{$imageName}.png";
+
+    if (file_exists($jpgPath)) {
+        echo "<img src='{$jpgPath}' alt='{$product['ProductName']}' width='100'>";
+    } elseif (file_exists($pngPath)) {
+        echo "<img src='{$pngPath}' alt='{$product['ProductName']}' width='100'>";
+    } else {
+        // If neither file exists, you can display a placeholder image or a message
+        echo "<img src='../image/placeholder.jpg' alt='Image not available' width='100'>";
+    }
+    ?>
+</td>
                     <td><?php echo $product['ProductName']; ?></td>
                     <td style="text-align: center;"><?php echo number_format($product['ProductPrice'], 2); ?></td>
                     <td><?php echo $product['ProductDesc']; ?></td>
