@@ -11,7 +11,7 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 $productID = (int) $_GET['id'];
 
 // Fetch product details
-$stmt = $pdo->prepare("SELECT * FROM product WHERE ProductID = :productID");
+$stmt = $conn->prepare("SELECT * FROM product WHERE ProductID = :productID");
 $stmt->execute(['productID' => $productID]);
 $product = $stmt->fetch();
 
@@ -19,13 +19,11 @@ if (!$product) {
     die("Product not found.");
 }
 
-// Fetch available colors and images
-$stmt = $pdo->prepare("SELECT Color, Picture FROM product_color WHERE ProductID = :productID");
+$stmt = $conn->prepare("SELECT Color, Picture FROM product_color WHERE ProductID = :productID");
 $stmt->execute(['productID' => $productID]);
 $colors = $stmt->fetchAll();
 
-// Fetch available sizes
-$stmt = $pdo->prepare("SELECT DISTINCT Size FROM product_size WHERE ProductID = :productID");
+$stmt = $conn->prepare("SELECT DISTINCT Size FROM product_size WHERE ProductID = :productID");
 $stmt->execute(['productID' => $productID]);
 $sizes = $stmt->fetchAll();
 
@@ -44,7 +42,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
     $color = $_POST["color"] ?? null;
 
     // Insert into cart table (example)
-    $stmt = $pdo->prepare("INSERT INTO cart (CustID, ProductID, Quantity, Size, Color, ProductName, ProductPrice) 
+    $stmt = $conn->prepare("INSERT INTO cart (CustID, ProductID, Quantity, Size, Color, ProductName, ProductPrice) 
     VALUES (:custID, :productID, :quantity, :size, :color, :productName, :productPrice)");
     $stmt->execute([
         'custID' => $_SESSION["user_id"],
