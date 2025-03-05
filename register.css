@@ -22,14 +22,14 @@ header {
     height: auto;
 }
 
-.home{
+.return{
     display: flex;
     align-items: center;
     justify-content: center;
     flex-direction: row;
 }
 
-.home h2 {
+.return h2 {
     transition: 0.5s;
     font-size: medium;
     color: #000000;
@@ -37,24 +37,24 @@ header {
     font-size: 18px;
 }
 
-.home a {
+.return a {
     transition: 0.5s;
     text-decoration: none;
 }
 
-.home a:hover, h2:hover{
+.return a:hover, h2:hover{
     transition: color 0.5s;
     color: #007BFF;
     cursor: pointer;
 }
 
-.home i:hover{
+.return i:hover{
     transition: color 0.5s;
     color: #007BFF;
     cursor: pointer;
 }
 
-.home i {
+.return i {
     transition: 0.5s;
     font-size: 20pt;
     color: black;
@@ -120,7 +120,7 @@ header {
     color: #000;
 }
 
-.frame button {
+.reg {
     font-size: 18px;
     transition: 0.5s;
     color: #fff;
@@ -133,7 +133,7 @@ header {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-.frame button:hover {
+.reg:hover{
     transition: 0.5s;
     background-color: #007bff94;
 }
@@ -148,91 +148,78 @@ header {
     border: 1px solid #ccc;
 }
 
-.frame input:hover {
+.frame input:hover, textarea:hover {
     border: 1px solid #4c5157;
     background-color: #b3b0b0;
 }
 
-.frame input:focus {
+.frame input:focus, textarea:focus {
     background-color: #007bff94;
     color: white;
     outline: none;
     border-color: #007BFF;
 }
 
-.frame input:not(:placeholder-shown) {
+.frame input:not(:placeholder-shown), textarea:not(:placeholder-shown) {
     background-color: #007bff94;
     color: white;
     outline: none;
     border-color: #007BFF;
 }
 
-.option{
+/* password requirement */
+.password-req {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #666;
+}
+
+.req {
     display: flex;
-    flex-direction: column;
-    padding-top: 30px; 
+    align-items: center;
+    margin-bottom: 5px;
 }
 
-.option h4{
-    font-size: 13pt;
-    font-weight: 700;
+.req .circle{
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-left: 8px;
+    background-color: grey;
+}
+
+.req.red .circle{
+    background-color: red;
+}
+
+.req.green .circle{
+    background-color: green;
+}
+
+/* Wrapper */
+.wrapper{
     position: relative;
-    margin-bottom: 10px;
+    display: inline-block;
+    width: 100%;
 }
 
-.social-icon{
-    gap: 10px;
-    display: flex; 
+.wrapper input{
+    width: 100%;
+    padding-right: 40px;
 }
 
-.social-icon img{
-    width: 40px;
-    padding: 5px;
-    background-color: #007BFF;
-    border-radius: 10px;
-    border: 2px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+.wrapper .eye-icon{
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-80%);
     cursor: pointer;
-    transition: 0.3s ease;
+    color: #666;
+    background: none;
+    border: none;
+    padding: 0;
 }
 
-.social-icon img:hover{
-    transition: 0.3s ease;
-    background-color: #007bff94;
-}
-
-.register{
-    margin-top: 30px;
-}
-
-.register h3, a{
-    font-size: 11pt;
-    font-weight: 600;
-}
-
-.register a{
-    padding-top: 20px;
-    color: #007BFF;
-}
-
-.register a:hover{
-    color: #007bff94;
-}
-
-.findback{
-    margin-top: 20px;
-}
-
-.findback h3, a{
-    font-size: 11pt;
-    font-weight: 600; 
-}
-
-.findback a{
-    padding-top: 20px;
-    color: #007BFF;   
-}
-
-.findback a:hover{
-    color: #007bff94;
+.wrapper .eye-icon:hover{
+    color: #333;
 }

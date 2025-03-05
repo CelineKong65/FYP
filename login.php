@@ -49,7 +49,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <title>Login</title>
     <link rel="stylesheet" type="text/css" href="login.css">
-    <link rel="stylesheet" href="path/to/font-awesome/css/font-awesome.min.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
 <body>
     <header>
@@ -57,8 +57,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <img src="logo.png" alt="Watersport Equipment Shop Logo">
         </div>
         <div class="home">
-            <i class="fa fa-home" aria-hidden="true"></i>
-            <a href="index.php"><h2>HOME</h2></a>
+        <a href="index.php"><i class='bx bx-home'><h2>HOME</h2></i></a>
         </div>
     </header>
 
