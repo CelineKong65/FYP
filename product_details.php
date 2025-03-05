@@ -1,25 +1,7 @@
 <?php
+session_start();
+include 'config.php'; 
 include 'header.php';
-
-// Database connection
-$host = '127.0.0.1';
-$db = 'fyp';
-$user = 'root';
-$pass = '';
-$charset = 'utf8mb4';
-
-$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
-$options = [
-    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    PDO::ATTR_EMULATE_PREPARES => false,
-];
-
-try {
-    $pdo = new PDO($dsn, $user, $pass, $options);
-} catch (PDOException $e) {
-    die("Database connection failed: " . $e->getMessage());
-}
 
 // Check if ProductID is set in the URL
 if (!isset($_GET['id']) || empty($_GET['id'])) {
@@ -29,7 +11,7 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 $productID = (int) $_GET['id'];
 
 // Fetch product details
-$stmt = $pdo->prepare("SELECT * FROM product WHERE ProductID = :productID");
+$stmt = $conn->prepare("SELECT * FROM product WHERE ProductID = :productID");
 $stmt->execute(['productID' => $productID]);
 $product = $stmt->fetch();
 
@@ -37,15 +19,46 @@ if (!$product) {
     die("Product not found.");
 }
 
-// Fetch available colors and images
-$stmt = $pdo->prepare("SELECT Color, Picture FROM product_color WHERE ProductID = :productID");
+$stmt = $conn->prepare("SELECT Color, Picture FROM product_color WHERE ProductID = :productID");
 $stmt->execute(['productID' => $productID]);
 $colors = $stmt->fetchAll();
 
-// Fetch available sizes
-$stmt = $pdo->prepare("SELECT DISTINCT Size FROM product_size WHERE ProductID = :productID");
+$stmt = $conn->prepare("SELECT DISTINCT Size FROM product_size WHERE ProductID = :productID");
 $stmt->execute(['productID' => $productID]);
 $sizes = $stmt->fetchAll();
+
+// Handle Add to Cart form submission
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
+    // Ensure the user is logged in before adding to cart
+    if (!isset($_SESSION["user_id"])) {
+        header("Location: login.php");
+        exit();
+    }
+
+    // Add to cart logic here
+    $productID = (int) $_POST["productID"];
+    $quantity = isset($_POST["qty"]) ? (int) $_POST["qty"] : 1;
+    $size = $_POST["size"] ?? null;
+    $color = $_POST["color"] ?? null;
+
+    // Insert into cart table (example)
+    $stmt = $conn->prepare("INSERT INTO cart (CustID, ProductID, Quantity, Size, Color, ProductName, ProductPrice) 
+    VALUES (:custID, :productID, :quantity, :size, :color, :productName, :productPrice)");
+    $stmt->execute([
+        'custID' => $_SESSION["user_id"],
+        'productID' => $productID,
+        'quantity' => $quantity,
+        'size' => $size,
+        'color' => $color,
+        'productName' => $product['ProductName'],
+        'productPrice' => $product['ProductPrice']
+    ]);
+
+    // Redirect to cart page
+    header("Location: cart.php");
+    exit();
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -129,10 +142,11 @@ $sizes = $stmt->fetchAll();
                 </div>
 
                 <div class="quantity">
-                    <button onclick="decreaseQty()">-</button>
-                    <input type="text" id="qty" value="1">
-                    <button onclick="increaseQty()">+</button>
+                    <button type="button" onclick="decreaseQty()">-</button>
+                    <input type="text" id="qty" name="qty" value="1">
+                    <button type="button" onclick="increaseQty()">+</button>
                 </div>
+
 
                 <!-- Display Sizes Only If Available -->
                 <?php if (!empty($sizes)): ?>
@@ -148,8 +162,11 @@ $sizes = $stmt->fetchAll();
                 <?php endif; ?>
 
                 <!-- Add to Cart Button -->
-                <form action="cart.php" method="POST">
+                <form action="" method="POST" onsubmit="return validateSelection()">
                     <input type="hidden" name="productID" value="<?= $productID ?>">
+                    <input type="hidden" name="size" id="selectedSize" value="">
+                    <input type="hidden" name="color" id="selectedColor" value="">
+                    <input type="hidden" id="hiddenQty" name="qty" value="1">
                     <button type="submit">Add to Cart</button>
                 </form>
             </div>
@@ -157,31 +174,57 @@ $sizes = $stmt->fetchAll();
     </div>
 
     <script>
-        function changeImage(img) {
-            document.getElementById("mainProductImage").src = img.src;
+    function changeImage(img) {
+        document.getElementById("mainProductImage").src = img.src;
         }
 
         function changeImageByColor(imageSrc) {
             document.getElementById("mainProductImage").src = imageSrc;
         }
+
         function decreaseQty() {
-            let qty = document.getElementById('qty');
-            if (qty.value > 1) qty.value--;
+            let qtyInput = document.getElementById('qty'); 
+            let hiddenQty = document.getElementById('hiddenQty'); 
+            if (qtyInput.value > 1) {
+                qtyInput.value--;
+                hiddenQty.value = qtyInput.value; 
+            }
         }
 
         function increaseQty() {
-            let qty = document.getElementById('qty');
-            qty.value++;
+            let qtyInput = document.getElementById('qty');
+            let hiddenQty = document.getElementById('hiddenQty'); 
+            qtyInput.value++;
+            hiddenQty.value = qtyInput.value; 
         }
+
 
         document.querySelectorAll('.size').forEach(button => {
             button.addEventListener('click', function () {
                 document.querySelectorAll('.size').forEach(btn => btn.classList.remove('active'));
                 this.classList.add('active');
+                document.getElementById('selectedSize').value = this.textContent.trim();
             });
         });
 
+        document.querySelectorAll('.color-circle').forEach(circle => {
+            circle.addEventListener('click', function () {
+                document.querySelectorAll('.color-circle').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById('selectedColor').value = this.style.backgroundColor;
+            });
+        });
+        
+        function validateSelection() {
+            let selectedColor = document.getElementById('selectedColor').value;
+            let selectedSize = document.getElementById('selectedSize').value;
+
+            if (selectedColor === "" || selectedSize === "") {
+                alert("Please select a color and size before adding to cart.");
+                return false;
+            }
+            return true; 
+        }
     </script>
 </body>
 </html>
-
