@@ -20,7 +20,6 @@ h2 {
 }
 
 form.header {
-    margin-bottom: 20px;
     display: flex;
     justify-content: flex-end;
     gap:10px
@@ -36,8 +35,8 @@ form.editForm,.addForm{
 
 label {
     font-weight: bold;
-    margin-right: 10px;
     color: #0A2F4F;
+    transform: translateY(7px);
 }
 
 select, input[type="text"], input[type="number"], textarea {
@@ -48,9 +47,14 @@ select, input[type="text"], input[type="number"], textarea {
     border-radius: 4px;
 }
 
-.add-content select{
+.header input{
+    width: 200px;
+}
+
+.add-content select, .edit-content select{
     border: 1px solid #93c5fd; 
-    width: 250px;   
+    width: 270px;   
+    margin-right: 6px;
 }
 
 button {
@@ -89,9 +93,14 @@ button[name="delete_product"]:hover{
     background-color: #c82333;
 }
 
+.add_button{
+    width: 60px;
+}
+
 .add{
     display: flex;
     justify-content: flex-end;
+    margin-top: 12px;
 }
 
 table {
@@ -158,10 +167,6 @@ img {
     margin-top: 200px;
 }
 
-.add_button{
-    float: right;
-}
-
 #editModal h3, #addModal h3 {
     margin-top: 0;
     color: #1e3a8a;
@@ -178,7 +183,7 @@ img {
 #editModal input, #editModal textarea, #addModal input, #addModal textarea {
     width: 100%;
     padding: 8px;
-    margin-bottom: 10px;
+    margin-bottom: 13px;
     border: 1px solid #93c5fd;
     border-radius: 4px;
 }
