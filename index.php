@@ -80,25 +80,25 @@
     <section class="categories">
         <div class="category">
             <a href="swimming.php">
-                <img src="swimming.jpg" alt="Swimming">
+                <img src="image/swimming.jpg" alt="Swimming">
             </a>
             <span>Swimming</span>
         </div>
         <div class="category">
             <a href="surfing.php">
-                <img src="surfing.png" alt="Surfing and beach sports">
+                <img src="image/surfing.png" alt="Surfing and beach sports">
             </a>
             <span>Surfing and beach sports</span>
         </div>
         <div class="category">
             <a href="snorkeling.php">
-                <img src="scuba.png" alt="Snorkeling / Scuba diving">
+                <img src="image/scuba.png" alt="Snorkeling / Scuba diving">
             </a>
             <span>Snorkeling / Scuba diving</span>
         </div>
         <div class="category">
             <a href="kayaking.php">
-                <img src="kayaking.png" alt="Kayaking">
+                <img src="image/kayaking.png" alt="Kayaking">
             </a>
             <span>Kayaking</span>
         </div>

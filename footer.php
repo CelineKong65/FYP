@@ -156,16 +156,16 @@
                     </ul>
                     <div class="footer-social">
                         <a href="https://www.facebook.com/" target="_blank">
-                            <img src="facebook.png" alt="Facebook">
+                            <img src="image/facebook.png" alt="Facebook">
                         </a>
                         <a href="https://www.instagram.com/?hl=en" target="_blank">
-                            <img src="instagram.png" alt="Instagram">
+                            <img src="image/instagram.png" alt="Instagram">
                         </a>
                         <a href="#" target="_blank">
-                            <img src="twitter.png" alt="Twitter">
+                            <img src="image/twitter.png" alt="Twitter">
                         </a>
                         <a href="#" target="_blank">
-                            <img src="whatsapp.png" alt="WhatsApp">
+                            <img src="image/whatsapp.png" alt="WhatsApp">
                         </a>
                     </div>
                 </div>

@@ -57,7 +57,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     <section class="container">
         <div class="left-side">
-            <img src="Picture.png" alt="Side Picture">
+            <img src="image/Picture.png" alt="Side Picture">
         </div>
         <div class="right-side">
             <div class="right-side-inner">

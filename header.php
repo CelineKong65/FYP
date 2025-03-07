@@ -105,7 +105,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
 <body>
     <header>
         <div class="logo">
-            <img src="logo.png" alt="Watersport Equipment Shop Logo">
+            <img src="image/logo.png" alt="Watersport Equipment Shop Logo">
         </div>
         <nav>
             <ul>
@@ -116,7 +116,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
             </ul>
         </nav>
         <div class="user-auth">
-            <img src="user.png" alt="User Account" class="user-icon">
+            <img src="image/user.png" alt="User Account" class="user-icon">
             <div class="user-menu">
                 <?php if ($isLoggedIn): ?>
                     <a href="account.php">My Account</a>

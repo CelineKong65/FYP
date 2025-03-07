@@ -1,25 +1,6 @@
 <?php
+include 'config.php';
 include 'header.php';
-
-// Database connection
-$host = '127.0.0.1';
-$db = 'fyp';
-$user = 'root';
-$pass = '';
-$charset = 'utf8mb4';
-
-$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
-$options = [
-    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    PDO::ATTR_EMULATE_PREPARES => false,
-];
-
-try {
-    $pdo = new PDO($dsn, $user, $pass, $options);
-} catch (PDOException $e) {
-    throw new PDOException($e->getMessage(), (int)$e->getCode());
-}
 
 // Pagination logic
 $productsPerPage = 6;
@@ -27,12 +8,12 @@ $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($page - 1) * $productsPerPage;
 
 // Fetch total number of products
-$stmt = $pdo->query("SELECT COUNT(*) FROM product");
+$stmt = $conn->query("SELECT COUNT(*) FROM product");
 $totalProducts = $stmt->fetchColumn();
 $totalPages = ceil($totalProducts / $productsPerPage);
 
 // Fetch products for the current page
-$stmt = $pdo->prepare("SELECT * FROM product LIMIT :limit OFFSET :offset");
+$stmt = $conn->prepare("SELECT * FROM product LIMIT :limit OFFSET :offset");
 $stmt->bindValue(':limit', $productsPerPage, PDO::PARAM_INT);
 $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();
@@ -96,7 +77,7 @@ $products = $stmt->fetchAll();
                     <div class="product-image">
                         <?php
                         // Fetch the first color image for the product
-                        $stmt = $pdo->prepare("SELECT Picture FROM product_color WHERE ProductID = :productId LIMIT 1");
+                        $stmt = $conn->prepare("SELECT Picture FROM product_color WHERE ProductID = :productId LIMIT 1");
                         $stmt->execute(['productId' => $product['ProductID']]);
                         $image = $stmt->fetch();
                         $imageSrc = $image ? 'image/' . $image['Picture'] : 'image/default-image.png';
@@ -107,7 +88,7 @@ $products = $stmt->fetchAll();
                     <div class="color-options">
                         <?php
                         // Fetch all color options for the product
-                        $stmt = $pdo->prepare("SELECT Color, Picture FROM product_color WHERE ProductID = :productId");
+                        $stmt = $conn->prepare("SELECT Color, Picture FROM product_color WHERE ProductID = :productId");
                         $stmt->execute(['productId' => $product['ProductID']]);
                         $colors = $stmt->fetchAll();
                         foreach ($colors as $color): ?>
