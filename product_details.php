@@ -55,7 +55,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
     ]);
 
     // Redirect to cart page
-    header("Location: cart.php");
+    header("Location: shopping_cart.php");
     exit();
 }
 

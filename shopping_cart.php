@@ -1,21 +1,26 @@
 <?php 
+    session_start(); // Start session to access session variables
     include 'config.php'; 
     include 'header.php';
-    session_start();
     
-    $custID = 1; 
-
-    $query = "SELECT cart.*, product_color.Picture 
-              FROM cart 
-              JOIN product_color 
-              ON cart.ProductID = product_color.ProductID 
-              AND cart.Color = product_color.Color
-              WHERE cart.CustID = :custID";
-
-    $stmt = $conn->prepare($query);
-    $stmt->bindParam(':custID', $custID, PDO::PARAM_INT); 
-    $stmt->execute();
-    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    // Retrieve CustID from session
+    $custID = $_SESSION["user_id"] ?? null;
+    
+    if ($custID) {
+        $query = "SELECT cart.*, product_color.Picture 
+                  FROM cart 
+                  JOIN product_color 
+                  ON cart.ProductID = product_color.ProductID 
+                  AND cart.Color = product_color.Color
+                  WHERE cart.CustID = :custID";
+    
+        $stmt = $conn->prepare($query);
+        $stmt->bindParam(':custID', $custID, PDO::PARAM_INT); 
+        $stmt->execute();
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } else {
+        $result = []; // Empty array if user is not logged in
+    }    
 ?>
 
 
