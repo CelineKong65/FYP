@@ -1,6 +1,6 @@
 <?php
 session_start();
-include 'config.php'; // Database connection file
+include 'config.php'; 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = trim($_POST["email"]);
@@ -9,38 +9,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($email) || empty($password)) {
         echo "Both email and password are required.";
     } else {
-        // Fetch user data from database
-        $sql = "SELECT CustID, CustName, CustPassword FROM customer WHERE CustEmail = ?";
-        $stmt = $conn->prepare($sql);
-        
-        if (!$stmt) {
-            die("SQL error: " . $conn->error);
-        }
+        try {
+            $sql = "SELECT CustID, CustName, CustPassword FROM customer WHERE CustEmail = :email";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindParam(":email", $email, PDO::PARAM_STR);
+            $stmt->execute();
 
-        $stmt->bind_param("s", $email);
-        $stmt->execute();
-        $stmt->store_result();
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($stmt->num_rows > 0) {
-            $stmt->bind_result($id, $username, $hashed_password);
-            $stmt->fetch();
+            if ($user) {
+                if (password_verify($password, $user["CustPassword"])) {
+                    $_SESSION["user_id"] = $user["CustID"];
+                    $_SESSION["username"] = $user["CustName"];
 
-            // Verify password
-            if (password_verify($password, $hashed_password)) {
-                $_SESSION["user_id"] = $id;
-                $_SESSION["username"] = $username;
-                echo "Login successful. Redirecting...";
-                header("refresh:2; url=index.php"); // Redirect to dashboard after login
-                exit();
+                    echo "Login successful. Redirecting...";
+                    header("refresh:2; url=index.php"); 
+                    exit();
+                } else {
+                    echo "Invalid email or password.";
+                }
             } else {
-                echo "Invalid email or password.";
+                echo "No account found with this email.";
             }
-        } else {
-            echo "No account found with this email.";
+        } catch (PDOException $e) {
+            die("Database error: " . $e->getMessage());
         }
-        $stmt->close();
     }
-    $conn->close();
 }
 ?>
 
@@ -63,7 +57,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     <section class="container">
         <div class="left-side">
-            <img src="Picture.png" alt="Side Picture">
+            <img src="image/Picture.png" alt="Side Picture">
         </div>
         <div class="right-side">
             <div class="right-side-inner">

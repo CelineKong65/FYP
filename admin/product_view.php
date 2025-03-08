@@ -35,30 +35,61 @@ $stmt->execute();
 $product_result = $stmt->get_result();
 
 if (isset($_POST['update_product'])) {
-    $product_id = intval($_POST['product_id']);
+    $product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
     $name = trim($_POST['name']);
     $price = floatval($_POST['price']);
     $description = trim($_POST['description']);
+    $stock = intval($_POST['stock']);
+    $image = isset($_FILES['image']['name']) ? $_FILES['image']['name'] : null;
+    $image_tmp = isset($_FILES['image']['tmp_name']) ? $_FILES['image']['tmp_name'] : null;
 
-    $check_query = "SELECT ProductID FROM product WHERE ProductID = ?";
+    $check_query = "SELECT ProductImage FROM product WHERE ProductID = ?";
     $stmt = $conn->prepare($check_query);
     $stmt->bind_param("i", $product_id);
     $stmt->execute();
-    $stmt->store_result();
+    $stmt->bind_result($existing_image);
+    $stmt->fetch();
+    $stmt->close();
 
-    if ($stmt->num_rows > 0) {
-        $update_query = "UPDATE product SET ProductName = ?, ProductPrice = ?, ProductDesc = ? WHERE ProductID = ?";
-        $stmt = $conn->prepare($update_query);
-        $stmt->bind_param("sdsi", $name, $price, $description, $product_id);
+    if (!empty($image)) {
+        $image_extension = strtolower(pathinfo($image, PATHINFO_EXTENSION));
+        $allowed_types = ['jpg', 'jpeg', 'png'];
+        if (!in_array($image_extension, $allowed_types)) {
+            echo "<script>alert('Invalid file format. Only JPG, JPEG, and PNG allowed.'); window.location.href='product_view.php';</script>";
+            exit();
+        }
 
-        if ($stmt->execute()) {
-            echo "<script>alert('Product updated successfully!'); window.location.href='product_view.php?category=" . $selected_category . "&search=" . $search_query . "';</script>";
-        } else {
-            echo "<script>alert('Failed to update product.'); window.location.href='product_view.php?category=" . $selected_category . "&search=" . $search_query . "';</script>";
+        $image_name = strtolower(str_replace(' ', '-', $name)) . "." . $image_extension;
+        $target_dir = "../image/";
+        $target_file = $target_dir . $image_name;
+
+        if (!move_uploaded_file($image_tmp, $target_file)) {
+            echo "<script>alert('Failed to upload image.'); window.location.href='product_view.php';</script>";
+            exit();
+        }
+
+        if (!empty($existing_image) && file_exists($target_dir . $existing_image)) {
+            unlink($target_dir . $existing_image); // Delete the old image file
         }
     } else {
-        echo "<script>alert('Product not found.'); window.location.href='product_view.php?category=" . $selected_category . "&search=" . $search_query . "';</script>";
+        $image_name = $existing_image;
     }
+
+    $update_query = "UPDATE product SET ProductName = ?, ProductPrice = ?, ProductDesc = ?, ProductStock = ?, ProductImage = ? WHERE ProductID = ?";
+    $stmt = $conn->prepare($update_query);
+    $stmt->bind_param("sdsisi", $name, $price, $description, $stock, $image_name, $product_id);
+
+    if ($stock <= 0) {
+        echo "<script>alert('Stock quantity must be greater than 0.'); window.location.href='product_view.php';</script>";
+        exit();
+    }
+
+    if ($stmt->execute()) {
+        echo "<script>alert('Product updated successfully!'); window.location.href='product_view.php';</script>";
+    } else {
+        echo "<script>alert('Failed to update product.'); window.location.href='product_view.php';</script>";
+    }
+    $stmt->close();
     exit();
 }
 
@@ -70,37 +101,52 @@ if (isset($_POST['delete_product'])) {
     $stmt->bind_param("i", $product_id);
 
     if ($stmt->execute()) {
-        echo "<script>alert('Product deleted successfully!'); window.location.href='product_view.php?category=" . $selected_category . "&search=" . $search_query . "';</script>";
+        echo "<script>alert('Product deleted successfully!'); window.location.href='product_view.php';</script>";
     } else {
-        echo "<script>alert('Failed to delete product.'); window.location.href='product_view.php?category=" . $selected_category . "&search=" . $search_query . "';</script>";
+        echo "<script>alert('Failed to delete product.'); window.location.href='product_view.php';</script>";
     }
     exit();
 }
 
 if (isset($_POST['add_product'])) {
+    $allowed_types = ['jpg', 'jpeg', 'png'];
+    $image = $_FILES['image']['name'];
+    $image_tmp = $_FILES['image']['tmp_name'];
+
+    $image_extension = strtolower(pathinfo($image, PATHINFO_EXTENSION));
+
+    if (!in_array($image_extension, $allowed_types)) {
+        echo "<script>alert('Invalid file format. Only JPG, JPEG, and PNG allowed.'); window.location.href='product_view.php';</script>";
+        exit();
+    }
+
     $name = trim($_POST['name']);
     $price = floatval($_POST['price']);
     $description = trim($_POST['description']);
+    $stock = intval($_POST['stock']);
     $category_id = intval($_POST['category_id']);
+    $admin_id = $_SESSION['AdminID']; // Assuming AdminID is stored in the session
 
-    $check_query = "SELECT ProductID FROM product WHERE ProductName = ?";
-    $stmt = $conn->prepare($check_query);
-    $stmt->bind_param("s", $name);
-    $stmt->execute();
-    $stmt->store_result();
+    $image_name = strtolower(str_replace(' ', '-', $name)) . "." . $image_extension;
+    $target_dir = "../image/";
+    $target_file = $target_dir . $image_name;
 
-    if ($stmt->num_rows > 0) {
-        echo "<script>alert('Product name already exists. Please enter a unique product name.'); window.location.href='product_view.php?category=" . $selected_category . "&search=" . $search_query . "';</script>";
-    } else {
-        $insert_query = "INSERT INTO product (ProductName, ProductPrice, ProductDesc, CategoryID) VALUES (?, ?, ?, ?)";
+    if (move_uploaded_file($image_tmp, $target_file)) {
+        $insert_query = "INSERT INTO product (ProductName, ProductPrice, ProductDesc, ProductStock, CategoryID, AdminID) VALUES (?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($insert_query);
-        $stmt->bind_param("sdsi", $name, $price, $description, $category_id);
+        $stmt->bind_param("sdsiii", $name, $price, $description, $stock, $category_id, $admin_id);
 
-        if ($stmt->execute()) {
-            echo "<script>alert('Product added successfully!'); window.location.href='product_view.php?category=" . $selected_category . "&search=" . $search_query . "';</script>";
-        } else {
-            echo "<script>alert('Failed to add product.'); window.location.href='product_view.php?category=" . $selected_category . "&search=" . $search_query . "';</script>";
+        if ($stock <= 0) {
+            echo "<script>alert('Stock quantity must be greater than 0.'); window.location.href='product_view.php';</script>";
+            exit();
         }
+        if ($stmt->execute()) {
+            echo "<script>alert('Product added successfully!'); window.location.href='product_view.php';</script>";
+        } else {
+            echo "<script>alert('Failed to add product.'); window.location.href='product_view.php';</script>";
+        }
+    } else {
+        echo "<script>alert('Failed to upload image.'); window.location.href='product_view.php';</script>";
     }
     exit();
 }
@@ -139,7 +185,6 @@ if (isset($_POST['add_product'])) {
         <button onclick="openAddModal()" class="add">Add Product</button>
     </div>
 
-
     <table>
     <thead>
         <tr>
@@ -148,6 +193,7 @@ if (isset($_POST['add_product'])) {
             <th>Name</th>
             <th style="text-align: center;">Price (RM)</th>
             <th>Description</th>
+            <th style="text-align: center;">Stock</th>
             <th>Action</th>
         </tr>
     </thead>
@@ -156,28 +202,28 @@ if (isset($_POST['add_product'])) {
             <?php while ($product = $product_result->fetch_assoc()): ?>
                 <tr>
                     <td><?php echo $product['ProductID']; ?></td>
-                    <td>
+                    <td style="display: grid; place-items: center;">
                         <?php
-    $imageName = strtolower(str_replace(' ', '-', $product['ProductName']));
-    $jpgPath = "../image/{$imageName}.jpg";
-    $pngPath = "../image/{$imageName}.png";
+                        $imageName = strtolower(str_replace(' ', '-', $product['ProductName']));
+                        $jpgPath = "../image/{$imageName}.jpg";
+                        $pngPath = "../image/{$imageName}.png";
 
-    if (file_exists($jpgPath)) {
-        echo "<img src='{$jpgPath}' alt='{$product['ProductName']}' width='100'>";
-    } elseif (file_exists($pngPath)) {
-        echo "<img src='{$pngPath}' alt='{$product['ProductName']}' width='100'>";
-    } else {
-        // If neither file exists, you can display a placeholder image or a message
-        echo "<img src='../image/placeholder.jpg' alt='Image not available' width='100'>";
-    }
-    ?>
-</td>
+                        if (file_exists($jpgPath)) {
+                            echo "<img src='{$jpgPath}' alt='{$product['ProductName']}' width='150'>";
+                        } elseif (file_exists($pngPath)) {
+                            echo "<img src='{$pngPath}' alt='{$product['ProductName']}' width='150'>";
+                        } else {
+                            echo "<img src='../image/placeholder.jpg' alt='Image not available' width='150'>";
+                        }
+                        ?>
+                    </td>
                     <td><?php echo $product['ProductName']; ?></td>
                     <td style="text-align: center;"><?php echo number_format($product['ProductPrice'], 2); ?></td>
                     <td><?php echo $product['ProductDesc']; ?></td>
+                    <td style="text-align: center;"><?php echo $product['ProductStock']; ?></td>
                     <td>
-                        <button name="edit_product" onclick='editProduct(<?php echo json_encode($product["ProductID"]); ?>, <?php echo json_encode($product["ProductName"]); ?>, <?php echo json_encode($product["ProductPrice"]); ?>, <?php echo json_encode($product["ProductDesc"]); ?>)'>Edit</button>
-                        <form method="POST" action="" style="display:inline;">
+                    <button name="edit_product" onclick='editProduct(<?php echo json_encode($product["ProductID"]); ?>, <?php echo json_encode($product["ProductName"]); ?>, <?php echo json_encode($product["ProductPrice"]); ?>, <?php echo json_encode($product["ProductDesc"]); ?>, <?php echo json_encode($product["ProductStock"]); ?>)'>Edit</button>
+                    <form method="POST" action="" style="display:inline;">
                             <input type="hidden" name="product_id" value="<?php echo $product['ProductID']; ?>">
                             <button type="submit" name="delete_product" onclick="return confirm('Are you sure you want to delete this product?');">Delete</button>
                         </form>
@@ -194,32 +240,49 @@ if (isset($_POST['add_product'])) {
 
     <div id="editModal">
         <div class="edit-content">
-            <span class="close"onclick="closeModal()">&times</span>
+            <span class="close" onclick="closeModal()">&times;</span>
             <h3>Edit Product</h3>
-            <form method="POST" action="" class="edit">
+            <form method="POST" action="" enctype="multipart/form-data" class="edit">
                 <input type="hidden" name="product_id" id="product_id">
+                <label>Image:</label>
+                <input type="file" name="image">
                 <label>Name:</label>
                 <input type="text" name="name" id="name" required>
                 <label>Price:</label>
                 <input type="number" step="1.00" name="price" id="price" required>
                 <label>Description:</label>
                 <textarea name="description" id="description" required></textarea>
-                <button type="submit" name="update_product class="upd_button">Update</button>
+                <label>Stock:</label>
+                <input type="number" step="10.00" name="stock" id="stock" required>
+                <label>Category:</label>
+                <select name="category_id" id="category_id" required>
+                    <?php $category_result->data_seek(0); ?>
+                    <?php while ($row = $category_result->fetch_assoc()): ?>
+                        <option value="<?php echo $row['CategoryID']; ?>" <?php echo ($row['CategoryID'] == $selected_category) ? 'selected' : ''; ?>>
+                            <?php echo $row['CategoryName']; ?>
+                        </option>
+                    <?php endwhile; ?>
+                </select>
+                <button type="submit" name="update_product">Update</button>
             </form>
         </div>
     </div>
 
     <div id="addModal">
         <div class="add-content">
-            <span class="close"onclick="closeAddModal()">&times</span>
+            <span class="close" onclick="closeAddModal()">&times;</span>
             <h3>Add Product</h3>
-                <form method="POST" action="" class="addForm">
+            <form method="POST" action="" enctype="multipart/form-data">
+                <label>Image:</label>
+                <input type="file" name="image" required>
                 <label>Name:</label>
                 <input type="text" name="name" required>
                 <label>Price:</label>
                 <input type="number" step="5.00" name="price" required>
                 <label>Description:</label>
                 <textarea name="description" required></textarea>
+                <label>Stock:</label>
+                <input type="number" step="10.00" name="stock" required>
                 <label>Category:</label>
                 <select name="category_id" required>
                     <?php $category_result->data_seek(0); ?>
@@ -228,16 +291,17 @@ if (isset($_POST['add_product'])) {
                     <?php endwhile; ?>
                 </select>
                 <button type="submit" name="add_product" class="add_button">Add</button>
-                </form>
+            </form>
         </div>
     </div>
 
     <script>
-        function editProduct(id, name, price, description) {
+        function editProduct(id, name, price, description, stock) {
             document.getElementById('product_id').value = id;
             document.getElementById('name').value = name;
             document.getElementById('price').value = price;
             document.getElementById('description').value = description;
+            document.getElementById('stock').value = stock;  // Fix: Set stock value in input
             document.getElementById('editModal').style.display = 'block';
         }
 

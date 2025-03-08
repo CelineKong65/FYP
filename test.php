@@ -1,26 +1,21 @@
 <?php 
-    session_start(); // Start session to access session variables
     include 'config.php'; 
     include 'header.php';
+    session_start();
     
-    // Retrieve CustID from session
-    $custID = $_SESSION["user_id"] ?? null;
-    
-    if ($custID) {
-        $query = "SELECT cart.*, product_color.Picture 
-                  FROM cart 
-                  JOIN product_color 
-                  ON cart.ProductID = product_color.ProductID 
-                  AND cart.Color = product_color.Color
-                  WHERE cart.CustID = :custID";
-    
-        $stmt = $conn->prepare($query);
-        $stmt->bindParam(':custID', $custID, PDO::PARAM_INT); 
-        $stmt->execute();
-        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } else {
-        $result = []; // Empty array if user is not logged in
-    }    
+    $custID = 1; 
+
+    $query = "SELECT cart.*, product_color.Picture 
+              FROM cart 
+              JOIN product_color 
+              ON cart.ProductID = product_color.ProductID 
+              AND cart.Color = product_color.Color
+              WHERE cart.CustID = :custID";
+
+    $stmt = $conn->prepare($query);
+    $stmt->bindParam(':custID', $custID, PDO::PARAM_INT); 
+    $stmt->execute();
+    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 
@@ -30,7 +25,101 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shopping Cart</title>
-    <link rel="stylesheet" href="shopping_cart.css">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f8f8;
+        }
+        .cart-container {
+            width: 80%;
+            margin: 150px auto;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        img {
+            width: 80px;
+            height: auto;
+        }
+        .price, .total {
+            color: red;
+            font-weight: bold;
+        }
+        .quantity-selector {
+            display: flex;
+            align-items: center;
+        }
+        .quantity-selector button {
+            background: #ddd;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .quantity-selector input {
+            width: 40px;
+            text-align: center;
+            border: 1px solid #ddd;
+            margin: 0 5px;
+        }
+        .remove {
+            cursor: pointer;
+            font-size: 18px;
+            color: red;
+        }
+        .cart-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .cart-buttons button {
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .continue {
+            background: #eee;
+        }
+        .update {
+            background: #ddd;
+        }
+        .cart-summary {
+            background: #f0f0f0;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: right;
+        }
+        .summary-details p {
+            display: flex;
+            justify-content: space-between;
+        }
+        .checkout {
+            background: black;
+            color: white;
+            padding: 15px;
+            width: 100%;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top:20px;
+        }
+        select {
+            padding: 5px;
+            border: 1px solid #ddd;
+        }
+    </style>
 </head>
 <body>
     <div class="cart-container">
