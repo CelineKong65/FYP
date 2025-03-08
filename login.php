@@ -43,15 +43,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <title>Login</title>
     <link rel="stylesheet" type="text/css" href="login.css">
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://kit.fontawesome.com/c2f7d169d6.js" crossorigin="anonymous"></script>
 </head>
 <body>
     <header>
         <div class="logo">
-            <img src="logo.png" alt="Watersport Equipment Shop Logo">
+            <img src="image/logo.png" alt="Watersport Equipment Shop Logo">
         </div>
         <div class="home">
-        <a href="index.php"><i class='bx bx-home'><h2>HOME</h2></i></a>
+        <a href="index.php"><i class="fa-solid fa-house"><h2>HOME</h2></i></a>
         </div>
     </header>
 
@@ -66,9 +66,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <form method="post" action="">
                         <label>Email:</label>
                         <input type="email" placeholder="example: 123@gmail.com" name="email" required><br>
-
+    
                         <label>Password:</label>
-                        <input type="password" placeholder="example: 123%abc" name="password" required><br>
+                        <div class="wrapper">
+                            <div class="pass-field">
+                                <input type="password" placeholder="example: 123%abc" name="password" required><br>
+                                <i class="fa-solid fa-eye" id="show-password"></i>
+                            </div>
+                        </div>
 
                         <button type="submit">Continue</button>
                     </form>
@@ -77,8 +82,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <div class="option">
                     <h4>Or continue with</h4>
                     <div class="social-icon">
-                        <img src="facebook.png" alt="facebook">
-                        <img src="google.png" alt="google">
+                        <img src="image/facebook.png" alt="facebook">
+                        <img src="image/google.png" alt="google">
                     </div>
                 </div>
                 <section class="bar">
@@ -94,5 +99,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
         </div>
     </section>
+
+    <script src="login.js"></script>
 </body>
 </html>

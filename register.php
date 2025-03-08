@@ -77,16 +77,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <body>
     <header>
         <div class="logo">
-            <img src="logo.png" alt="Watersport Equipment Shop Logo">
+            <img src="image/logo.png" alt="Watersport Equipment Shop Logo">
         </div>
         <div class="return">
-        <a onclick="history.back();"><i class='bx bxs-left-arrow'><h2>RETURN</h2></i></a>
+        <a onclick="history.back();"><i class="fa-solid fa-rotate-left"><h2>RETURN</h2></i></a>
         </div>
     </header>
 
     <section class="container">
         <div class="left-side">
-            <img src="Picture.png" alt="Side Picture">
+            <img src="image/Picture.png" alt="Side Picture">
         </div>
         <div class="right-side">
             <div class="right-side-inner">
