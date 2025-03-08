@@ -9,10 +9,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $custAddress = $_POST['custAddress'];
 
     // Validate password format
-    if (!preg_match("/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/", $custPassword)) {
-        echo "<script>alert('Password must be at least 8 characters long, include at least one letter, one number, and one special character.');
-        history.back();
-        </script>";
+    if (!preg_match("/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])\S{8,}$/", $custPassword)) {
+        echo "<script>alert('Password must be at least 8 characters long, include at least one letter, one number, and one special character, and no spaces.'); history.back();</script>";
         exit();
     }
 
@@ -22,33 +20,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Check if email, phone number, or address already exists
     $sql_check = "SELECT CustName, CustEmail, CustPhoneNum, CustAddress FROM customer WHERE CustName = ? OR CustEmail = ? OR CustPhoneNum = ? OR CustAddress = ?";
     $stmt_check = $conn->prepare($sql_check);
-    $stmt_check->bind_param("ssss", $custName, $custEmail, $custPhoneNum, $custAddress);
-    $stmt_check->execute();
-    $stmt_check->store_result();
+    $stmt_check->execute([$custName, $custEmail, $custPhoneNum, $custAddress]);
+    $result = $stmt_check->fetchAll(PDO::FETCH_ASSOC);
 
-    if ($stmt_check->num_rows > 0) {
-        $stmt_check->bind_result($existingName, $existingEmail, $existingPhoneNum, $existingAddress);
-        $stmt_check->fetch();
-
-        if ($existingName == $custName){
-            echo "<script>alert('Name already exists.');
-            history.back();</script>";
-        }elseif ($existingEmail == $custEmail) {
-            echo "<script>alert('Email already exists.');
-            history.back();</script>";
-        } elseif ($existingPhoneNum == $custPhoneNum) {
-            echo "<script>alert('Phone number already exists.');
-            history.back();</script>";
-        } elseif ($existingAddress == $custAddress) {
-            echo "<script>alert('Address already exists.');
-            history.back();</script>";
+    if (count($result) > 0) {
+        foreach ($result as $row) {
+            if ($row['CustName'] == $custName) {
+                echo "<script>alert('Name already exists.'); history.back();</script>";
+            } elseif ($row["CustEmail"] == $custEmail) {
+                echo "<script>alert('Email already exists.'); history.back();</script>";
+            } elseif ($row["CustPhoneNum"] == $custPhoneNum) {
+                echo "<script>alert('Phone Number already exists.'); history.back();</script>";
+            } elseif ($row["CustAddress"] == $custAddress) {
+                echo "<script>alert('Address already exists.'); history.back();</script>";
+            }
         }
-
-        $stmt_check->close();
-        $conn->close();
         exit();
     }
-
+    
     // Insert data into customer table
     $sql = "INSERT INTO customer (CustName, CustEmail, CustPassword, CustPhoneNum, CustAddress) 
             VALUES (?, ?, ?, ?, ?)";
@@ -142,7 +131,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <input type="text" placeholder="012-345 6789" name="custPhoneNum"><br>
                         
                         <label>Address:</label>
-                        <textarea name="custAddress" placeholder="4, Jalan Melodies 8, Taman Rainbow, 80100, Johor bahru, Johor" row="4" cols="69"></textarea><br>
+                        <textarea name="custAddress" placeholder="4, Jalan Melodies 8, Taman Rainbow, 80100, Johor bahru, Johor" rows="4" cols="69"></textarea><br>
                         
                         <button type="submit" class="reg">Register</button>
                     </form>
