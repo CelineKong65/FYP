@@ -31,6 +31,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shopping Cart</title>
     <link rel="stylesheet" href="shopping_cart.css">
+    <style>
+        .summary-details p {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            font-size: 16px;
+            letter-spacing: 0.5px;
+            word-spacing: 2px; 
+        }
+    </style>
 </head>
 <body>
     <div class="cart-container">
@@ -123,7 +134,9 @@
 
         <div class="cart-summary">
             <div class="summary-details">
-                <p><strong>TOTAL</strong> <span class="total-price">RM <?= number_format($totalPrice, 2) ?></span></p>
+                <p>SUBTOTAL<span class="total-price">RM <?= number_format($totalPrice, 2) ?></span></p>
+                <p>DELIVERY FEES<span class="delivery-fee">RM <?= number_format(5.00, 2) ?></span></p> 
+                <p><strong>TOTAL</strong> <span class="grand-total">RM <?= number_format($totalPrice + 5.00, 2) ?></span></p>
             </div>
             <button class="checkout">PROCEED TO CHECK OUT</button>
         </div>

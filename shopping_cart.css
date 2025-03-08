@@ -72,10 +72,7 @@ img {
     margin-top: 20px;
     text-align: right;
 }
-.summary-details p {
-    display: flex;
-    justify-content: space-between;
-}
+
 .checkout {
     background: black;
     color: white;
