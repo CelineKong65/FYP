@@ -1,74 +1,36 @@
-const passwordInput = document.getElementById('custPassword');
-const togglePassword = document.getElementById('togglePassword');
-const requirements = {
-    uppercase : document.getElementById('req-uppercase'),
-    lowercase : document.getElementById('req-lowercase'),
-    space : document.getElementById('req-space'),
-    length : document.getElementById('req-length'),
-};
+const passwordInput = document.querySelector(".pass-field input");
+const eyeIcon = document.querySelector(".pass-field i");
+const requirementList = document.querySelectorAll(".password-req li");
 
-//Function for password requirements
-const updateReq = (password) => {
-    //Uppercase
-    if (/[A-Z]/.test(password)){
-        requirements.uppercase.classList.remove('red');
-        requirements.uppercase.classList.add('green');
-    } else {
-        requirements.uppercase.classList.remove('green');
-        requirements.uppercase.classList.add('red');
-    }
+const requirements = [
+    {regex: /.{8}./, index: 0}, //Minimum 8 characters
+    {regex: /[A-Z]/, index: 1}, //At least one uppercase
+    {regex: /[a-z]/, index: 2}, //At least one lowercase
+    {regex: /[@$!%*#?&]/, index: 3}, //At least one special symbol
+    {regex: /^\S*$/, index: 4}, //No space
+]
 
-    //Lowercase
-    if (/[a-z]/.test(password)){
-        requirements.uppercase.classList.remove('red');
-        requirements.uppercase.classList.add('green');
-    } else {
-        requirements.uppercase.classList.remove('green');
-        requirements.uppercase.classList.add('red');
-    }
+passwordInput.addEventListener("keyup", (e)=> {
+    requirements.forEach(item => {
+        //Check is the password match requirements
+        const isValid = item.regex.test(e.target.value);
+        const requirementItem = requirementList[item.index];
 
-    //Space
-    if (!/\s/.test(password)){
-        requirements.uppercase.classList.remove('red');
-        requirements.uppercase.classList.add('green');
-    } else {
-        requirements.uppercase.classList.remove('green');
-        requirements.uppercase.classList.add('red');
-    }
-
-    if (password.length >= 8){
-        requirements.uppercase.classList.remove('red');
-        requirements.uppercase.classList.add('green');
-    } else {
-        requirements.uppercase.classList.remove('green');
-        requirements.uppercase.classList.add('red');
-    }
-};
-
-passwordInput.addEventListener('input', () => {
-    const password = passwordInput.value;
-
-    if(password.length === 0){
-        //Reset all circle to grey
-        Object.values(requirements).forEach(req => {
-            req.classList.remove('red','green');
-        });
-    }else{
-        updateReq(password);
-    }
+        if(isValid){
+            requirementItem.firstElementChild.className = "fa-solid fa-circle-check";
+            requirementItem.classList.add("valid");
+        }else{
+            requirementItem.firstElementChild.className = "fa-solid fa-circle";
+            requirementItem.classList.remove("valid");
+        }
+    });
 });
 
-//View password
-togglePassword.addEventListener('click', () => {
-    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-    passwordInput.setAttribute('type', type);
+eyeIcon.addEventListener("click", ()=>{
+    //Toggle password
+    passwordInput.type = passwordInput.type === "password" ? "text" : "password";
 
-    const eyeIcon = togglePassword.querySelector('i');
-    if (type === 'password'){
-        togglePassword.classList.remove('bx-show-alt'); 
-        togglePassword.classList.add('bxs-hide');
-    } else {
-        togglePassword.classList.remove('bxs-hide');
-        togglePassword.classList.add('bx-show-alt');
-    }
+    //Change eyeIcon 
+    eyeIcon.className = `fa-solid fa-eye${passwordInput.type === "password" ? "" : "-slash"}`;
+
 });

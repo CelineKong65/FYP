@@ -170,30 +170,40 @@ header {
 /* password requirement */
 .password-req {
     margin-top: 10px;
+    margin-bottom: 12px;
     font-size: 14px;
     color: #666;
 }
 
-.req {
+.password-req li.valid span{
+    color: #b3b0b0;
+}
+
+.content p{
+    font-size: 12pt;
+}
+
+.content li{
+    list-style: none;
+}
+
+.fa-circle {
+    transform: translateY(-13%);
+    font-size: 10px;
+    margin-right: 10px;
     display: flex;
     align-items: center;
     margin-bottom: 5px;
 }
 
-.req .circle{
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    margin-left: 8px;
-    background-color: grey;
-}
-
-.req.red .circle{
-    background-color: red;
-}
-
-.req.green .circle{
-    background-color: green;
+.fa-circle-check{
+    color: rgb(38, 255, 0);
+    transform: translateY(-13%);
+    font-size: 10px;
+    margin-right: 10px;
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
 }
 
 /* Wrapper */
@@ -208,18 +218,35 @@ header {
     padding-right: 40px;
 }
 
-.wrapper .eye-icon{
+.wrapper .fa-eye{
     position: absolute;
     right: 10px;
     top: 50%;
-    transform: translateY(-80%);
+    transform: translateY(-550%);
     cursor: pointer;
-    color: #666;
+    color: #7f7f7f;
     background: none;
     border: none;
     padding: 0;
 }
 
-.wrapper .eye-icon:hover{
-    color: #333;
+.wrapper .fa-eye-slash{
+    position: absolute;
+    right: 9px;
+    top: 50%;
+    transform: translateY(-550%);
+    cursor: pointer;
+    color: #7f7f7f;
+    background: none;
+    border: none;
+    padding: 0;
+}
+
+.fa-eye, .fa-eye-slash{
+    font-size: 15px;
+    color: #007BFF;
+}
+
+.wrapper .fa-eye:hover{
+    color: #505050;
 }

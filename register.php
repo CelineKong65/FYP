@@ -72,7 +72,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <title>Customer Registration</title>
     <link rel="stylesheet" type="text/css" href="register.css">
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://kit.fontawesome.com/c2f7d169d6.js" crossorigin="anonymous"></script>
 </head>
 <body>
     <header>
@@ -92,7 +92,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div class="right-side-inner">
                 <div class="frame">
                     <h2>Register</h2>
-                    <form method="POST" action="">
+                    <form method="POST" action="/register" id="register-form">
                         <label>Name:</label>
                         <input type="text" placeholder="Username" name="custName" required><br>
                         
@@ -101,35 +101,42 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         
                         <label>Password:</label>
                         <div class="wrapper">
-                            <input type="password" placeholder="123$abcd" name="custPassword" required>
-                            <button type="button" id="togglePassword" class="eye-icon">
-                                <i class='bx bxs-hide'></i>
-                            </button>
-                        </div><br>
-
-                        <!-- Password Requirement -->
-                         <div class="password-req">
-                            <div class="req" id="req-uppercase">
-                                <span class="circle"></span>
-                                1 uppercase letter
+                            <div class="pass-field">
+                                <input type="password" placeholder="123$abcd" name="custPassword" required><br>
+                                <i class="fa-solid fa-eye" id="show-password"></i>
                             </div>
 
-                            <div class="req" id="req-lowercase">
-                                <span class="circle"></span>
-                                1 lowercase letter
-                            </div>
+                            <!-- Password Requirement -->
+                            <div class="content">
+                                <p>Password minimum requirements</p>
+                                <ul class="password-req">
+                                    <li>
+                                        <i class="fa-solid fa-circle"></i>
+                                        <span>At least 8 characters</span>
+                                    </li>
 
-                            <div class="req" id="req-space">
-                                <span class="circle"></span>
-                                No spaces
-                            </div>
+                                    <li>
+                                        <i class="fa-solid fa-circle"></i>
+                                        <span>At least 1 uppercase letter [A...Z]</span>
+                                    </li>
 
-                            <div class="req" id="req-length">
-                                <span class="circle"></span>
-                                At least 8 characters
-                            </div>
-                         </div>
+                                    <li>
+                                        <i class="fa-solid fa-circle"></i>
+                                        <span>At least 1 lowercase letter [a...z]</span>
+                                    </li>
 
+                                    <li>
+                                        <i class="fa-solid fa-circle"></i>
+                                        <span>At least 1 special symbol [!...$]</span>
+                                    </li>
+
+                                    <li>
+                                        <i class="fa-solid fa-circle"></i>
+                                        <span>No spaces</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
 
                         <label>Phone Number:</label>
                         <input type="text" placeholder="012-345 6789" name="custPhoneNum"><br>
