@@ -12,7 +12,7 @@ if (isset($_GET['CartID'])) {
     
     if ($stmt->execute()) {
         // Redirect back to the shopping cart page after deletion
-        header("Location: test.php");
+        header("Location: shopping_cart.php");
         exit();
     } else {
         echo "Error: Unable to remove item.";

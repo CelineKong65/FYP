@@ -1,28 +1,37 @@
-<?php 
-    session_start(); // Start session to access session variables
-    include 'config.php'; 
-    include 'header.php';
-    
-    // Retrieve CustID from session
-    $custID = $_SESSION["user_id"] ?? null;
-    
-    if ($custID) {
-        $query = "SELECT cart.*, product_color.Picture 
-                  FROM cart 
-                  JOIN product_color 
-                  ON cart.ProductID = product_color.ProductID 
-                  AND cart.Color = product_color.Color
-                  WHERE cart.CustID = :custID";
-    
-        $stmt = $conn->prepare($query);
-        $stmt->bindParam(':custID', $custID, PDO::PARAM_INT); 
-        $stmt->execute();
-        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } else {
-        $result = []; // Empty array if user is not logged in
-    }    
-?>
+<?php
+session_start(); // Start session to access session variables
+include 'config.php'; 
+include 'header.php';
 
+// Retrieve CustID from session
+$custID = $_SESSION["user_id"] ?? null;
+
+if ($custID) {
+    $query = "SELECT cart.*, product_color.Picture 
+              FROM cart 
+              JOIN product_color 
+              ON cart.ProductID = product_color.ProductID 
+              AND cart.Color = product_color.Color
+              WHERE cart.CustID = :custID";
+
+    $stmt = $conn->prepare($query);
+    $stmt->bindParam(':custID', $custID, PDO::PARAM_INT); 
+    $stmt->execute();
+    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} else {
+    $result = []; // Empty array if user is not logged in
+}    
+
+// Calculate total price
+$totalPrice = 0;
+foreach ($result as $row) {
+    $totalPrice += $row['ProductPrice'] * $row['Quantity'];
+}
+$grandTotal = $totalPrice + 5.00; // Add delivery fee
+
+// Store grand total in session
+$_SESSION['grand_total'] = $grandTotal;
+?>
 
 <!DOCTYPE html>
 <html lang="zh">
@@ -138,7 +147,7 @@
                 <p>DELIVERY FEES<span class="delivery-fee">RM <?= number_format(5.00, 2) ?></span></p> 
                 <p><strong>TOTAL</strong> <span class="grand-total">RM <?= number_format($totalPrice + 5.00, 2) ?></span></p>
             </div>
-            <button class="checkout">PROCEED TO CHECK OUT</button>
+            <button class="checkout" onclick="window.location.href='payment.php'">PROCEED TO CHECK OUT</button>
         </div>
 
         <?php endif; ?>
@@ -149,3 +158,4 @@
 <?php
 include 'footer.php';
 ?>
+

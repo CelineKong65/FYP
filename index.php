@@ -9,11 +9,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Watersport Equipment Shop</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .hero {
+            background: url('image/image.png') no-repeat center center/cover;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+    </style>
 </head>
 <body>
     <header>
         <div class="logo">
-            <img src="logo.png" alt="Watersport Equipment Shop Logo">
+            <img src="image/logo.png" alt="Watersport Equipment Shop Logo">
         </div>
         <nav>
             <ul>
@@ -24,7 +34,7 @@
             </ul>
         </nav>
         <div class="user-auth">
-            <img src="user.png" alt="User Account" class="user-icon">
+            <img src="image/user.png" alt="User Account" class="user-icon">
             <div class="user-menu">
                 <?php if ($isLoggedIn): ?>
                     <a href="account.php">My Account</a>
