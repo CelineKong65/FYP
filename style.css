@@ -7,15 +7,6 @@
 }
 
 /* Hero Section */
-.hero {
-    background: url('image.png') no-repeat center center/cover;
-    height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-}
-
 /* Hero Text */
 .hero-text {
     max-width: 600px;
