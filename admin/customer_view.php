@@ -235,7 +235,8 @@ if (isset($_POST['add_customer'])) {
                         <th>Email</th>
                         <th>Phone</th>
                         <th>Address</th>
-                        <th>Password</th>
+                        <!-- display不到密码 -->
+                        <th>Password</th> 
                         <th></th>
                     </tr>
                 </thead>
