@@ -1,5 +1,7 @@
 <?php
+
 session_start();
+
 if (!isset($_SESSION['AdminID'])) {
     header("Location: admin_login.php");
     exit();
@@ -43,7 +45,7 @@ if (isset($_POST['update_product'])) {
     $image = isset($_FILES['image']['name']) ? $_FILES['image']['name'] : null;
     $image_tmp = isset($_FILES['image']['tmp_name']) ? $_FILES['image']['tmp_name'] : null;
 
-    $check_query = "SELECT ProductImage FROM product WHERE ProductID = ?";
+    $check_query = "SELECT ProductID FROM product WHERE ProductID = ?";
     $stmt = $conn->prepare($check_query);
     $stmt->bind_param("i", $product_id);
     $stmt->execute();
@@ -75,10 +77,12 @@ if (isset($_POST['update_product'])) {
         $image_name = $existing_image;
     }
 
-    $update_query = "UPDATE product SET ProductName = ?, ProductPrice = ?, ProductDesc = ?, ProductStock = ?, ProductImage = ? WHERE ProductID = ?";
-    $stmt = $conn->prepare($update_query);
-    $stmt->bind_param("sdsisi", $name, $price, $description, $stock, $image_name, $product_id);
+    $category_id = intval($_POST['category_id']);
 
+    $update_query = "UPDATE product SET ProductName = ?, ProductPrice = ?, ProductDesc = ?, ProductStock = ?, CategoryID = ? WHERE ProductID = ?";
+    $stmt = $conn->prepare($update_query);
+    $stmt->bind_param("sdsiii", $name, $price, $description, $stock, $category_id, $product_id);
+    
     if ($stock <= 0) {
         echo "<script>alert('Stock quantity must be greater than 0.'); window.location.href='product_view.php';</script>";
         exit();
@@ -158,85 +162,380 @@ if (isset($_POST['add_product'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product List</title>
-    <link rel="stylesheet" href="product_view.css">
+    <style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.header {
+    margin-bottom: 50px;
+}
+
+.container {
+    margin-top: 50px;
+    display: flex;
+    flex: 1;
+    margin-left: 250px;
+}
+
+.sidebar {
+    width: 220px;
+    background-color: #0077b6;
+    padding-top: 30px;
+    text-align: center;
+    border-radius: 20px;
+    margin: 30px;
+    height: 650px;
+    margin-top: 150px;
+    position: fixed;
+    left: 0;
+    top: 0; 
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar ul li {
+    text-align: center;
+    width: 200px;
+    margin: auto;
+    border-radius: 10px;
+}
+
+.sidebar ul li a {
+    color: white;
+    text-decoration: none;
+    display: block;
+    font-size: 18px;
+    transition: 0.3s;
+    padding: 15px 20px;
+}
+
+.sidebar ul li a:hover {
+    background-color: #1e3a8a;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+.main-content {
+    flex-grow: 1;
+    padding: 20px;
+    margin: 10px;
+    background-color: #ffffff;
+    border-radius: 10px;
+}
+
+h2 {
+    color: #1e3a8a;
+    font-size: 40px;
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.message {
+    padding: 10px;
+    color: #1e3a8a;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+form.search {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+form.editForm, .addForm {
+    margin-bottom: 20px;
+}
+
+label{
+    font-weight: bold;
+}
+
+.search label{
+    color: #0A2F4F;
+    transform: translateY(8px);
+}
+
+select, input[type="text"], input[type="number"], textarea {
+    padding: 8px;
+    font-size: 12px;
+    margin-bottom: 10px;
+    border: 1px solid #0A2F4F;
+    border-radius: 4px;
+}
+
+.search input {
+    width: 200px;
+}
+
+.add-content select, .edit-content select {
+    border: 1px solid #93c5fd;
+    width: 210px;
+}
+
+button {
+    padding: 10px 16px;
+    background-color: #1e3a8a;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 5px;
+    margin-bottom: 10px;
+    font-size: 13px;
+}
+
+button.search {
+    width: 105px;
+}
+
+button:hover {
+    background-color: #1d4ed8;
+}
+
+button[name="edit_product"] {
+    color: black;
+    background-color: #ffc107;
+}
+
+button[name="edit_product"]:hover {
+    background-color: #e0a800d1;
+}
+
+button[name="delete_product"] {
+    background-color: red;
+}
+
+button[name="delete_product"]:hover {
+    background-color: #c82333;
+}
+
+.add {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+.add_btn{
+    background-color: #28a745;
+}
+
+.add_btn:hover {
+    background-color: #218838;
+}
+
+.submit{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+    margin-top: 10px;
+}
+
+table, th, td {
+    font-size: 15px;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+}
+
+th {
+    background-color: #1e3a8a;
+    color: white;
+}
+
+tr:nth-child(even) {
+    background-color: #f0f4ff;
+}
+
+table tr:hover {
+    background-color:rgb(237, 236, 236);
+}
+
+.price {
+    text-align: center;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+.close {
+    float: right;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: red;
+}
+
+#editModal, #addModal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    justify-content: center;
+    align-items: center;
+}
+
+.edit-content, .add-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 350px;
+    margin: auto;
+    margin-top: 200px;
+}
+
+#editModal h3, #addModal h3 {
+    margin-top: 0;
+    color: #1e3a8a;
+    font-size: 25px;
+    text-align: center;
+}
+
+#editModal label, #addModal label {
+    display: block;
+    margin-bottom: 5px;
+    color: #1e3a8a;
+}
+
+#editModal input, #editModal textarea, #addModal input, #addModal textarea {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 13px;
+    border: 1px solid #93c5fd;
+    border-radius: 4px;
+}
+
+#editModal button[type="submit"], #addModal button[type="submit"] {
+    background-color: #1e3a8a;
+}
+
+#editModal button[type="submit"]:hover, #addModal button[type="submit"]:hover {
+    background-color: #1d4ed8;
+}
+    </style>
 </head>
 <body>
-    <h2>Product List</h2>
-
-    <?php if (isset($_SESSION['message'])): ?>
-        <p class="message"><?php echo $_SESSION['message']; unset($_SESSION['message']); ?></p>
-    <?php endif; ?>
-
-    <form method="GET" action="" class="header">
-        <label for="category">Filter by Category:</label>
-        <select name="category" id="category" onchange="this.form.submit()">
-            <option value="">All Categories</option>
-            <?php while ($row = $category_result->fetch_assoc()): ?>
-                <option value="<?php echo $row['CategoryID']; ?>" <?php echo ($selected_category == $row['CategoryID']) ? 'selected' : ''; ?>>
-                    <?php echo $row['CategoryName']; ?>
-                </option>
-            <?php endwhile; ?>
-        </select>
-        <input type="text" name="search" placeholder="Search by product name" value="<?php echo htmlspecialchars($search_query); ?>">
-        <button type="submit" class="search">Search</button>
-    </form>
-            
-    <div class="add">
-        <button onclick="openAddModal()" class="add">Add Product</button>
+    <div class="header">
+        <?php include 'header.php'; ?>
     </div>
 
-    <table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Picture</th>
-            <th>Name</th>
-            <th style="text-align: center;">Price (RM)</th>
-            <th>Description</th>
-            <th style="text-align: center;">Stock</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        <?php if ($product_result->num_rows > 0): ?>
-            <?php while ($product = $product_result->fetch_assoc()): ?>
-                <tr>
-                    <td><?php echo $product['ProductID']; ?></td>
-                    <td style="display: grid; place-items: center;">
-                        <?php
-                        $imageName = strtolower(str_replace(' ', '-', $product['ProductName']));
-                        $jpgPath = "../image/{$imageName}.jpg";
-                        $pngPath = "../image/{$imageName}.png";
+    <div class="container">
+        <div class="sidebar">
+            <ul>
+                <li><a href="report.php">Report</a></li>
+                <li><a href="customer_view.php">Customer List</a></li>
+                <li><a href="admin_view.php">Admin List</a></li>
+                <li><a href="category_view.php">Category List</a></li>
+                <li><a href="product_view.php">Product List</a></li>
+                <li><a href="order_view.php">Order List</a></li>
+                <li><a href="profile.php">My Profile</a></li>
+            </ul>
+        </div>
 
-                        if (file_exists($jpgPath)) {
-                            echo "<img src='{$jpgPath}' alt='{$product['ProductName']}' width='150'>";
-                        } elseif (file_exists($pngPath)) {
-                            echo "<img src='{$pngPath}' alt='{$product['ProductName']}' width='150'>";
-                        } else {
-                            echo "<img src='../image/placeholder.jpg' alt='Image not available' width='150'>";
-                        }
-                        ?>
-                    </td>
-                    <td><?php echo $product['ProductName']; ?></td>
-                    <td style="text-align: center;"><?php echo number_format($product['ProductPrice'], 2); ?></td>
-                    <td><?php echo $product['ProductDesc']; ?></td>
-                    <td style="text-align: center;"><?php echo $product['ProductStock']; ?></td>
-                    <td>
-                    <button name="edit_product" onclick='editProduct(<?php echo json_encode($product["ProductID"]); ?>, <?php echo json_encode($product["ProductName"]); ?>, <?php echo json_encode($product["ProductPrice"]); ?>, <?php echo json_encode($product["ProductDesc"]); ?>, <?php echo json_encode($product["ProductStock"]); ?>)'>Edit</button>
-                    <form method="POST" action="" style="display:inline;">
-                            <input type="hidden" name="product_id" value="<?php echo $product['ProductID']; ?>">
-                            <button type="submit" name="delete_product" onclick="return confirm('Are you sure you want to delete this product?');">Delete</button>
-                        </form>
-                    </td>
+        <div class="main-content">
+            <h2>Product List</h2>
+
+            <?php if (isset($_SESSION['message'])): ?>
+                <p class="message"><?php echo $_SESSION['message']; unset($_SESSION['message']); ?></p>
+            <?php endif; ?>
+
+            <form method="GET" action="" class="search">
+                <label for="category">Filter by Category:</label>
+                <select name="category" id="category" onchange="this.form.submit()">
+                    <option value="">All Categories</option>
+                    <?php while ($row = $category_result->fetch_assoc()): ?>
+                        <option value="<?php echo $row['CategoryID']; ?>" <?php echo ($selected_category == $row['CategoryID']) ? 'selected' : ''; ?>>
+                            <?php echo $row['CategoryName']; ?>
+                        </option>
+                    <?php endwhile; ?>
+                </select>
+                <input type="text" name="search" placeholder="Search by product name" value="<?php echo htmlspecialchars($search_query); ?>">
+                <button type="submit" class="search">Search</button>
+            </form>
+                    
+            <div class="add">
+                <button onclick="openAddModal()" class="add_btn">Add Product</button>
+            </div>
+
+            <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th style="text-align: center;">Price (RM)</th>
+                    <th style="width: 350px;">Description</th>
+                    <th style="text-align: center;">Stock</th>
+                    <th></th>
                 </tr>
-            <?php endwhile; ?>
-        <?php else: ?>
-            <tr>
-                <td colspan="6" style="text-align: center;color:red;"><b>No products found for this category.</b></td>
-            </tr>
-        <?php endif; ?>
-    </tbody>
-    </table>
+            </thead>
+            <tbody>
+                <?php if ($product_result->num_rows > 0): ?>
+                    <?php while ($product = $product_result->fetch_assoc()): ?>
+                        <tr>
+                            <td><?php echo $product['ProductID']; ?></td>
+                            <td style="display: grid; place-items: center;">
+                                <?php
+                                $imageName = strtolower(str_replace(' ', '-', $product['ProductName']));
+                                $jpgPath = "../image/{$imageName}.jpg";
+                                $pngPath = "../image/{$imageName}.png";
+
+                                if (file_exists($jpgPath)) {
+                                    echo "<img src='{$jpgPath}' alt='{$product['ProductName']}' width='150'>";
+                                } elseif (file_exists($pngPath)) {
+                                    echo "<img src='{$pngPath}' alt='{$product['ProductName']}' width='150'>";
+                                } else {
+                                    echo "<img src='../image/placeholder.jpg' alt='Image not available' width='150'>";
+                                }
+                                ?>
+                            </td>
+                            <td><?php echo $product['ProductName']; ?></td>
+                            <td style="text-align: center;"><?php echo number_format($product['ProductPrice'], 2); ?></td>
+                            <td><?php echo $product['ProductDesc']; ?></td>
+                            <td style="text-align: center;"><?php echo $product['ProductStock']; ?></td>
+                            <td>
+                            <button name="edit_product" onclick='editProduct(<?php echo json_encode($product["ProductID"]); ?>, <?php echo json_encode($product["ProductName"]); ?>, <?php echo json_encode($product["ProductPrice"]); ?>, <?php echo json_encode($product["ProductDesc"]); ?>, <?php echo json_encode($product["ProductStock"]); ?>, <?php echo json_encode($product["CategoryID"]); ?>)'>Edit</button>
+                            <form method="POST" action="" style="display:inline;">
+                                    <input type="hidden" name="product_id" value="<?php echo $product['ProductID']; ?>">
+                                    <button type="submit" name="delete_product" onclick="return confirm('Are you sure you want to delete this product?');">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="6" style="text-align: center;color:red;"><b>No products found for this category.</b></td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+            </table>
+        </div>
+    </div>
 
     <div id="editModal">
         <div class="edit-content">
@@ -255,15 +554,17 @@ if (isset($_POST['add_product'])) {
                 <label>Stock:</label>
                 <input type="number" step="10.00" name="stock" id="stock" required>
                 <label>Category:</label>
-                <select name="category_id" id="category_id" required>
-                    <?php $category_result->data_seek(0); ?>
-                    <?php while ($row = $category_result->fetch_assoc()): ?>
-                        <option value="<?php echo $row['CategoryID']; ?>" <?php echo ($row['CategoryID'] == $selected_category) ? 'selected' : ''; ?>>
-                            <?php echo $row['CategoryName']; ?>
-                        </option>
-                    <?php endwhile; ?>
-                </select>
-                <button type="submit" name="update_product">Update</button>
+                <div class="submit">
+                    <select name="category_id" id="category_id" required>
+                        <?php $category_result->data_seek(0); ?>
+                        <?php while ($row = $category_result->fetch_assoc()): ?>
+                            <option value="<?php echo $row['CategoryID']; ?>" <?php echo ($row['CategoryID'] == $selected_category) ? 'selected' : ''; ?>>
+                                <?php echo $row['CategoryName']; ?>
+                            </option>
+                        <?php endwhile; ?>
+                    </select>
+                    <button type="submit" name="update_product">Update</button>
+                </div>
             </form>
         </div>
     </div>
@@ -284,26 +585,31 @@ if (isset($_POST['add_product'])) {
                 <label>Stock:</label>
                 <input type="number" step="10.00" name="stock" required>
                 <label>Category:</label>
-                <select name="category_id" required>
-                    <?php $category_result->data_seek(0); ?>
-                    <?php while ($row = $category_result->fetch_assoc()): ?>
-                        <option value="<?php echo $row['CategoryID']; ?>"><?php echo $row['CategoryName']; ?></option>
-                    <?php endwhile; ?>
-                </select>
-                <button type="submit" name="add_product" class="add_button">Add</button>
+                <div class="submit">
+                    <select name="category_id" required>
+                        <?php $category_result->data_seek(0); ?>
+                        <?php while ($row = $category_result->fetch_assoc()): ?>
+                            <option value="<?php echo $row['CategoryID']; ?>"><?php echo $row['CategoryName']; ?></option>
+                        <?php endwhile; ?>
+                    </select>
+                    <button type="submit" name="add_product" class="add_sbm">Add</button>                    
+                </div>
+
             </form>
         </div>
     </div>
 
     <script>
-        function editProduct(id, name, price, description, stock) {
+        function editProduct(id, name, price, description, stock, category_id) {
             document.getElementById('product_id').value = id;
             document.getElementById('name').value = name;
             document.getElementById('price').value = price;
             document.getElementById('description').value = description;
-            document.getElementById('stock').value = stock;  // Fix: Set stock value in input
-            document.getElementById('editModal').style.display = 'block';
+            document.getElementById('stock').value = stock;
+            document.getElementById('category_id').value = category_id;
+            document.getElementById('editModal').style.display = "block";
         }
+
 
         function closeModal() {
             document.getElementById('editModal').style.display = 'none';
