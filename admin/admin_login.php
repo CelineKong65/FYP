@@ -52,7 +52,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div id="login-form">
                 <form name="loginfrm" method="post" class="Loginfrm" action="">
                     <div class="header">
-                        <img src="../logo.png">
+                        <img src="../image/logo.png">
                         <h3>Admin Login</h3>
                     </div>
                     
