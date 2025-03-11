@@ -1,7 +1,7 @@
 <?php
 session_start(); // Start session to access session variables
-
-include 'config.php'; // Include the database configuration file
+include 'header.php'; 
+include 'config.php'; 
 
 // Retrieve grand total from session
 $deliveryCharge = 5.00; 
