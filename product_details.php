@@ -1,5 +1,6 @@
 <?php
 session_start();
+ob_start();
 include 'config.php'; 
 include 'header.php';
 
