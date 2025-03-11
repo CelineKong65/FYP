@@ -90,7 +90,7 @@ h2 {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-`/* Cart Item Styling */
+/* Cart Item Styling */
 .cart-items {
     display: flex;
     flex-direction: column;
@@ -130,6 +130,6 @@ h2 {
 .total {
     border-top: 2px solid #000;
     color: red;
-}`
+}
 
 

@@ -1,13 +1,12 @@
 <?php
 session_start(); // Start session to access session variables
-include 'header.php'; 
+
 include 'config.php'; // Include the database configuration file
 
 // Retrieve grand total from session
 $deliveryCharge = 5.00; 
 $subtotal = $_SESSION['subtotal'] ?? 0;
 $grandTotalWithDelivery = $subtotal + $deliveryCharge;
-
 
 // Retrieve cart items from session
 $cartItems = $_SESSION['cart_items'] ?? [];
@@ -53,7 +52,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $insertStmt->bindParam(':cardNum', $cardNum, PDO::PARAM_STR);
     $insertStmt->bindParam(':cardCVV', $cardCVV, PDO::PARAM_STR);
 
+    // After inserting into orderpayment table
     if ($insertStmt->execute()) {
+        // Get the last inserted OrderID
+        $orderID = $conn->lastInsertId();
+
+        // Insert each cart item into the orderdetails table
+        foreach ($cartItems as $item) {
+            $productName = $item['ProductName'];
+            $color = $item['Color'];
+            $size = $item['Size'];
+            $quantity = $item['Quantity'];
+
+            $detailQuery = "INSERT INTO orderdetails (OrderID, ProductName, Color, Size, Quantity)
+                            VALUES (:orderID, :productName, :color, :size, :quantity)";
+            $detailStmt = $conn->prepare($detailQuery);
+            $detailStmt->bindParam(':orderID', $orderID, PDO::PARAM_INT);
+            $detailStmt->bindParam(':productName', $productName, PDO::PARAM_STR);
+            $detailStmt->bindParam(':color', $color, PDO::PARAM_STR);
+            $detailStmt->bindParam(':size', $size, PDO::PARAM_STR);
+            $detailStmt->bindParam(':quantity', $quantity, PDO::PARAM_INT);
+
+            if (!$detailStmt->execute()) {
+                // Handle the error (e.g., display an error message)
+                echo "<p>Error saving order details. Please try again.</p>";
+                exit();
+            }
+        }
+
         // Clear the cart for the logged-in user
         $deleteCartQuery = "DELETE FROM cart WHERE CustID = :custID";
         $deleteCartStmt = $conn->prepare($deleteCartQuery);
