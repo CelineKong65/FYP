@@ -36,23 +36,32 @@ if (!empty($selected_category) && !empty($search_query)) {
 $stmt->execute();
 $product_result = $stmt->get_result();
 
+
 if (isset($_POST['update_product'])) {
-    $product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
+    $product_id = intval($_POST['product_id']);
     $name = trim($_POST['name']);
     $price = floatval($_POST['price']);
     $description = trim($_POST['description']);
     $stock = intval($_POST['stock']);
-    $image = isset($_FILES['image']['name']) ? $_FILES['image']['name'] : null;
-    $image_tmp = isset($_FILES['image']['tmp_name']) ? $_FILES['image']['tmp_name'] : null;
+    $category_id = intval($_POST['category_id']);
+    $image = $_FILES['image']['name'];
+    $image_tmp = $_FILES['image']['tmp_name'];
 
-    $check_query = "SELECT ProductID FROM product WHERE ProductID = ?";
+    // Check if the product name already exists for a different product
+    $check_query = "SELECT COUNT(*) FROM product WHERE ProductName = ? AND ProductID != ?";
     $stmt = $conn->prepare($check_query);
-    $stmt->bind_param("i", $product_id);
+    $stmt->bind_param("si", $name, $product_id);
     $stmt->execute();
-    $stmt->bind_result($existing_image);
+    $stmt->bind_result($count);
     $stmt->fetch();
     $stmt->close();
 
+    if ($count > 0) {
+        echo "<script>alert('Product name already exists. Please use a different name.'); window.location.href='product_view.php';</script>";
+        exit();
+    }
+
+    // Proceed with updating the product
     if (!empty($image)) {
         $image_extension = strtolower(pathinfo($image, PATHINFO_EXTENSION));
         $allowed_types = ['jpg', 'jpeg', 'png'];
@@ -69,20 +78,14 @@ if (isset($_POST['update_product'])) {
             echo "<script>alert('Failed to upload image.'); window.location.href='product_view.php';</script>";
             exit();
         }
-
-        if (!empty($existing_image) && file_exists($target_dir . $existing_image)) {
-            unlink($target_dir . $existing_image); // Delete the old image file
-        }
     } else {
-        $image_name = $existing_image;
+        $image_name = $_POST['existing_image'];
     }
-
-    $category_id = intval($_POST['category_id']);
 
     $update_query = "UPDATE product SET ProductName = ?, ProductPrice = ?, ProductDesc = ?, ProductStock = ?, CategoryID = ? WHERE ProductID = ?";
     $stmt = $conn->prepare($update_query);
     $stmt->bind_param("sdsiii", $name, $price, $description, $stock, $category_id, $product_id);
-    
+
     if ($stock <= 0) {
         echo "<script>alert('Stock quantity must be greater than 0.'); window.location.href='product_view.php';</script>";
         exit();
@@ -116,7 +119,6 @@ if (isset($_POST['add_product'])) {
     $allowed_types = ['jpg', 'jpeg', 'png'];
     $image = $_FILES['image']['name'];
     $image_tmp = $_FILES['image']['tmp_name'];
-
     $image_extension = strtolower(pathinfo($image, PATHINFO_EXTENSION));
 
     if (!in_array($image_extension, $allowed_types)) {
@@ -129,8 +131,23 @@ if (isset($_POST['add_product'])) {
     $description = trim($_POST['description']);
     $stock = intval($_POST['stock']);
     $category_id = intval($_POST['category_id']);
-    $admin_id = $_SESSION['AdminID']; // Assuming AdminID is stored in the session
+    $admin_id = $_SESSION['AdminID'];
 
+    // Check if the product name already exists
+    $check_query = "SELECT COUNT(*) FROM product WHERE ProductName = ?";
+    $stmt = $conn->prepare($check_query);
+    $stmt->bind_param("s", $name);
+    $stmt->execute();
+    $stmt->bind_result($count);
+    $stmt->fetch();
+    $stmt->close();
+
+    if ($count > 0) {
+        echo "<script>alert('Product name already exists. Please use a different name.'); window.location.href='product_view.php';</script>";
+        exit();
+    }
+
+    // Proceed with adding the product
     $image_name = strtolower(str_replace(' ', '-', $name)) . "." . $image_extension;
     $target_dir = "../image/";
     $target_file = $target_dir . $image_name;
@@ -144,6 +161,7 @@ if (isset($_POST['add_product'])) {
             echo "<script>alert('Stock quantity must be greater than 0.'); window.location.href='product_view.php';</script>";
             exit();
         }
+
         if ($stmt->execute()) {
             echo "<script>alert('Product added successfully!'); window.location.href='product_view.php';</script>";
         } else {
