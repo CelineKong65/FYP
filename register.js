@@ -3,7 +3,7 @@ const eyeIcon = document.querySelector(".pass-field i");
 const requirementList = document.querySelectorAll(".password-req li");
 
 const requirements = [
-    {regex: /.{8}./, index: 0}, //Minimum 8 characters
+    {regex: /.{7}./, index: 0}, //Minimum 8 characters
     {regex: /[A-Z]/, index: 1}, //At least one uppercase
     {regex: /[a-z]/, index: 2}, //At least one lowercase
     {regex: /[@$!%*#?&]/, index: 3}, //At least one special symbol

@@ -42,9 +42,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $sql = "INSERT INTO customer (CustName, CustEmail, CustPassword, CustPhoneNum, CustAddress) 
             VALUES (?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sssss", $custName, $custEmail, $custPassword, $custPhoneNum, $custAddress);
+    $stmt->execute([$custName, $custEmail, $custPassword, $custPhoneNum, $custAddress]);
 
-    if ($stmt->execute()) {
+    if ($stmt->rowCount()>0) {
         echo "<script>alert('Registration successful!'); window.location.href='login.php';</script>";
     } else {
         echo "<script>alert('Error: " . $stmt->error . "');
@@ -81,7 +81,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div class="right-side-inner">
                 <div class="frame">
                     <h2>Register</h2>
-                    <form method="POST" action="/register" id="register-form">
+                    <form method="POST" action="" id="register-form">
                         <label>Name:</label>
                         <input type="text" placeholder="Username" name="custName" required><br>
                         
