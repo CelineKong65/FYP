@@ -168,7 +168,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
                     <input type="hidden" name="size" id="selectedSize" value="">
                     <input type="hidden" name="color" id="selectedColor" value="">
                     <input type="hidden" id="hiddenQty" name="qty" value="1">
-                    <button type="submit">Add to Cart</button>
+                    <button type="submit" onclick="addToCart()">Add to Cart</button>
                 </form>
             </div>
         </div>
@@ -226,6 +226,41 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
             }
             return true; 
         }
+
+        function addToCart() {
+            let productID = <?= $productID ?>;
+            let qty = document.getElementById("qty").value;
+            let size = document.getElementById("selectedSize").value;
+            let color = document.getElementById("selectedColor").value;
+
+            if (size === "" || color === "") {
+                alert("Please select a color and size before adding to cart.");
+                return;
+            }
+
+            let formData = new FormData();
+            formData.append("productID", productID);
+            formData.append("qty", qty);
+            formData.append("size", size);
+            formData.append("color", color);
+
+            fetch("add_to_cart.php", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById("cartCount").textContent = data.cartCount;
+                    alert("Item added to cart!");
+                } else {
+                    alert("Failed to add item to cart.");
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        }
+
     </script>
 </body>
 </html>
+

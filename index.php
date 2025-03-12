@@ -21,31 +21,6 @@
     </style>
 </head>
 <body>
-    <header>
-        <div class="logo">
-            <img src="image/logo.png" alt="Watersport Equipment Shop Logo">
-        </div>
-        <nav>
-            <ul>
-                <li><a href="index.php">HOME</a></li>
-                <li><a href="about.php">ABOUT</a></li>
-                <li><a href="product.php">PRODUCTS</a></li>
-                <li><a href="contact.php">CONTACT</a></li>
-            </ul>
-        </nav>
-        <div class="user-auth">
-            <img src="image/user.png" alt="User Account" class="user-icon">
-            <div class="user-menu">
-                <?php if ($isLoggedIn): ?>
-                    <a href="account.php">My Account</a>
-                    <a href="logout.php">Logout</a>
-                <?php else: ?>
-                    <a href="login.php">Login</a>
-                    <a href="register.php">Sign Up</a>
-                <?php endif; ?>
-            </div>
-        </div>
-    </header>
 
     <section class="hero">
         <div class="hero-text">

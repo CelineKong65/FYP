@@ -11,7 +11,7 @@ $stmt->bindParam(':custID', $custID, PDO::PARAM_INT);
 
 if ($stmt->execute()) {
     // Redirect back to the cart page after clearing the cart
-    header("Location: test.php");
+    header("Location: shopping_cart.php");
     exit();
 } else {
     echo "Error: Unable to clear cart.";

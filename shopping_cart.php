@@ -44,6 +44,15 @@ foreach ($result as $row) {
     ];
 }
 
+// Fetch updated cart count (count distinct ProductID)
+$stmt = $conn->prepare("SELECT COUNT(DISTINCT ProductID) AS total FROM cart WHERE CustID = ?");
+$stmt->execute([$userID]);
+$row = $stmt->fetch();
+$cartCount = $row['total'] ?? 0;
+
+// Return JSON response
+echo json_encode(["success" => true, "cartCount" => $cartCount]);
+
 ?>
 
 <!DOCTYPE html>
