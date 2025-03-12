@@ -101,7 +101,7 @@ label{
     font-size: 14px;
 }
 
-.search select, input{
+select, input{
     padding: 8px;
     font-size: 12px;
     margin-bottom: 10px;
