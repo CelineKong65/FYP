@@ -2,9 +2,6 @@
 session_start();
 include("config.php");
 
-// Debugging: Print session values
-var_dump($_SESSION);
-
 // Check if user is logged in
 $isLoggedIn = isset($_SESSION['user_id']);
 ?>

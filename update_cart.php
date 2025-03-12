@@ -37,6 +37,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['CartID'])) {
 }
 
 // Refresh the shopping cart page
-header("Location: test.php");
+header("Location: shopping_cart.php");
 exit;
 ?>
