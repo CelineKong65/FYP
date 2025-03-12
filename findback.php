@@ -2,27 +2,34 @@
 session_start();
 include 'config.php';
 
+$error_message = "";
+
 if ($_SERVER["REQUEST_METHOD"] == "POST"){
     $email= &$_POST['email'];
 
-    $sql = "SELECT CustEmail FROM customer WHERE CustEmail = ?";
+    $sql = "SELECT CustID, CustEmail FROM customer WHERE CustEmail = ?";
     $stmt = $conn->prepare($sql);
     $stmt->execute([$email]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($user) {
         //Generate random 6 code
-        $code = rand(100000, 999999);
-        $_SESSION['reset_email'] = $email;
-        $_SESSION['reset_code'] = $code;
+        $otp = rand(100000, 999999);
 
-        //Send the code to user email
-        include 'send-email.php';
+        //Store OTP and email in the password_reset table
+        $sql = "INSERT INTO password_reset (CustID, CustEmail, Token) VALUES (?, ?, ?)";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([$user['CustID'], $user['CustEmail'], $otp]);
 
-        header("Location: verify.php");
+        //Store in session
+        $_SESSION['reset_email'] = $user['CustEmail'];
+        $_SESSION['reset_otp'] = $otp;
+
+        //Continue with OTPverify.php
+        header("Location: OTPverify.php");
         exit();
     }else{
-        echo "<script>alert('Email not found');</script>";
+        $error_message = "Email nto found. Please enter a valid email address.";
     }
 }
 ?>
@@ -32,7 +39,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST"){
 <head>
     <title>Forgot Password</title>
     <link rel="stylesheet" type="text/css" href="findback.css">
+    <script src="https://smtpjs.com/v3/smtp.js"></script>
     <script src="https://kit.fontawesome.com/c2f7d169d6.js" crossorigin="anonymous"></script>
+    <script src="findback.js"></script>
 </head>
 <body>
     <header>
@@ -52,12 +61,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST"){
             <div class="right-side-inner">
                 <div class="frame">
                     <h2>Forgot Password</h2>
-                    <p>In the prepared box, type your current email address.<br>The code will be sent to your email soon.</p>
-                    <form method="POST" action="">
+                    <p>In the prepared box, type your current email address.<br>The OTP code will be sent to your email soon.</p>
+                    <form id="emailForm" method="POST" action="">
                         <label>Enter your email:</label>
-                        <input type="email" name="email" placeholder="example@email.com" required>
-                        <button type="submit" class="sub">SUBMIT</button>
+                        <input type="email" id="email" name="email" placeholder="example@email.com" required>
+                        <button type="submit">SEND OTP</button>
                     </form>
+                    <?php if ($error_message): ?>
+                        <p class="error"><?php echo $error_message; ?></p>
+                    <?php endif; ?>
                 </div>
             </div> 
         </div>
