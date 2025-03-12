@@ -1,0 +1,135 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f8f8;
+}
+.checkout-wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    max-width: 1200px;
+    margin: auto;
+    margin-top: 100px;
+    margin-bottom: 100px;
+    align-items: stretch;
+}
+
+.container-bill {
+    flex: 1;
+    max-width: 60%;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    margin: auto;
+}
+
+.row {
+    display: flex;
+    justify-content: space-between;
+}
+
+.col {
+    flex: 1;
+    padding: 10px;
+}
+
+h2 {
+    margin-bottom: 10px;
+}
+
+input[type="text"], input[type="email"] {
+    width: 80%;
+    padding: 10px;
+    margin: 5px 0 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.card-icons img {
+    width: 40px;
+    margin-right: 5px;
+}
+
+label {
+    font-weight: bold;
+    display: block;
+    margin-top: 10px;
+}
+
+button.checkout-btn {
+    width: 100%;
+    background: #28a745;
+    color: white;
+    padding: 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 20px;
+}
+
+button.checkout-btn:hover {
+    background: #218838;
+}
+
+.order-container {
+    flex: 1;
+    max-width: 40%;
+}
+h2 {
+    font-size: 24px;
+    margin-bottom: 15px;
+}
+
+.order-box {
+    background: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Cart Item Styling */
+.cart-items {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.cart-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #ddd;
+    padding: 10px 0;
+}
+
+.cart-item p {
+    margin: 0;
+    font-size: 16px;
+}
+
+.cart-price {
+    font-weight: bold;
+}
+
+/* Subtotal & Total */
+.subtotal, .total{
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    font-weight: bold;
+}
+
+.subtotal {
+    border-top: 1px solid #ccc;
+}
+
+.total {
+    border-top: 2px solid #000;
+    color: red;
+}
+
+

@@ -29,8 +29,21 @@ foreach ($result as $row) {
 }
 $grandTotal = $totalPrice + 5.00; // Add delivery fee
 
-// Store grand total in session
-$_SESSION['grand_total'] = $grandTotal;
+// Store the information
+$_SESSION['subtotal'] = $totalPrice; 
+$_SESSION['delivery_fee'] = 5.00; 
+
+$_SESSION['cart_items'] = [];
+foreach ($result as $row) {
+    $_SESSION['cart_items'][] = [
+        'ProductName' => $row['ProductName'],
+        'Color' => $row['Color'],
+        'Size' => $row['Size'],
+        'Quantity' => $row['Quantity'],
+        'Total' => $row['ProductPrice'] * $row['Quantity']
+    ];
+}
+
 ?>
 
 <!DOCTYPE html>
