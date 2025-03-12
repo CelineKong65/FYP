@@ -1,4 +1,5 @@
 <?php
+ob_start();
 session_start(); // Start session to access session variables
 include 'header.php'; 
 include 'config.php'; 

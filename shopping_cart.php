@@ -50,9 +50,6 @@ $stmt->execute([$userID]);
 $row = $stmt->fetch();
 $cartCount = $row['total'] ?? 0;
 
-// Return JSON response
-echo json_encode(["success" => true, "cartCount" => $cartCount]);
-
 ?>
 
 <!DOCTYPE html>
