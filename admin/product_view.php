@@ -263,9 +263,10 @@ label{
 .search label{
     color: #0A2F4F;
     transform: translateY(8px);
+    font-size: 14px;
 }
 
-select, input[type="text"], input[type="number"], textarea {
+select, input{
     padding: 8px;
     font-size: 12px;
     margin-bottom: 10px;
@@ -420,14 +421,16 @@ img {
     display: block;
     margin-bottom: 5px;
     color: #1e3a8a;
+    font-size: 15px;
 }
 
 #editModal input, #editModal textarea, #addModal input, #addModal textarea {
-    width: 100%;
+    width: 95%;
     padding: 8px;
     margin-bottom: 13px;
     border: 1px solid #93c5fd;
     border-radius: 4px;
+    font-size: 13px;
 }
 
 #editModal button[type="submit"], #addModal button[type="submit"] {

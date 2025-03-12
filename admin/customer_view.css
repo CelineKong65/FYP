@@ -105,7 +105,7 @@ form.editForm,.addForm{
     transform: translateY(7px);
 }
 
-select, input[type="text"], input[type="number"], textarea {
+.search input{
     padding: 8px;
     font-size: 12px;
     margin-bottom: 10px;
@@ -255,14 +255,16 @@ img {
     margin-bottom: 5px;
     color: #1e3a8a;
     font-weight: bold;
+    font-size: 15px;
 }
 
 #editModal input, #editModal textarea, #addModal input, #addModal textarea {
-    width: 100%;
+    width: 95%;
     padding: 8px;
     margin-bottom: 13px;
     border: 1px solid #93c5fd;
     border-radius: 4px;
+    font-size: 13px;
 }
 
 #editModal button[type="submit"], #addModal button[type="submit"] {

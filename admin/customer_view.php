@@ -200,7 +200,7 @@ if (isset($_POST['add_customer'])) {
     <div class="container">
         <div class="sidebar">
             <ul>
-                <li><a href="report.php">Report</a></li>
+                <li><a href="dashboard.php">Dashboard</a></li>
                 <li><a href="customer_view.php">Customer List</a></li>
                 <li><a href="admin_view.php">Admin List</a></li>
                 <li><a href="category_view.php">Category List</a></li>
