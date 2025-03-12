@@ -4,6 +4,15 @@ include("config.php");
 
 // Check if user is logged in
 $isLoggedIn = isset($_SESSION['user_id']);
+
+// Fetch cart count if user is logged in
+$cartCount = 0;
+if ($isLoggedIn) {
+    $stmt = $conn->prepare("SELECT COUNT(DISTINCT ProductID) AS total FROM cart WHERE CustID = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+    $row = $stmt->fetch();
+    $cartCount = $row['total'] ?? 0;
+}
 ?>
 
 <!DOCTYPE html>
@@ -33,7 +42,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
         }
 
         nav {
-            margin-left: 65%;
+            margin-left: 60%;
         }
     
         nav ul {
@@ -97,6 +106,31 @@ $isLoggedIn = isset($_SESSION['user_id']);
         .user-auth:hover .user-menu {
             display: block;
         }
+        .shopping-cart {
+            margin-right: 10px;
+        }
+
+        .cart-icon {
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+        }
+        .cart-count {
+            position: absolute;
+            top: 30px;
+            right: 80px;
+            background-color: blue; /* Changed background color to blue */
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%; /* Keeps it circular */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
     </style>
 </head>
 <body>
@@ -112,6 +146,16 @@ $isLoggedIn = isset($_SESSION['user_id']);
                 <li><a href="contact.php">CONTACT</a></li>
             </ul>
         </nav>
+
+        <?php if ($isLoggedIn): ?>
+        <div class="shopping-cart">
+            <a href="shopping_cart.php">
+                <img src="image/shopping-cart.png" alt="Cart" class="cart-icon">
+                <span id="cartCount" class="cart-count"><?= $cartCount ?></span>
+            </a>
+        </div>
+        <?php endif; ?>
+
         <div class="user-auth">
             <img src="image/user.png" alt="User Account" class="user-icon">
             <div class="user-menu">
