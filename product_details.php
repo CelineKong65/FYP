@@ -28,36 +28,12 @@ $stmt = $conn->prepare("SELECT DISTINCT Size FROM product_size WHERE ProductID =
 $stmt->execute(['productID' => $productID]);
 $sizes = $stmt->fetchAll();
 
-// Handle Add to Cart form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
     // Ensure the user is logged in before adding to cart
     if (!isset($_SESSION["user_id"])) {
         header("Location: login.php");
         exit();
     }
-
-    // Add to cart logic here
-    $productID = (int) $_POST["productID"];
-    $quantity = isset($_POST["qty"]) ? (int) $_POST["qty"] : 1;
-    $size = $_POST["size"] ?? null;
-    $color = $_POST["color"] ?? null;
-
-    // Insert into cart table (example)
-    $stmt = $conn->prepare("INSERT INTO cart (CustID, ProductID, Quantity, Size, Color, ProductName, ProductPrice) 
-    VALUES (:custID, :productID, :quantity, :size, :color, :productName, :productPrice)");
-    $stmt->execute([
-        'custID' => $_SESSION["user_id"],
-        'productID' => $productID,
-        'quantity' => $quantity,
-        'size' => $size,
-        'color' => $color,
-        'productName' => $product['ProductName'],
-        'productPrice' => $product['ProductPrice']
-    ]);
-
-    // Redirect to cart page
-    header("Location: shopping_cart.php");
-    exit();
 }
 
 ?>
