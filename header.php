@@ -42,7 +42,7 @@ if ($isLoggedIn) {
         }
 
         nav {
-            margin-left: 60%;
+            margin-left: 55%;
         }
     
         nav ul {
@@ -118,7 +118,7 @@ if ($isLoggedIn) {
         .cart-count {
             position: absolute;
             top: 30px;
-            right: 80px;
+            right: 70px;
             background-color: blue; /* Changed background color to blue */
             color: white;
             font-size: 14px;
@@ -144,7 +144,7 @@ if ($isLoggedIn) {
                 <li><a href="about.php">ABOUT</a></li>
                 <li><a href="product.php">PRODUCTS</a></li>
                 <li><a href="contact.php">CONTACT</a></li>
-                <li><a href="wishlist.php"></a></li>
+                <li><a href="wishlist.php">WISHLIST</a></li>
             </ul>
         </nav>
 
