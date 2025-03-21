@@ -31,24 +31,24 @@ if (!$product) {
 $productName = $product["ProductName"];
 $productPrice = $product["ProductPrice"];
 
-// Check if product already exists in cart
-$stmt = $conn->prepare("SELECT * FROM cart WHERE CustID = ? AND ProductID = ?");
-$stmt->execute([$userID, $productID]);
+// Check if product with the same ID, color, and size already exists in cart
+$stmt = $conn->prepare("SELECT * FROM cart WHERE CustID = ? AND ProductID = ? AND Color = ? AND Size = ?");
+$stmt->execute([$userID, $productID, $color, $size]);
 $existingItem = $stmt->fetch();
 
 if ($existingItem) {
-    // Update quantity if already in cart
-    $stmt = $conn->prepare("UPDATE cart SET Quantity = Quantity + ? WHERE CustID = ? AND ProductID = ?");
-    $stmt->execute([$quantity, $userID, $productID]);
+    // Update quantity if the same product with the same color and size is already in the cart
+    $stmt = $conn->prepare("UPDATE cart SET Quantity = Quantity + ? WHERE CustID = ? AND ProductID = ? AND Color = ? AND Size = ?");
+    $stmt->execute([$quantity, $userID, $productID, $color, $size]);
 } else {
-    // Insert new item into cart
+    // Insert new item into cart if it doesn't exist
     $stmt = $conn->prepare("INSERT INTO cart (CustID, ProductID, Quantity, Size, Color, ProductName, ProductPrice) 
     VALUES (?, ?, ?, ?, ?, ?, ?)");
     $stmt->execute([$userID, $productID, $quantity, $size, $color, $productName, $productPrice]);
 }
 
-// Get updated cart count
-$stmt = $conn->prepare("SELECT SUM(Quantity) AS cartCount FROM cart WHERE CustID = ?");
+// Get updated cart count (total number of items, including variations)
+$stmt = $conn->prepare("SELECT COUNT(*) AS total FROM cart WHERE CustID = ?");
 $stmt->execute([$userID]);
 $cartCount = $stmt->fetchColumn();
 

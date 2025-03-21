@@ -77,6 +77,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
         .color-circle.active {
             border-color: #000;
         }
+        
+        .button {
+            display: flex;
+            align-items: center;
+            gap: 10px; /* Adjust the spacing between buttons */
+        }
+
+        .wishlist-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            margin-left: 10px;
+        }
+
+        .heart-button {
+            width: 20px; 
+            height: 20px;
+        }
+
     </style>
 </head>
 <body>
@@ -144,8 +164,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
                     <input type="hidden" name="size" id="selectedSize" value="">
                     <input type="hidden" name="color" id="selectedColor" value="">
                     <input type="hidden" id="hiddenQty" name="qty" value="1">
-                    <button type="submit" onclick="addToCart()">Add to Cart</button>
                 </form>
+                
+                <div class="button">
+                    <button type="submit" onclick="addToCart()">Add to Cart</button>
+                    <button type="submit" class="wishlist-btn" onclick="addToWishlist(<?= $productID ?>)">
+                        <img src="image/circle-heart.png" alt="Wishlist" class="heart-button">
+                    </button>
+                </div>
+
             </div>
         </div>
     </div>
@@ -235,8 +262,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
             })
             .catch(error => console.error("Error:", error));
         }
+        
+        function addToWishlist(productID) {
+            let formData = new FormData();
+            formData.append("productID", productID);
+
+            fetch("add_to_wishlist.php", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Item added to wishlist!");
+                } else {
+                    alert("Failed to add item to wishlist.");
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        }
+
 
     </script>
 </body>
 </html>
-

@@ -7,8 +7,8 @@ $isLoggedIn = isset($_SESSION['user_id']);
 
 // Fetch cart count if user is logged in
 $cartCount = 0;
-if ($isLoggedIn) {
-    $stmt = $conn->prepare("SELECT COUNT(DISTINCT ProductID) AS total FROM cart WHERE CustID = ?");
+if ($isLoggedIn) {  
+    $stmt = $conn->prepare("SELECT COUNT(*) AS total FROM cart WHERE CustID = ?");  
     $stmt->execute([$_SESSION['user_id']]);
     $row = $stmt->fetch();
     $cartCount = $row['total'] ?? 0;
@@ -144,6 +144,7 @@ if ($isLoggedIn) {
                 <li><a href="about.php">ABOUT</a></li>
                 <li><a href="product.php">PRODUCTS</a></li>
                 <li><a href="contact.php">CONTACT</a></li>
+                <li><a href="wishlist.php"></a></li>
             </ul>
         </nav>
 
