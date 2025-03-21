@@ -1,5 +1,5 @@
 <?php
-include 'config.php'; // Ensure this file contains the PDO connection ($conn)
+include 'config.php'; 
 
 // Fetch all shipping records
 $stmt = $conn->prepare("SELECT * FROM shipping");
@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } elseif (isset($_POST['update'])) {
         $shipping_id = $_POST['shipping_id'];
         $status = $_POST['status'];
-        $actual_date = $_POST['actual_date'];
+        $actual_date = ($_POST['status'] == "Delivered") ? $_POST['actual_date'] : null; // Allow only when Delivered
 
         // If status is "Pending" or "Processing", make shipping method and tracking number NULL
         if ($status == "Pending" || $status == "Processing") {
@@ -75,7 +75,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <th>Method</th>
             <th>Tracking</th>
             <th>Status</th>
-            <th>Est. Delivery</th>
+            <th>Estimate Delivery Date</th>
+            <th>Actual Delivery Date</th>
             <th>Actions</th>
         </tr>
         <?php foreach ($shippings as $shipping) { ?>
@@ -88,6 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <td><?= $shipping['TrackingNum'] ?: "N/A" ?></td>
                 <td><?= $shipping['ShippingStatus'] ?></td>
                 <td><?= $shipping['EstimateDeliveryDate'] ?></td>
+                <td><?= $shipping['ActualDeliveryDate'] ?></td>
                 <td>
                     <form method="POST" style="display:inline;">
                         <input type="hidden" name="shipping_id" value="<?= $shipping['ShippingID'] ?>">
@@ -104,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <input type="text" name="cust_id" placeholder="Customer ID" required>
         <input type="text" name="address" placeholder="Shipping Address" required>
         
-        <select name="status" required>
+        <select name="status" required onchange="toggleFields(this)">
             <option value="Pending">Pending</option>
             <option value="Processing">Processing</option>
             <option value="Shipped">Shipped</option>
@@ -126,7 +128,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </select>
 
         <input type="text" name="tracking" placeholder="Tracking Number">
-
         <input type="date" name="est_date" required>
         <input type="text" name="admin_id" placeholder="Admin ID" required>
         <button type="submit" name="add">Add Shipping</button>
@@ -136,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <form method="POST">
         <input type="text" name="shipping_id" placeholder="Shipping ID" required>
 
-        <select name="status" required>
+        <select name="status" required onchange="toggleFields(this)">
             <option value="Pending">Pending</option>
             <option value="Processing">Processing</option>
             <option value="Shipped">Shipped</option>
@@ -158,16 +159,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </select>
 
         <input type="text" name="tracking" placeholder="Tracking Number">
-        <input type="date" name="actual_date">
+        <input type="date" name="actual_date" disabled>
         <button type="submit" name="update">Update Shipping</button>
     </form>
+
     <script>
-        function toggleShippingFields(form) {
-            var status = form.querySelector("select[name='status']").value;
+        function toggleFields(selectElement) {
+            var form = selectElement.closest("form");
             var methodField = form.querySelector("select[name='method']");
             var trackingField = form.querySelector("input[name='tracking']");
-            
-            if (status === "Pending" || status === "Processing") {
+            var actualDateField = form.querySelector("input[name='actual_date']");
+
+            if (selectElement.value === "Pending" || selectElement.value === "Processing") {
                 methodField.disabled = true;
                 trackingField.disabled = true;
                 methodField.value = "";
@@ -176,17 +179,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 methodField.disabled = false;
                 trackingField.disabled = false;
             }
+
+            // Actual delivery date only enabled if status is "Delivered"
+            actualDateField.disabled = selectElement.value !== "Delivered";
+            if (actualDateField.disabled) actualDateField.value = "";
         }
 
         document.addEventListener("DOMContentLoaded", function() {
-            document.querySelectorAll("form").forEach(function(form) {
-                var statusField = form.querySelector("select[name='status']");
-                if (statusField) {
-                    statusField.addEventListener("change", function() {
-                        toggleShippingFields(form);
-                    });
-                    toggleShippingFields(form); // Initialize fields based on default selection
-                }
+            document.querySelectorAll("form select[name='status']").forEach(function(selectElement) {
+                toggleFields(selectElement);
+                selectElement.addEventListener("change", function() {
+                    toggleFields(selectElement);
+                });
             });
         });
     </script>
