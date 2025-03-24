@@ -15,7 +15,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Hash password
-    $custPassword = password_hash($custPassword, PASSWORD_BCRYPT);
+    // $custPassword = password_hash($custPassword, PASSWORD_BCRYPT);
 
     // Check if email, phone number, or address already exists
     $sql_check = "SELECT CustName, CustEmail, CustPhoneNum, CustAddress FROM customer WHERE CustName = ? OR CustEmail = ? OR CustPhoneNum = ? OR CustAddress = ?";

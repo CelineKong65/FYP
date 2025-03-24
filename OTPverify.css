@@ -99,84 +99,104 @@ header {
     flex-direction: column;
 }
 
-.frame {
-    max-width: 500px;
-    width: 100%;
-    padding-top: 30px;
+.right-side-inner p{
+    font-weight: 500;
+    margin-bottom: 15px;
 }
 
-.frame h2 {
+.right-side-inner h2 {
     font-size: 24px;
     font-weight: 600;
     margin-bottom: 12px;
     color: #000;
 }
 
-.frame h4{
-    margin-top: 10px;
-    font-weight: 500;
-}
-
-.frame p{
-    font-weight: 500;
-    margin-bottom: 20px;
-}
-
-.frame label {
-    font-size: 16px;
-    display: block;
-    margin-bottom: 5px;
-    color: #000;
-}
-
-.frame input {
-    height: 35px;
-    color: white;
+.frame {
     max-width: 500px;
     width: 100%;
-    padding: 6px;
-    margin-bottom: 15px;
-    border: 1px solid #ccc;
+    padding-top: 30px;
 }
 
-.frame input:hover, textarea:hover {
-    border: 1px solid #4c5157;
-    background-color: #b3b0b0;
+.frame h4{
+    font-weight: 600;
 }
 
-.frame input:focus, textarea:focus {
-    background-color: #007bff94;
-    color: white;
-    outline: none;
-    border-color: #007BFF;
+.otp-inputs{
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
 }
 
-.frame input:not(:placeholder-shown), textarea:not(:placeholder-shown) {
-    background-color: #007bff94;
-    color: white;
-    outline: none;
-    border-color: #007BFF;
-}
-
-.frame button{
+.otp-inputs .otp{
+    transition: 0.3s;
+    width: 72px;
+    height: 50px;
+    background-color: rgb(233, 233, 233);
+    text-align: center;
     font-size: 18px;
-    transition: 0.5s;
-    color: #fff;
-    width: 500px;
-    padding: 8px;
-    margin-top: 20px;
-    border-radius: 10px;
-    border: 2px solid rgba(0, 0, 0, 0.1);
-    background-color: #007BFF;
+    border: 1px solid #000;
+    border-radius: 5px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-.frame button:hover{
-    transition: 0.5s;
-    background-color: #0060c7;
+.otp-inputs input:hover{
+    transition: 0.3s;
+    background-color: #007bffc4;
+    border-color: #4c5157;
+    outline: none;
+}
+
+.otp-inputs input:focus{
+    background-color: #007BFF;
+    border-color: #4c5157;
+    outline: none;
+}
+
+.btn{
+    display: flex;
+    flex-direction: column;
+    width: 500px;
+    padding: 8px;
+    margin-top: 20px;
+    gap: 10px;
+}
+
+.btn #verify_otp:hover, .btn #resend_otp:hover{
+    transition: 0.3s;
+    background-color: #006adc;
+    color: white;
+}
+
+.btn #verify_otp{
+    border: none;
+    color: white;
+    background-color: #007BFF;
+    font-weight: 500;
+    border-radius: 5px;
+    height: 40px;
+    font-size: 16px;
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+.btn #resend_otp{
+    border: none;
+    background-color: white;
+    color: #007BFF;
+    font-weight: 500;
+    border-radius: 5px;
+    height: 40px;
+    font-size: 16px;
+    transition: 0.3s;
+    cursor: pointer;
 }
 
 .error{
     color: red;
+    margin-top: 10px;
+}
+
+.success{
+    color: green;
     margin-top: 10px;
 }
