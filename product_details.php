@@ -165,7 +165,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
                     <input type="hidden" name="color" id="selectedColor" value="">
                     <input type="hidden" id="hiddenQty" name="qty" value="1">
                 </form>
-                
+
+                <!-- Add the hidden input field to check login status -->
+                <input type="hidden" id="isLoggedIn" value="<?= isset($_SESSION['user_id']) ? 'true' : 'false' ?>">
+
                 <div class="button">
                     <button type="submit" onclick="addToCart()">Add to Cart</button>
                     <button type="submit" class="wishlist-btn" onclick="addToWishlist(<?= $productID ?>)">
@@ -231,6 +234,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
         }
 
         function addToCart() {
+            let isLoggedIn = document.getElementById("isLoggedIn").value; 
+            if (isLoggedIn !== "true") {
+                window.location.href = "login.php"; 
+                return;
+            }
+
             let productID = <?= $productID ?>;
             let qty = document.getElementById("qty").value;
             let size = document.getElementById("selectedSize").value;
@@ -262,6 +271,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
             })
             .catch(error => console.error("Error:", error));
         }
+
         
         function addToWishlist(productID) {
             let formData = new FormData();
