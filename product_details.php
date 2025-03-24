@@ -28,36 +28,12 @@ $stmt = $conn->prepare("SELECT DISTINCT Size FROM product_size WHERE ProductID =
 $stmt->execute(['productID' => $productID]);
 $sizes = $stmt->fetchAll();
 
-// Handle Add to Cart form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
     // Ensure the user is logged in before adding to cart
     if (!isset($_SESSION["user_id"])) {
         header("Location: login.php");
         exit();
     }
-
-    // Add to cart logic here
-    $productID = (int) $_POST["productID"];
-    $quantity = isset($_POST["qty"]) ? (int) $_POST["qty"] : 1;
-    $size = $_POST["size"] ?? null;
-    $color = $_POST["color"] ?? null;
-
-    // Insert into cart table (example)
-    $stmt = $conn->prepare("INSERT INTO cart (CustID, ProductID, Quantity, Size, Color, ProductName, ProductPrice) 
-    VALUES (:custID, :productID, :quantity, :size, :color, :productName, :productPrice)");
-    $stmt->execute([
-        'custID' => $_SESSION["user_id"],
-        'productID' => $productID,
-        'quantity' => $quantity,
-        'size' => $size,
-        'color' => $color,
-        'productName' => $product['ProductName'],
-        'productPrice' => $product['ProductPrice']
-    ]);
-
-    // Redirect to cart page
-    header("Location: shopping_cart.php");
-    exit();
 }
 
 ?>
@@ -101,6 +77,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
         .color-circle.active {
             border-color: #000;
         }
+        
+        .button {
+            display: flex;
+            align-items: center;
+            gap: 10px; /* Adjust the spacing between buttons */
+        }
+
+        .wishlist-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            margin-left: 10px;
+        }
+
+        .heart-button {
+            width: 20px; 
+            height: 20px;
+        }
+
     </style>
 </head>
 <body>
@@ -168,8 +164,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
                     <input type="hidden" name="size" id="selectedSize" value="">
                     <input type="hidden" name="color" id="selectedColor" value="">
                     <input type="hidden" id="hiddenQty" name="qty" value="1">
-                    <button type="submit">Add to Cart</button>
                 </form>
+                
+                <div class="button">
+                    <button type="submit" onclick="addToCart()">Add to Cart</button>
+                    <button type="submit" class="wishlist-btn" onclick="addToWishlist(<?= $productID ?>)">
+                        <img src="image/circle-heart.png" alt="Wishlist" class="heart-button">
+                    </button>
+                </div>
+
             </div>
         </div>
     </div>
@@ -226,6 +229,60 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
             }
             return true; 
         }
+
+        function addToCart() {
+            let productID = <?= $productID ?>;
+            let qty = document.getElementById("qty").value;
+            let size = document.getElementById("selectedSize").value;
+            let color = document.getElementById("selectedColor").value;
+
+            if (size === "" || color === "") {
+                alert("Please select a color and size before adding to cart.");
+                return;
+            }
+
+            let formData = new FormData();
+            formData.append("productID", productID);
+            formData.append("qty", qty);
+            formData.append("size", size);
+            formData.append("color", color);
+
+            fetch("add_to_cart.php", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById("cartCount").textContent = data.cartCount;
+                    alert("Item added to cart!");
+                } else {
+                    alert("Failed to add item to cart.");
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        }
+        
+        function addToWishlist(productID) {
+            let formData = new FormData();
+            formData.append("productID", productID);
+
+            fetch("add_to_wishlist.php", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Item added to wishlist!");
+                } else {
+                    alert("Failed to add item to wishlist.");
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        }
+
+
     </script>
 </body>
 </html>

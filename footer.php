@@ -188,8 +188,8 @@
                         <?php if (isset($_SESSION['user_id'])): ?>
                             <li><a href="account.php">My Account</a></li>
                         <?php endif; ?>
-                        <li><a href="<?php echo isset($_SESSION['user_id']) ? 'shopping-cart.php' : 'login.php'; ?>">Shopping Cart</a></li>
-                        <li><a href="<?php echo isset($_SESSION['user_id']) ? 'check-out.php' : 'login.php'; ?>">Check Out</a></li>
+                        <li><a href="<?php echo isset($_SESSION['user_id']) ? 'shopping_cart.php' : 'login.php'; ?>">Shopping Cart</a></li>
+                        <li><a href="<?php echo isset($_SESSION['user_id']) ? 'payment.php' : 'login.php'; ?>">Check Out</a></li>
                     </ul>
                 </div>
             </div>

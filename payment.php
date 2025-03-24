@@ -1,4 +1,5 @@
 <?php
+ob_start();
 session_start(); // Start session to access session variables
 include 'header.php'; 
 include 'config.php'; 
@@ -159,10 +160,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         <label for="address"><b>Address</b></label>
                         <input type="text" id="address" name="address" value="<?= htmlspecialchars($custAddress) ?>" placeholder="Enter address" required>
-
-                        <label>
-                            <input type="checkbox"> Shipping address same as billing
-                        </label>
                     </div>
 
                     <div class="col">
