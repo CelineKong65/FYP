@@ -118,7 +118,7 @@ if ($isLoggedIn) {
         .cart-count {
             position: absolute;
             top: 30px;
-            right: 70px;
+            right: 90px;
             background-color: blue; /* Changed background color to blue */
             color: white;
             font-size: 14px;
