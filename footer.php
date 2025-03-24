@@ -114,23 +114,35 @@
 
     .subscribe-form {
         display: flex;
+        align-items: center;
+        width: 100%;
     }
 
     .subscribe-form input {
         flex: 1;
         padding: 10px;
-        border: none;
+        border: 1px solid #ccc;
         border-radius: 5px 0 0 5px;
+        height: 40px; 
+        box-sizing: border-box;
+        font-size: 14px; 
     }
 
     .subscribe-form button {
-        padding: 10px 20px;
-        background-color: #3498db; 
+        height: 40px;
+        padding: 0 15px;
+        background-color: #3498db;
         color: #ffffff;
-        border: none;
+        border: 1px solid #3498db;
         border-radius: 0 5px 5px 0;
         cursor: pointer;
         transition: background-color 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        font-size: 14px; 
+        line-height: 1; 
     }
 
     .subscribe-form button:hover {
@@ -188,8 +200,8 @@
                         <?php if (isset($_SESSION['user_id'])): ?>
                             <li><a href="account.php">My Account</a></li>
                         <?php endif; ?>
-                        <li><a href="<?php echo isset($_SESSION['user_id']) ? 'shopping-cart.php' : 'login.php'; ?>">Shopping Cart</a></li>
-                        <li><a href="<?php echo isset($_SESSION['user_id']) ? 'check-out.php' : 'login.php'; ?>">Check Out</a></li>
+                        <li><a href="<?php echo isset($_SESSION['user_id']) ? 'shopping_cart.php' : 'login.php'; ?>">Shopping Cart</a></li>
+                        <li><a href="<?php echo isset($_SESSION['user_id']) ? 'payment.php' : 'login.php'; ?>">Check Out</a></li>
                     </ul>
                 </div>
             </div>
@@ -200,7 +212,7 @@
                     <p>Get E-mail updates about our latest special offers.</p>
                     <form action="index.php" class="subscribe-form">
                         <input type="text" placeholder="Enter Your Mail">
-                        <button type="button">Subscribe</button>
+                        <button type="button" class="footer-subscribe-btn">Subscribe</button>
                     </form>
                 </div>
             </div>

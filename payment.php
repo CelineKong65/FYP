@@ -160,10 +160,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         <label for="address"><b>Address</b></label>
                         <input type="text" id="address" name="address" value="<?= htmlspecialchars($custAddress) ?>" placeholder="Enter address" required>
-
-                        <label>
-                            <input type="checkbox"> Shipping address same as billing
-                        </label>
                     </div>
 
                     <div class="col">
