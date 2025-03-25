@@ -141,7 +141,7 @@ if ($isLoggedIn) {
         <nav>
             <ul>
                 <li><a href="index.php">HOME</a></li>
-                <li><a href="about.php">ABOUT</a></li>
+                <li><a href="about_us.php">ABOUT</a></li>
                 <li><a href="product.php">PRODUCTS</a></li>
                 <li><a href="contact.php">CONTACT</a></li>
                 <li><a href="wishlist.php">WISHLIST</a></li>
