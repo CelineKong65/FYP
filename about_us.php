@@ -1,4 +1,8 @@
 <?php
+    include 'header.php';
+?>
+
+<?php
 $team_members = [
     [
         'name' => 'Kong Lee Ching',
@@ -25,7 +29,7 @@ $sports = [
     'Paddleboarding' => 'image/paddleboarding.jpg',
     'Kayaking' => 'image/kayaking.jpg',
     'Surfing' => 'image/surfing.jpg',
-    'Scuba Diving' => 'image/google2.jpg'
+    'Scuba Diving' => 'image/goggle2.png'
 ];
 ?>
 
@@ -41,12 +45,12 @@ $sports = [
     <link rel="stylesheet" href="about_us.css">
 </head>
 <body>
-    <header class="header">
+    <div class="top">
         <div class="container">
-            <h1 class="logo">Watersport Equipment</h1>
+            <h1 class="LOGO">Watersport Equipment</h1>
             <p class="tagline">Your ultimate destination for high-quality watersport gear and accessories!</p>
         </div>
-    </header>
+    </div>
     
     <div class="container">
         <section class="section">
@@ -128,3 +132,7 @@ $sports = [
     </script>
 </body>
 </html>
+
+<?php
+    include 'footer.php';
+?>

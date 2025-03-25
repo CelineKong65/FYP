@@ -14,24 +14,29 @@
     font-family: Arial, sans-serif;
 }
 
-body {
+header{
+    z-index: 1;
+}
+
+body{
     font-family: 'Open Sans', sans-serif;
     color: var(--text);
-    line-height: 1.6;
+    line-height: 1.8;
     background-color: white;
     overflow-x: hidden;
 }
 
-.header {
+.top{
     background-color: var(--primary);
     color: white;
-    padding: 80px 20px;
+    margin-top: 20px;
+    padding: 150px 20px;
     text-align: center;
     position: relative;
     overflow: hidden;
 }
 
-.header::after {
+.top::after {
     content: '';
     position: absolute;
     bottom: -50px;
@@ -43,7 +48,7 @@ body {
     z-index: 1;
 }
 
-.logo {
+.LOGO {
     font-family: 'Montserrat', sans-serif;
     font-size: 3rem;
     font-weight: 700;
@@ -52,7 +57,7 @@ body {
     display: inline-block;
 }
 
-.logo::after {
+.LOGO::after {
     content: '';
     position: absolute;
     bottom: -10px;
