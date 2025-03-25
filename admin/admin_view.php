@@ -125,15 +125,7 @@ if (isset($_POST['add_admin'])) {
 
     <div class="container">
         <div class="sidebar">
-            <ul>
-                <li><a href="dashboard.php">Dashboard</a></li>
-                <li><a href="customer_view.php">Customer List</a></li>
-                <li><a href="admin_view.php">Admin List</a></li>
-                <li><a href="category_view.php">Category List</a></li>
-                <li><a href="product_view.php">Product List</a></li>
-                <li><a href="order_view.php">Order List</a></li>
-                <li><a href="profile.php">My Profile</a></li>
-            </ul>
+            <?php include 'sidebar.php'; ?>
         </div>
 
         <div class="main-content">

@@ -180,7 +180,7 @@ if (isset($_POST['add_product'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product List</title>
-    <link rel="stylesheet" href="product_view.css">
+    <link rel='stylesheet' href='product_view.css'>
 </head>
 <body>
     <div class="header">
@@ -189,15 +189,7 @@ if (isset($_POST['add_product'])) {
 
     <div class="container">
         <div class="sidebar">
-            <ul>
-                <li><a href="report.php">Report</a></li>
-                <li><a href="customer_view.php">Customer List</a></li>
-                <li><a href="admin_view.php">Admin List</a></li>
-                <li><a href="category_view.php">Category List</a></li>
-                <li><a href="product_view.php">Product List</a></li>
-                <li><a href="order_view.php">Order List</a></li>
-                <li><a href="profile.php">My Profile</a></li>
-            </ul>
+            <?php include 'sidebar.php'; ?>
         </div>
 
         <div class="main-content">
