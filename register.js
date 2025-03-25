@@ -3,11 +3,12 @@ const eyeIcon = document.querySelector(".pass-field i");
 const requirementList = document.querySelectorAll(".password-req li");
 
 const requirements = [
-    {regex: /.{7}./, index: 0}, //Minimum 8 characters
-    {regex: /[A-Z]/, index: 1}, //At least one uppercase
-    {regex: /[a-z]/, index: 2}, //At least one lowercase
-    {regex: /[@$!%*#?&]/, index: 3}, //At least one special symbol
-    {regex: /^\S*$/, index: 4}, //No space
+    {regex: /\S{8,}/, index: 0},       // Minimum 8 non-whitespace characters
+    {regex: /[A-Z]/, index: 1},        // At least one uppercase
+    {regex: /[a-z]/, index: 2},        // At least one lowercase
+    {regex: /\d/, index: 3},           // At least one digit
+    {regex: /[@$!%*#?&]/, index: 4},   // At least one special symbol
+    {regex: /^\S*$/, index: 5}         // No space
 ]
 
 passwordInput.addEventListener("keyup", (e)=> {

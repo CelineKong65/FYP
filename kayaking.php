@@ -1,39 +1,20 @@
-<?php
+<?php 
+include 'config.php';
 include 'header.php';
-
-// Database connection
-$host = '127.0.0.1';
-$db = 'fyp';
-$user = 'root';
-$pass = '';
-$charset = 'utf8mb4';
-
-$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
-$options = [
-    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    PDO::ATTR_EMULATE_PREPARES => false,
-];
-
-try {
-    $pdo = new PDO($dsn, $user, $pass, $options);
-} catch (PDOException $e) {
-    throw new PDOException($e->getMessage(), (int)$e->getCode());
-}
 
 // Pagination logic
 $productsPerPage = 6;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($page - 1) * $productsPerPage;
 
-// Fetch total number of products in category 1
-$stmt = $pdo->prepare("SELECT COUNT(*) FROM product WHERE CategoryID = 4");
+// Fetch total number of products in category 4
+$stmt = $conn->prepare("SELECT COUNT(*) FROM product WHERE CategoryID = 4");
 $stmt->execute();
 $totalProducts = $stmt->fetchColumn();
 $totalPages = ceil($totalProducts / $productsPerPage);
 
-// Fetch products for the current page in category 1
-$stmt = $pdo->prepare("SELECT * FROM product WHERE CategoryID = 4 LIMIT :limit OFFSET :offset");
+// Fetch products for the current page in category 4
+$stmt = $conn->prepare("SELECT * FROM product WHERE CategoryID = 4 LIMIT :limit OFFSET :offset");
 $stmt->bindValue(':limit', $productsPerPage, PDO::PARAM_INT);
 $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();
@@ -45,7 +26,7 @@ $products = $stmt->fetchAll();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Page - </title>
+    <title>Product Page</title>
     <link rel="stylesheet" href="product.css">
     <style>
         .categories ul {
@@ -77,6 +58,7 @@ $products = $stmt->fetchAll();
             border-color: #333;
         }
     </style>
+    
 </head>
 <body>
     <div class="container-shop">
@@ -96,7 +78,7 @@ $products = $stmt->fetchAll();
                     <div class="product-image">
                         <?php
                         // Fetch the first color image for the product
-                        $stmt = $pdo->prepare("SELECT Picture FROM product_color WHERE ProductID = :productId LIMIT 1");
+                        $stmt = $conn->prepare("SELECT Picture FROM product_color WHERE ProductID = :productId LIMIT 1");
                         $stmt->execute(['productId' => $product['ProductID']]);
                         $image = $stmt->fetch();
                         $imageSrc = $image ? 'image/' . $image['Picture'] : 'image/default-image.png';
@@ -107,18 +89,18 @@ $products = $stmt->fetchAll();
                     <div class="color-options">
                         <?php
                         // Fetch all color options for the product
-                        $stmt = $pdo->prepare("SELECT Color, Picture FROM product_color WHERE ProductID = :productId");
+                        $stmt = $conn->prepare("SELECT Color, Picture FROM product_color WHERE ProductID = :productId");
                         $stmt->execute(['productId' => $product['ProductID']]);
                         $colors = $stmt->fetchAll();
                         foreach ($colors as $color): ?>
                             <div class="color-circle" 
-                                style="background-color: <?= $color['Color'] ?>;" 
-                                data-image="image/<?= $color['Picture'] ?>" 
-                                onclick="changeImage('product-image-<?= $product['ProductID'] ?>', 'image/<?= $color['Picture'] ?>')">
+                                style="background-color: <?= htmlspecialchars($color['Color']) ?>;" 
+                                data-image="image/<?= htmlspecialchars($color['Picture']) ?>" 
+                                onclick="changeImage('product-image-<?= $product['ProductID'] ?>', 'image/<?= htmlspecialchars($color['Picture']) ?>')">
                             </div>              
                         <?php endforeach; ?>
                     </div>
-                    <h3><?= $product['ProductName'] ?></h3>
+                    <h3><?= htmlspecialchars($product['ProductName']) ?></h3>
                     <p>RM <?= number_format($product['ProductPrice'], 2) ?></p>
                 </div>
             <?php endforeach; ?>
@@ -132,7 +114,7 @@ $products = $stmt->fetchAll();
         <?php endif; ?>
 
         <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-            <a href="?page=<?= $i ?>" class="page <?= $i === $page ? 'active' : '' ?>"><?= $i ?></a>
+            <a href="?page=<?= $i ?>" class="page <?= ($i == $page) ? 'active' : '' ?>"><?= $i ?></a>
         <?php endfor; ?>
 
         <?php if ($page < $totalPages): ?>

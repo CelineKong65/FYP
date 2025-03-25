@@ -93,3 +93,7 @@ foreach ($orders as $row) {
     </div>
 </body>
 </html>
+
+<?php
+include 'footer.php'; 
+?>

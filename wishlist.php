@@ -1,6 +1,8 @@
 <?php
+ob_start();
 session_start();
 include 'config.php'; 
+include 'header.php';
 
 if (!isset($_SESSION["user_id"])) {
     header("Location: login.php");
@@ -32,14 +34,14 @@ $wishlistItems = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wishlist</title>
-    <link rel="stylesheet" href="#.css"> 
+    <link rel="stylesheet" href="wishlist.css"> 
 </head>
 <body>
 
 <h2>My Wishlist</h2>
 
 <?php if (empty($wishlistItems)): ?>
-    <p>Your wishlist is empty.</p>
+    <p class="empty-message">Your wishlist is empty. Start adding your favorite products!</p>
 <?php else: ?>
     <table border="1">
         <tr>
@@ -66,3 +68,7 @@ $wishlistItems = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 </body>
 </html>
+
+<?php
+include 'footer.php';
+?>

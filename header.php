@@ -1,6 +1,6 @@
 <?php
 session_start();
-include("config.php");
+include 'config.php';
 
 // Check if user is logged in
 $isLoggedIn = isset($_SESSION['user_id']);
@@ -118,7 +118,7 @@ if ($isLoggedIn) {
         .cart-count {
             position: absolute;
             top: 30px;
-            right: 90px;
+            right: 70px;
             background-color: blue; /* Changed background color to blue */
             color: white;
             font-size: 14px;
@@ -141,7 +141,7 @@ if ($isLoggedIn) {
         <nav>
             <ul>
                 <li><a href="index.php">HOME</a></li>
-                <li><a href="about.php">ABOUT</a></li>
+                <li><a href="about_us.php">ABOUT</a></li>
                 <li><a href="product.php">PRODUCTS</a></li>
                 <li><a href="contact.php">CONTACT</a></li>
                 <li><a href="wishlist.php">WISHLIST</a></li>

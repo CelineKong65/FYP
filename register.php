@@ -14,9 +14,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit();
     }
 
-    // Hash password
-    $custPassword = password_hash($custPassword, PASSWORD_BCRYPT);
-
     // Check if email, phone number, or address already exists
     $sql_check = "SELECT CustName, CustEmail, CustPhoneNum, CustAddress FROM customer WHERE CustName = ? OR CustEmail = ? OR CustPhoneNum = ? OR CustAddress = ?";
     $stmt_check = $conn->prepare($sql_check);
@@ -112,6 +109,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                     <li>
                                         <i class="fa-solid fa-circle"></i>
                                         <span>At least 1 lowercase letter [a...z]</span>
+                                    </li>
+
+                                    <li>
+                                        <i class="fa-solid fa-circle"></i>
+                                        <span>At least 1 number</span>
                                     </li>
 
                                     <li>
