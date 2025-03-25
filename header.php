@@ -110,22 +110,22 @@ if ($isLoggedIn) {
             margin-right: 10px;
         }
 
-        .cart-icon {
+        .cart-icon, .love-icon {
             width: 30px;
             height: 30px;
             cursor: pointer;
         }
         .cart-count {
             position: absolute;
-            top: 30px;
-            right: 70px;
-            background-color: blue; /* Changed background color to blue */
+            top: 32px;
+            right: 85px;
+            background-color: blue; 
             color: white;
             font-size: 14px;
             font-weight: bold;
             width: 20px;
             height: 20px;
-            border-radius: 50%; /* Keeps it circular */
+            border-radius: 50%; 
             display: flex;
             align-items: center;
             justify-content: center;
@@ -144,11 +144,15 @@ if ($isLoggedIn) {
                 <li><a href="about_us.php">ABOUT</a></li>
                 <li><a href="product.php">PRODUCTS</a></li>
                 <li><a href="contact.php">CONTACT</a></li>
-                <li><a href="wishlist.php">WISHLIST</a></li>
             </ul>
         </nav>
 
         <?php if ($isLoggedIn): ?>
+            <div class="wishlist">
+            <a href="wishlist.php">
+                <img src="image/wishlist.png" alt="Wishlist" class="love-icon">
+            </a>
+        </div>
         <div class="shopping-cart">
             <a href="shopping_cart.php">
                 <img src="image/shopping-cart.png" alt="Cart" class="cart-icon">

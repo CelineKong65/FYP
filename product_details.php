@@ -90,12 +90,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
             cursor: pointer;
             padding: 5px;
             margin-left: 10px;
+            background: #3498db;
+            color: white;
+            font-size: 16px;
+            margin-top: 10px;
+            border-radius: 5px;
+            transition: background 0.3s ease;
+        }
+
+        .wishlist-btn:hover
+        {
+            background: darkblue;
         }
 
         .heart-button {
-            width: 20px; 
-            height: 20px;
+            width: 25px; 
+            height: 25px;
         }
+
 
     </style>
 </head>
@@ -171,11 +183,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
 
                 <div class="button">
                     <button type="submit" onclick="addToCart()">Add to Cart</button>
-                    <button type="submit" class="wishlist-btn" onclick="addToWishlist(<?= $productID ?>)">
+                    <button type="button" class="wishlist-btn" onclick="addToWishlist(<?= $productID ?>)">
                         <img src="image/circle-heart.png" alt="Wishlist" class="heart-button">
                     </button>
                 </div>
-
             </div>
         </div>
     </div>
@@ -274,6 +285,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
 
         
         function addToWishlist(productID) {
+            let isLoggedIn = document.getElementById("isLoggedIn").value; 
+            if (isLoggedIn !== "true") {
+                window.location.href = "login.php"; 
+                return;
+            }
+
             let formData = new FormData();
             formData.append("productID", productID);
 
@@ -281,15 +298,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
                 method: "POST",
                 body: formData
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert("Item added to wishlist!");
-                } else {
-                    alert("Failed to add item to wishlist.");
-                }
+            .then(response => {
+                if (!response.ok) throw new Error("Network error");
+                return response.text();
             })
-            .catch(error => console.error("Error:", error));
+            .then(message => {
+                alert(message); 
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("操作失败，请重试。");
+            });
         }
 
 
