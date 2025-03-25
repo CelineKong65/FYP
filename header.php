@@ -23,7 +23,18 @@ if ($isLoggedIn) {
     <title>Watersport Equipment Shop</title>
     <link rel="stylesheet" href="style.css">
     <style>
+        html {
+            scroll-padding-top: 80px;
+        }
+
+        body {
+            margin: 0;
+            padding-top: 80px; /* Match your header height */
+        }
+
         header {
+            height: 120px; /* Fixed height */
+            box-sizing: border-box;
             background-color: white;
             display: flex;
             align-items: center;
@@ -42,13 +53,17 @@ if ($isLoggedIn) {
         }
 
         nav {
-            margin-left: 55%;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
         }
-    
+        
         nav ul {
             list-style: none;
             display: flex;
             gap: 20px;
+            margin: 0;
+            padding: 0;
         }
 
         nav ul li {
@@ -67,11 +82,18 @@ if ($isLoggedIn) {
             color: #007BFF;
         }
 
+        /* New container for right-side icons */
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
         .user-auth {
             position: relative;
         }
 
-        .user-icon {
+        .user-icon, .cart-icon, .love-icon {
             width: 30px;
             height: 30px;
             cursor: pointer;
@@ -106,31 +128,26 @@ if ($isLoggedIn) {
         .user-auth:hover .user-menu {
             display: block;
         }
-        .shopping-cart {
-            margin-right: 10px;
-        }
 
-        .cart-icon {
-            width: 30px;
-            height: 30px;
-            cursor: pointer;
-        }
         .cart-count {
             position: absolute;
-            top: 30px;
-            right: 70px;
-            background-color: blue; /* Changed background color to blue */
+            top: -5px;
+            right: -5px;
+            background-color: blue; 
             color: white;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: bold;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%; /* Keeps it circular */
+            width: 18px;
+            height: 18px;
+            border-radius: 50%; 
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
+        .cart-container, .wishlist-container {
+            position: relative;
+        }
     </style>
 </head>
 <body>
@@ -144,29 +161,36 @@ if ($isLoggedIn) {
                 <li><a href="about_us.php">ABOUT</a></li>
                 <li><a href="product.php">PRODUCTS</a></li>
                 <li><a href="contact.php">CONTACT</a></li>
-                <li><a href="wishlist.php">WISHLIST</a></li>
+                <li><a href="customer_shipping.php">TRACK</a></li>
             </ul>
         </nav>
 
-        <?php if ($isLoggedIn): ?>
-        <div class="shopping-cart">
-            <a href="shopping_cart.php">
-                <img src="image/shopping-cart.png" alt="Cart" class="cart-icon">
-                <span id="cartCount" class="cart-count"><?= $cartCount ?></span>
-            </a>
-        </div>
-        <?php endif; ?>
+        <div class="header-right">
+            <?php if ($isLoggedIn): ?>
+                <div class="wishlist-container">
+                    <a href="wishlist.php">
+                        <img src="image/wishlist.png" alt="Wishlist" class="love-icon">
+                    </a>
+                </div>
+                <div class="cart-container">
+                    <a href="shopping_cart.php">
+                        <img src="image/shopping-cart.png" alt="Cart" class="cart-icon">
+                        <span id="cartCount" class="cart-count"><?= htmlspecialchars($cartCount) ?></span>
+                    </a>
+                </div>
+            <?php endif; ?>
 
-        <div class="user-auth">
-            <img src="image/user.png" alt="User Account" class="user-icon">
-            <div class="user-menu">
-                <?php if ($isLoggedIn): ?>
-                    <a href="account.php">My Account</a>
-                    <a href="logout.php">Logout</a>
-                <?php else: ?>
-                    <a href="login.php">Login</a>
-                    <a href="register.php">Sign Up</a>
-                <?php endif; ?>
+            <div class="user-auth">
+                <img src="image/user.png" alt="User Account" class="user-icon">
+                <div class="user-menu">
+                    <?php if ($isLoggedIn): ?>
+                        <a href="account.php">My Account</a>
+                        <a href="logout.php">Logout</a>
+                    <?php else: ?>
+                        <a href="login.php">Login</a>
+                        <a href="register.php">Sign Up</a>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
     </header>
@@ -187,4 +211,5 @@ if ($isLoggedIn) {
             });
         });
     </script>
+</body>
 </html>

@@ -1,41 +1,41 @@
 <?php
 session_start();
-include 'config.php';
+include 'config.php'; 
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
-    echo json_encode(["success" => false, "message" => "Please log in to add items to your wishlist."]);
-    exit();
+    die('Please log in to add items to your wishlist.');
 }
 
-$CustID = $_SESSION['user_id']; 
+ // Get logged-in user's ID
+$userID = $_SESSION['user_id'];
 
-// Validate product ID
+// Validate product ID exists in POST request
 if (!isset($_POST['productID']) || empty($_POST['productID'])) {
-    echo json_encode(["success" => false, "message" => "Product ID is missing."]);
-    exit();
+    die('Product ID is missing.');
 }
 
-$productID = (int) $_POST['productID'];
+$productID = (int) $_POST['productID']; // Convert to integer for safety
 
 try {
-    // Check if the product is already in the wishlist
-    $stmt = $conn->prepare("SELECT * FROM wishlist WHERE CustID = :CustID AND ProductID = :productID");
-    $stmt->execute(['CustID' => $CustID, 'productID' => $productID]);
+    // Check if product already exists in user's wishlist
+    $checkQuery = $conn->prepare("SELECT * FROM wishlist WHERE CustID = ? AND ProductID = ?");
+    $checkQuery->execute([$userID, $productID]);
 
-    if ($stmt->rowCount() > 0) {
-        echo json_encode(["success" => false, "message" => "Product is already in your wishlist."]);
-        exit();
+    if ($checkQuery->rowCount() > 0) {
+        die('This product is already in your wishlist.');
     }
 
-    // Insert into wishlist
-    $stmt = $conn->prepare("INSERT INTO wishlist (CustID, ProductID) VALUES (:CustID, :productID)");
-    if ($stmt->execute(['CustID' => $CustID, 'productID' => $productID])) {
-        echo json_encode(["success" => true, "message" => "Added to wishlist successfully!"]);
+    // Add product to wishlist
+    $insertQuery = $conn->prepare("INSERT INTO wishlist (CustID, ProductID) VALUES (?, ?)");
+    
+    if ($insertQuery->execute([$userID, $productID])) {
+        die('Product added to wishlist successfully!');
     } else {
-        echo json_encode(["success" => false, "message" => "Failed to add to wishlist."]);
+        die('Failed to add to wishlist.');
     }
+    
 } catch (PDOException $e) {
-    echo json_encode(["success" => false, "message" => "Database error: " . $e->getMessage()]);
+    die('Database error: ' . $e->getMessage());
 }
 ?>
