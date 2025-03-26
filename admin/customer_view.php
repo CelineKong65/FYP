@@ -128,7 +128,6 @@ if (isset($_POST['add_customer'])) {
     $profile_picture = isset($_FILES['profile_picture']['name']) ? $_FILES['profile_picture']['name'] : null;
     $profile_picture_tmp = isset($_FILES['profile_picture']['tmp_name']) ? $_FILES['profile_picture']['tmp_name'] : null;
 
-    // Check if the email already exists
     $check_email_query = "SELECT CustID FROM customer WHERE CustEmail = ?";
     $stmt = $conn->prepare($check_email_query);
     $stmt->bind_param("s", $email);
@@ -266,7 +265,7 @@ if (isset($_POST['add_customer'])) {
                                 <td><?php echo $customer['CustAddress']; ?></td>
                                 <td><?php echo $customer['CustPassword']; ?></td>
                                 <td>
-                                    <button name="edit_customer" onclick='editCustomer(<?php echo json_encode($customer["CustID"]); ?>, <?php echo json_encode($customer["CustName"]); ?>, <?php echo json_encode($customer["CustEmail"]); ?>, <?php echo json_encode($customer["CustPhoneNum"]); ?>, <?php echo json_encode($customer["CustAddress"]); ?>, <?php echo json_encode($customer["CustProfilePicture"]); ?>, <?php echo json_encode($customer["CustPassword"]); ?>)'>Edit</button>
+                                <button name="edit_customer" onclick='editCustomer(<?php echo json_encode($customer["CustID"]); ?>, <?php echo json_encode($customer["CustName"]); ?>, <?php echo json_encode($customer["CustEmail"]); ?>, <?php echo json_encode($customer["CustPhoneNum"]); ?>, <?php echo json_encode($customer["CustAddress"]); ?>, <?php echo json_encode($customer["CustProfilePicture"]); ?>)'>Edit</button>
                                     <form method="POST" action="" style="display:inline;">
                                         <input type="hidden" name="cust_id" value="<?php echo $customer['CustID']; ?>">
                                         <button type="submit" name="delete_customer" onclick="return confirm('Are you sure you want to delete this customer?');">Delete</button>
@@ -341,7 +340,6 @@ if (isset($_POST['add_customer'])) {
             document.getElementById('email').value = email;
             document.getElementById('phone').value = phone;
             document.getElementById('address').value = address;
-            document.getElementById('profile_picture').value = profile_picture;
             document.getElementById('editModal').style.display = 'block';
         }
 

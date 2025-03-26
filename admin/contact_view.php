@@ -12,7 +12,6 @@ include 'db_connection.php';
 $contact_query = "SELECT * FROM contact_record ORDER BY Submission_date DESC";
 $contact_result = $conn->query($contact_query);
 
-// Handle delete action
 if (isset($_POST['delete_contact'])) {
     $contact_id = intval($_POST['contact_id']);
     
@@ -21,15 +20,14 @@ if (isset($_POST['delete_contact'])) {
     $stmt->bind_param("i", $contact_id);
     
     if ($stmt->execute()) {
-        $_SESSION['message'] = 'Contact record deleted successfully!';
-        header("Location: contact_view.php");
+        echo "<script>alert('Contact record deleted successfully!'); window.location.href='contact_view.php';</script>";
         exit();
     } else {
-        $_SESSION['error'] = 'Failed to delete contact record.';
-        header("Location: contact_view.php");
+        echo "<script>alert('Failed to delete contact record.'); window.location.href='contact_view.php';</script>";
         exit();
     }
 }
+
 ?>
 
 <!DOCTYPE html>
