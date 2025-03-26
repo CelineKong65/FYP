@@ -160,6 +160,7 @@ table {
 
 table, th, td {
     font-size: 15px;
+    border: 1px solid #1e3a8a;
 }
 
 
@@ -174,7 +175,7 @@ th {
 }
 
 tr:nth-child(even) {
-    background-color: #f0f4ff;
+    background-color: #e3f2fd;
 }
 
 table tr:hover {

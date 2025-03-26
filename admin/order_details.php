@@ -46,7 +46,7 @@ $order_details = $stmt->get_result();
     <div class="container">
         <div class="main-content">
             <div class="order-header">
-                <button name="back"><a href="order_view.php" class="view-details-btn">Back to Order List</a></button>
+                <button name="back" class="view-details-btn" onclick="window.location.href='order_view.php'">Back</button>
                 <h2>Order Details - #<?php echo $order_id; ?></h2>
                 <button name="print" onclick="printOrder()">Print</button>
             </div>
