@@ -59,7 +59,7 @@ if (isset($_POST['delete_order'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order List</title>
-    <link rel='stylesheet' href='order_list.css'>
+    <link rel='stylesheet' href='order_view.css'>
 </head>
 <body>
     <div class="header">
