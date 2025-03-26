@@ -34,7 +34,8 @@ $faqs = [
     ],
     'Product & Warranty' => [
         'What is your return policy?' => 'We offer 14-day returns for unused items with original packaging and receipt.',
-        'Do products come with warranty?' => 'Yes, most products come with 1-year manufacturer warranty. Watersport electronics have 2-year warranty.'
+        'Do products come with warranty?' => 'Yes, most products come with 1-year manufacturer warranty. Watersport electronics have 2-year warranty.',
+        'Do product contain free gift?' => 'No, dont dreaming.'
     ]
 ];
 ?>
