@@ -1,8 +1,7 @@
 <?php 
 include 'header.php';
-include 'config.php'; // Using your existing config file
+include 'config.php';
 
-// Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = $_POST['name'] ?? '';
     $email = $_POST['email'] ?? '';
