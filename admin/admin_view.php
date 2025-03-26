@@ -80,7 +80,7 @@ if (isset($_POST['delete_admin'])) {
 if (isset($_POST['add_admin'])) {
     $name = trim($_POST['name']);
     $email = strtolower(trim($_POST['email']));
-    $password = trim($_POST['password']); // Plain text password
+    $password = trim($_POST['password']);
     $phone = trim($_POST['phone']);
     $position = trim($_POST['position']);
 
@@ -167,7 +167,7 @@ if (isset($_POST['add_admin'])) {
                                 <td><?php echo $admin['AdminPosition']; ?></td>
                                 <td><?php echo $admin['AdminPassword']; ?></td>
                                 <td>
-                                    <button name="edit_admin" onclick='editAdmin(<?php echo json_encode($admin["AdminID"]); ?>, <?php echo json_encode($admin["AdminName"]); ?>, <?php echo json_encode($admin["AdminEmail"]); ?>, <?php echo json_encode($admin["AdminPassword"]); ?>, <?php echo json_encode($admin["AdminPosition"]); ?>)'>Edit</button>
+                                    <button name="edit_admin" onclick='editAdmin(<?php echo json_encode($admin["AdminID"]); ?>, <?php echo json_encode($admin["AdminName"]); ?>, <?php echo json_encode($admin["AdminEmail"]); ?>, <?php echo json_encode($admin["AdminPhoneNum"]); ?>, <?php echo json_encode($admin["AdminPosition"]); ?>, <?php echo json_encode($admin["AdminPassword"]); ?>)'>Edit</button>
                                     <form method="POST" action="" style="display:inline;">
                                         <input type="hidden" name="admin_id" value="<?php echo $admin['AdminID']; ?>">
                                         <button type="submit" name="delete_admin" onclick="return confirm('Are you sure you want to delete this admin?');">Delete</button>
@@ -238,13 +238,12 @@ if (isset($_POST['add_admin'])) {
     </div>
 
     <script>
-        function editAdmin(admin_id, name, email, phone, position, password) {
+        function editAdmin(admin_id, name, email, phone, position) {
             document.getElementById('admin_id').value = admin_id;
             document.getElementById('name').value = name;
             document.getElementById('email').value = email;
-            document.getElementById('phone').value = phone;
-            document.getElementById('position').value = position;
-            document.getElementById('password').value = password ? String(password) : ""; 
+            document.getElementById('phone').value = phone;  // Now correctly assigned
+            document.getElementById('position').value = position; 
             document.getElementById('editModal').style.display = 'block';
         }
 

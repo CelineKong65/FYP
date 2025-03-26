@@ -29,6 +29,7 @@ if (isset($_POST['update_customer'])) {
     $email = trim($_POST['email']);
     $phone = trim($_POST['phone']);
     $address = trim($_POST['address']);
+    $password = trim($_POST['password']);
     $profile_picture = isset($_FILES['profile_picture']['name']) ? $_FILES['profile_picture']['name'] : null;
     $profile_picture_tmp = isset($_FILES['profile_picture']['tmp_name']) ? $_FILES['profile_picture']['tmp_name'] : null;
 
@@ -84,9 +85,15 @@ if (isset($_POST['update_customer'])) {
     }
     $stmt->close();    
 
-    $update_query = "UPDATE customer SET CustName = ?, CustEmail = ?, CustPhoneNum = ?, CustAddress = ?, CustProfilePicture = ? WHERE CustID = ?";
-    $stmt = $conn->prepare($update_query);
-    $stmt->bind_param("sssssi", $name, $email, $phone, $address, $image_name, $cust_id);
+    if (!empty($password)) {
+        $update_query = "UPDATE customer SET CustName = ?, CustEmail = ?, CustPassword = ?, CustPhoneNum = ?, CustAddress = ?, CustProfilePicture = ? WHERE CustID = ?";
+        $stmt = $conn->prepare($update_query);
+        $stmt->bind_param("ssssssi", $name, $email, $password, $phone, $address, $image_name, $cust_id);
+    } else {
+        $update_query = "UPDATE customer SET CustName = ?, CustEmail = ?, CustPhoneNum = ?, CustAddress = ?, CustProfilePicture = ? WHERE CustID = ?";
+        $stmt = $conn->prepare($update_query);
+        $stmt->bind_param("sssssi", $name, $email, $phone, $address, $image_name, $cust_id);
+    }
 
     if ($stmt->execute()) {
         echo "<script>alert('Customer updated successfully!'); window.location.href='customer_view.php';</script>";
@@ -115,7 +122,7 @@ if (isset($_POST['delete_customer'])) {
 if (isset($_POST['add_customer'])) {
     $name = trim($_POST['name']);
     $email = strtolower(trim($_POST['email'])); // Normalize the email
-    $password = password_hash(trim($_POST['password']), PASSWORD_DEFAULT);
+    $password = trim($_POST['password']);
     $phone = trim($_POST['phone']);
     $address = trim($_POST['address']);
     $profile_picture = isset($_FILES['profile_picture']['name']) ? $_FILES['profile_picture']['name'] : null;
@@ -227,7 +234,6 @@ if (isset($_POST['add_customer'])) {
                         <th>Email</th>
                         <th>Phone</th>
                         <th>Address</th>
-                        <!-- display不到密码 -->
                         <th>Password</th> 
                         <th></th>
                     </tr>
@@ -295,9 +301,10 @@ if (isset($_POST['add_customer'])) {
                 <label>Address:</label>
                 <textarea name="address" id="address" required></textarea>             
                 <label>Password:</label>
-                <input type="password" name="password" required>
+                <input type="password" name="password">
+                <p style="color:gray;">(Leave empty to keep the current password)</p>
                 <div class="upd_div">
-                <button type="submit" name="update_customer">Update</button>
+                    <button type="submit" name="update_customer">Update</button>
                 </div>
             </form>
         </div>

@@ -72,7 +72,7 @@ if (isset($_POST['delete_order'])) {
         </div>
 
         <div class="main-content">
-            <h2>Order History</h2>
+            <h2>Order List</h2>
 
             <form method="GET" action="" class="search">
                 <input type="text" name="search" placeholder="Search by name or email" value="<?php echo htmlspecialchars($search_query); ?>">

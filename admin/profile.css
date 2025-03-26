@@ -1,1 +1,158 @@
-<link rel="stylesheet" href="profile.css">
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.header {
+    margin-bottom: 50px;
+}
+
+.container {
+    margin-top: 50px;
+    display: flex;
+    flex: 1;
+    margin-left: 250px;
+}
+
+.sidebar {
+    width: 220px;
+    background-color: #0077b6;
+    padding-top: 30px;
+    text-align: center;
+    border-radius: 20px;
+    margin: 30px;
+    height: 650px;
+    margin-top: 150px;
+    position: fixed;
+    left: 0;
+    top: 0; 
+}
+
+.main-content {
+    flex-grow: 1;
+    padding: 20px;
+    margin: 10px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    position: relative;
+}
+
+.profile-container {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    max-width: 800px;
+    margin: 0 auto;
+    border-radius: 10px;
+    margin-bottom: 50px;
+    height: 100%;
+}
+
+h2 {
+    color: #1e3a8a;
+    margin-bottom: 20px;
+    text-align: center;
+    margin-top: 0;
+    font-size: 35px;
+}
+
+h3 {
+    margin-top: 50px;
+    font-size: 20px;
+}
+
+.profile-table {
+    border-collapse: collapse;
+    margin: 0 auto;
+    width: 90%;
+}
+
+.upd_profile_div{
+    margin: 0 auto;
+    width: 90%;
+}
+
+.profile-table th, .profile-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.profile-table th {
+    width: 30%;
+    font-weight: bold;
+    color: #555;
+}
+
+.profile-table td {
+    color: #333;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #555;
+}
+
+input[type="text"],input[type="email"],input[type="tel"],input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+    box-sizing: border-box;
+    font-size: 13px;
+}
+
+.position-display {
+    padding: 10px;
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.btn {
+    background-color: #1e3a8a;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    display: block;
+    margin: 20px auto 0;
+}
+
+.btn:hover {
+    background-color: #15306b;
+}
+
+.message {
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.password-note {
+    font-size: 14px;
+    color: #666;
+    margin-top: 5px;
+}
+
+.upd_div {
+    float: right;
+    margin-top: 20px;
+    margin-bottom: 50px;
+}
