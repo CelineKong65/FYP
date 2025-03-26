@@ -1,8 +1,38 @@
 <?php 
-    include 'header.php';
-?>
+include 'header.php';
+include 'config.php'; // Using your existing config file
 
-<?php
+// Process form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $name = $_POST['name'] ?? '';
+    $email = $_POST['email'] ?? '';
+    $phone = $_POST['phone'] ?? '';
+    $subject = $_POST['subject'] ?? '';
+    $message = $_POST['message'] ?? '';
+    $submission_date = date('Y-m-d H:i:s');
+    
+    try {
+        $stmt = $conn->prepare("INSERT INTO contact_record 
+                              (CustName, CustEmail, CustPhoneNum, Subject, Message, Submission_date) 
+                              VALUES (:name, :email, :phone, :subject, :message, :submission_date)");
+        
+        $stmt->bindParam(':name', $name);
+        $stmt->bindParam(':email', $email);
+        $stmt->bindParam(':phone', $phone);
+        $stmt->bindParam(':subject', $subject);
+        $stmt->bindParam(':message', $message);
+        $stmt->bindParam(':submission_date', $submission_date);
+        
+        $stmt->execute();
+        
+        // Success message
+        echo '<script>alert("Thanks for your message, we will read it carefully and then delete it somehow")</script>';
+    } catch (PDOException $e) {
+        // Error message
+        echo '<script>alert("Your message is snatch by web spider, go find it and submit again your message. Thank you")</script>';
+    }
+}
+
 // Contact information
 $contact_info = [
     'phone' => '+60 3-1234 5678',
@@ -39,6 +69,7 @@ $faqs = [
     ]
 ];
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -66,7 +97,7 @@ $faqs = [
                     </div>
                     <h3>Call Us</h3>
                     <p>Speak with our customer service team</p>
-                    <a href="">+60 3-1234 5678</a>
+                    <a href="tel:<?= htmlspecialchars($contact_info['phone']) ?>"><?= htmlspecialchars($contact_info['phone']) ?></a>
                     <p>Mon-Sun, 9:00 AM - 6:00 PM</p>
                 </div>
                 
@@ -76,7 +107,7 @@ $faqs = [
                     </div>
                     <h3>Email Us</h3>
                     <p>Send us your questions and feedback</p>
-                    <a href="mailto:<?= $contact_info['email'] ?>"><?= $contact_info['email'] ?></a>
+                    <a href="mailto:<?= htmlspecialchars($contact_info['email']) ?>"><?= htmlspecialchars($contact_info['email']) ?></a>
                     <p>Response within 24 hours</p>
                 </div>
                 
@@ -86,7 +117,7 @@ $faqs = [
                     </div>
                     <h3>Visit Us</h3>
                     <p>Our headquarters location</p>
-                    <p><?= $contact_info['address'] ?></p>
+                    <p><?= htmlspecialchars($contact_info['address']) ?></p>
                 </div>
             </div>
         </div>
@@ -100,10 +131,10 @@ $faqs = [
                 <div class="store-card">
                     <div class="store-img" style="background-image: url('store-<?= strtolower(str_replace(' ', '-', explode(' ', $store['name'])[0])) ?>.jpg')"></div>
                     <div class="store-info">
-                        <h3><?= $store['name'] ?></h3>
+                        <h3><?= htmlspecialchars($store['name']) ?></h3>
                         <p><?= $store['address'] ?></p>
-                        <p class="store-hours"><?= $store['hours'] ?></p>
-                        <p>Tel: <a href="tel:<?= str_replace(' ', '', $store['phone']) ?>"><?= $store['phone'] ?></a></p>
+                        <p class="store-hours"><?= htmlspecialchars($store['hours']) ?></p>
+                        <p>Tel: <a href="tel:<?= str_replace(' ', '', $store['phone']) ?>"><?= htmlspecialchars($store['phone']) ?></a></p>
                     </div>
                 </div>
                 <?php endforeach; ?>
@@ -115,7 +146,7 @@ $faqs = [
         <div class="container">
             <h2 class="section-title">Send Us a Message</h2>
             <div class="form-container">
-                <form action="process-contact.php" method="POST">
+                <form action="contact.php" method="POST">
                     <div class="form-group">
                         <label for="name">Full Name</label>
                         <input type="text" id="name" name="name" required>
@@ -135,11 +166,11 @@ $faqs = [
                         <label for="subject">Subject</label>
                         <select id="subject" name="subject" required>
                             <option value="">Select a subject</option>
-                            <option value="product">Product Inquiry</option>
-                            <option value="order">Order Status</option>
-                            <option value="return">Returns & Refunds</option>
-                            <option value="feedback">Feedback</option>
-                            <option value="other">Other</option>
+                            <option value="Product Inquiry">Product Inquiry</option>
+                            <option value="Order Status">Order Status</option>
+                            <option value="Returns & Refunds">Returns & Refunds</option>
+                            <option value="Feedback">Feedback</option>
+                            <option value="Other">Other</option>
                         </select>
                     </div>
                     
@@ -160,11 +191,11 @@ $faqs = [
             <div class="faq-container">
                 <?php foreach ($faqs as $category => $questions): ?>
                 <div class="faq-category">
-                    <h3><?= $category ?></h3>
+                    <h3><?= htmlspecialchars($category) ?></h3>
                     <?php foreach ($questions as $question => $answer): ?>
                     <div class="faq-item">
-                        <div class="faq-question"><?= $question ?></div>
-                        <div class="faq-answer"><?= $answer ?></div>
+                        <div class="faq-question"><?= htmlspecialchars($question) ?></div>
+                        <div class="faq-answer"><?= htmlspecialchars($answer) ?></div>
                     </div>
                     <?php endforeach; ?>
                 </div>
