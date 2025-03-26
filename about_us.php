@@ -1,4 +1,8 @@
 <?php
+    include 'header.php';
+?>
+
+<?php
 $team_members = [
     [
         'name' => 'Kong Lee Ching',
@@ -25,7 +29,7 @@ $sports = [
     'Paddleboarding' => 'image/paddleboarding.jpg',
     'Kayaking' => 'image/kayaking.jpg',
     'Surfing' => 'image/surfing.jpg',
-    'Scuba Diving' => 'image/google2.jpg'
+    'Scuba Diving' => 'image/goggle2.png'
 ];
 ?>
 
@@ -34,19 +38,19 @@ $sports = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About Us - Watersport Equipment</title>
+    <title>About Us</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="about_us.css">
 </head>
 <body>
-    <header class="header">
+    <div class="top">
         <div class="container">
-            <h1 class="logo">Watersport Equipment</h1>
+            <h1 class="LOGO">KPL Watersport</h1>
             <p class="tagline">Your ultimate destination for high-quality watersport gear and accessories!</p>
         </div>
-    </header>
+    </div>
     
     <div class="container">
         <section class="section">
@@ -56,7 +60,7 @@ $sports = [
                 
                 <p class="mission-text">We are passionate about making watersports accessible, enjoyable, and safe for everyone, whether you're a seasoned pro or just dipping your toes into the world of aquatic adventures.</p>
                 
-                <p class="mission-text">At Watersport Equipment, we believe that the right gear can make all the difference in your watersport journey. That's why we carefully curate our collection to include only the most reliable, durable, and performance-driven products.</p>
+                <p class="mission-text">At KPL Watersport, we believe that the right gear can make all the difference in your watersport journey. That's why we carefully curate our collection to include only the most reliable, durable, and performance-driven products.</p>
                 
                 <p class="mission-text">Our mission is simple: to inspire and empower people to embrace the joy of watersports. Whether you're riding the waves, exploring coral reefs, or simply enjoying a day by the lake, we're here to equip you for every splash, dive, and adventure.</p>
             </div>
@@ -99,13 +103,13 @@ $sports = [
         </div>
     </div>
     
-    <footer class="footer">
+    <div class="below">
         <div class="container">
-            <div class="footer-logo">Watersport Equipment</div>
-            <p class="footer-tagline">Thank you for choosing Watersport Equipment—where your next aquatic adventure begins!</p>
-            <p class="footer-copyright">&copy; <?php echo date('Y'); ?> Watersport Equipment A.K.A FYP PROJECT. All rights reserved.</p>
+            <div class="footer-logo">KPL Watersport</div>
+            <p class="footer-tagline">Thank you for choosing KPL Watersport—where your next aquatic adventure begins!</p>
+            <p class="footer-copyright">&copy; <?php echo date('Y'); ?> KPL Watersport A.K.A FYP PROJECT. All rights reserved.</p>
         </div>
-    </footer>
+    </div>
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -128,3 +132,7 @@ $sports = [
     </script>
 </body>
 </html>
+
+<?php
+    include 'footer.php';
+?>
