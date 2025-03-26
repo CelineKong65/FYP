@@ -189,6 +189,7 @@ if ($isLoggedIn) {
                     <?php else: ?>
                         <a href="login.php">Login</a>
                         <a href="register.php">Sign Up</a>
+                        <a href="admin/admin_login.php">Admin Login</a>
                     <?php endif; ?>
                 </div>
             </div>
