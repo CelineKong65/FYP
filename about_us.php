@@ -103,13 +103,13 @@ $sports = [
         </div>
     </div>
     
-    <footer class="footer">
+    <div class="below">
         <div class="container">
             <div class="footer-logo">KPL Watersport</div>
             <p class="footer-tagline">Thank you for choosing KPL Watersport—where your next aquatic adventure begins!</p>
             <p class="footer-copyright">&copy; <?php echo date('Y'); ?> KPL Watersport A.K.A FYP PROJECT. All rights reserved.</p>
         </div>
-    </footer>
+    </div>
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
