@@ -5,7 +5,6 @@ body, header, div, a, img {
 }
 
 header {
-    position:absolute;
     top: 0;
     left: 0;
     right: 0;
@@ -17,7 +16,6 @@ header {
     background: linear-gradient(135deg, #0077b6, #00b4d8);
     border-radius: 15px;
     position: fixed;
-
 }
 
 .logo {

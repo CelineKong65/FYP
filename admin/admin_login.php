@@ -20,7 +20,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if ($password === $admin['AdminPassword']) {
                 $_SESSION['AdminID'] = $admin['AdminID'];
                 $_SESSION['admin_username'] = $admin['AdminName'];
-                header("Location: product_view.php");
+                header("Location: dashboard.php");
                 exit();
             } else {
                 echo "<script>alert('Incorrect password.'); window.location.href='admin_login.php';</script>";

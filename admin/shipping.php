@@ -8,8 +8,11 @@ if (!isset($_SESSION['AdminID'])) {
 
 include 'db_connection.php';
 
-$customers_query = "SELECT CustID, CustName FROM customer";
-$customers_result = $conn->query($customers_query);
+$orders_query = "SELECT o.OrderID, o.CustName 
+                 FROM orderpayment o 
+                 LEFT JOIN shipping s ON o.OrderID = s.OrderID 
+                 WHERE s.OrderID IS NULL";
+$orders_result = $conn->query($orders_query);
 
 $shipping_query = "SELECT s.*, o.CustName, o.CustEmail FROM shipping s JOIN orderpayment o ON s.OrderID = o.OrderID";
 $shipping_result = $conn->query($shipping_query);
@@ -79,19 +82,23 @@ if (isset($_POST['delete_shipping'])) {
 }
 
 if (isset($_POST['add_shipping'])) {
-    $cust_id = intval($_POST['cust_id']);
+    $order_id = intval($_POST['order_id']);
     $address = trim($_POST['address']);
     $status = trim($_POST['status']);
     $est_date = trim($_POST['est_date']);
     $admin_id = intval($_POST['admin_id']);
 
-    $check_customer = $conn->prepare("SELECT CustID FROM customer WHERE CustID = ?");
-    $check_customer->bind_param("i", $cust_id);
-    $check_customer->execute();
-    $check_customer->store_result();
+    // Check if order exists and doesn't already have shipping
+    $check_order = $conn->prepare("SELECT o.OrderID 
+                                  FROM orderpayment o 
+                                  LEFT JOIN shipping s ON o.OrderID = s.OrderID 
+                                  WHERE o.OrderID = ? AND s.OrderID IS NULL");
+    $check_order->bind_param("i", $order_id);
+    $check_order->execute();
+    $check_order->store_result();
     
-    if ($check_customer->num_rows == 0) {
-        echo "<script>alert('Error: Invalid customer selected!'); window.location.href='shipping.php';</script>";
+    if ($check_order->num_rows == 0) {
+        echo "<script>alert('Error: Invalid order selected or shipping already exists for this order!'); window.location.href='shipping.php';</script>";
         exit();
     }
 
@@ -109,10 +116,10 @@ if (isset($_POST['add_shipping'])) {
         $tracking = trim($_POST['tracking']);
     }
 
-    $insert_query = "INSERT INTO shipping (CustID, ShippingAddress, ShippingMethod, TrackingNum, ShippingStatus, EstimateDeliveryDate, AdminID) 
+    $insert_query = "INSERT INTO shipping (OrderID, ShippingAddress, ShippingMethod, TrackingNum, ShippingStatus, EstimateDeliveryDate, AdminID) 
                      VALUES (?, ?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($insert_query);
-    $stmt->bind_param("isssssi", $cust_id, $address, $method, $tracking, $status, $est_date, $admin_id);
+    $stmt->bind_param("isssssi", $order_id, $address, $method, $tracking, $status, $est_date, $admin_id);
 
     if ($stmt->execute()) {
         echo "<script>alert('Shipping details added successfully!'); window.location.href='shipping.php';</script>";
@@ -208,8 +215,20 @@ if (isset($_POST['add_shipping'])) {
             <form method="POST">
                 <input type="hidden" name="admin_id" value="<?php echo $_SESSION['AdminID']; ?>">
                 
-                <label>Customer ID:</label>
-                <input type="text" name="cust_id" required>
+                <label>Order ID:</label>
+                <?php if ($orders_result->num_rows > 0): ?>
+                    <select name="order_id" required>
+                        <option value="">Select Order</option>
+                        <?php 
+                        // Reset pointer to beginning of result set
+                        $orders_result->data_seek(0);
+                        while ($order = $orders_result->fetch_assoc()): ?>
+                            <option value="<?php echo $order['OrderID']; ?>"><?php echo $order['OrderID'] . ' - ' . $order['CustName']; ?></option>
+                        <?php endwhile; ?>
+                    </select>
+                <?php else: ?>
+                    <p style="color: red;">No orders available for shipping (all orders may already have shipping records)</p>
+                <?php endif; ?>
                 
                 <label>Shipping Address:</label>
                 <input type="text" name="address" required>
@@ -245,12 +264,13 @@ if (isset($_POST['add_shipping'])) {
                 <input type="date" name="est_date" required min="<?php echo date('Y-m-d'); ?>">
 
                 <div class="add_div">
-                    <button type="submit" name="add_shipping">Add</button>
+                    <button type="submit" name="add_shipping" <?php echo ($orders_result->num_rows == 0) ? 'disabled' : ''; ?>>Add</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Rest of your code remains the same -->
     <div id="editModal">
         <div class="edit-content">
             <span class="close" onclick="closeEditModal()">&times;</span>

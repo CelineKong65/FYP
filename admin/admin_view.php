@@ -65,6 +65,19 @@ if (isset($_POST['update_admin'])) {
 if (isset($_POST['delete_admin'])) {
     $admin_id = intval($_POST['admin_id']);
 
+    $check_shipping_query = "SELECT COUNT(*) FROM shipping WHERE AdminID = ?";
+    $stmt = $conn->prepare($check_shipping_query);
+    $stmt->bind_param("i", $admin_id);
+    $stmt->execute();
+    $stmt->bind_result($count);
+    $stmt->fetch();
+    $stmt->close();
+
+    if ($count > 0) {
+        echo "<script>alert('Cannot delete this admin. It is referenced in the shipping table.'); window.location.href='admin_view.php';</script>";
+        exit();
+    }
+
     $delete_query = "DELETE FROM admin WHERE AdminID = ?";
     $stmt = $conn->prepare($delete_query);
     $stmt->bind_param("i", $admin_id);
@@ -72,10 +85,11 @@ if (isset($_POST['delete_admin'])) {
     if ($stmt->execute()) {
         echo "<script>alert('Admin deleted successfully!'); window.location.href='admin_view.php';</script>";
     } else {
-        echo "<script>alert('Admin to delete customer.'); window.location.href='admin_view.php';</script>";
+        echo "<script>alert('Failed to delete admin.'); window.location.href='admin_view.php';</script>";
     }
     exit();
 }
+
 
 if (isset($_POST['add_admin'])) {
     $name = trim($_POST['name']);
@@ -242,7 +256,7 @@ if (isset($_POST['add_admin'])) {
             document.getElementById('admin_id').value = admin_id;
             document.getElementById('name').value = name;
             document.getElementById('email').value = email;
-            document.getElementById('phone').value = phone;  // Now correctly assigned
+            document.getElementById('phone').value = phone;
             document.getElementById('position').value = position; 
             document.getElementById('editModal').style.display = 'block';
         }
