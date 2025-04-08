@@ -307,7 +307,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
             })
             .catch(error => {
                 console.error("Error:", error);
-                alert("操作失败，请重试。");
+                alert("Operation failed, please try again.");
             });
         }
 
