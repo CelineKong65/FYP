@@ -162,6 +162,7 @@ if ($isLoggedIn) {
                 <li><a href="product.php">PRODUCTS</a></li>
                 <li><a href="contact.php">CONTACT</a></li>
                 <li><a href="customer_shipping.php">TRACK</a></li>
+                <li><a href="feedback.php">FEEDBACK</a></li>
             </ul>
         </nav>
 
