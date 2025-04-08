@@ -43,13 +43,13 @@ $contact_info = [
 $stores = [
     [
         'name' => 'Johor Bahru Flagship Store',
-        'address' => 'Level 3, Midvalley Southkey<br>Jalan Smootie<br>80150 Johor Bahru',
+        'address' => '1, Persiaran Southkey 1<br>Southkey, 80150 Johor Bahru<br>Johor Darul Tazim',
         'hours' => 'Mon-Sun: 10:00 AM - 10:00 PM',
         'phone' => '+60 3-9876 5432'
     ],
     [
-        'name' => 'Fu Gui Shan Zhuang Waterfront Store',
-        'address' => 'G-08, Gurney Plaza<br>Persiaran Gurney<br>80300 Senai',
+        'name' => 'Bandaraya Melaka Aeon Waterfront Store',
+        'address' => '2, Jalan Lagenda<br>Taman 1 Lagenda<br>75400 Melaka',
         'hours' => 'Mon-Sun: 10:00 AM - 9:00 PM',
         'phone' => '+60 4-123 4567'
     ]
@@ -62,9 +62,7 @@ $faqs = [
         'Do you offer international shipping?' => 'Currently we only ship within Malaysia. We plan to expand to Southeast Asia in 2025.'
     ],
     'Product & Warranty' => [
-        'What is your return policy?' => 'We offer 14-day returns for unused items with original packaging and receipt.',
-        'Do products come with warranty?' => 'Yes, most products come with 1-year manufacturer warranty. Watersport electronics have 2-year warranty.',
-        'Do product contain free gift?' => 'No, dont dreaming.'
+        'Do products come with warranty?' => 'Yes, most products come with 1-year manufacturer warranty. Watersport electronics have 2-year warranty.'
     ]
 ];
 ?>
@@ -143,7 +141,7 @@ $faqs = [
 
     <section class="section contact-form">
         <div class="container">
-            <h2 class="section-title">Send Us a Message</h2>
+            <h2 class="section-title">Do you have any question? Please let us know</h2>
             <div class="form-container">
                 <form action="contact.php" method="POST">
                     <div class="form-group">
@@ -168,7 +166,6 @@ $faqs = [
                             <option value="Product Inquiry">Product Inquiry</option>
                             <option value="Order Status">Order Status</option>
                             <option value="Returns & Refunds">Returns & Refunds</option>
-                            <option value="Feedback">Feedback</option>
                             <option value="Other">Other</option>
                         </select>
                     </div>

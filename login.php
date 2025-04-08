@@ -2,6 +2,9 @@
 session_start();
 include 'config.php'; 
 
+$error = '';
+$email = '';
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = trim($_POST["email"]);
     $password = trim($_POST["password"]);
@@ -26,13 +29,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     header("refresh:2; url=index.php"); 
                     exit();
                 } else {
-                    echo "Invalid email or password.";
+                    echo "Invalid password.";
                 }
             } else {
                 echo "No account found with this email.";
             }
         } catch (PDOException $e) {
-            die("Database error: " . $e->getMessage());
+            $error = "System error. Please try again later.";
         }
     }
 }
@@ -65,13 +68,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <h2>Log in</h2>
                     <form method="post" action="">
                         <label>Email:</label>
-                        <input type="email" placeholder="example: 123@gmail.com" name="email" required><br>
+                        <input type="email" placeholder="example: 123@gmail.com" name="email" value="<?=htmlspecialchars($email) ?>" required><br>
     
                         <label>Password:</label>
                         <div class="wrapper">
                             <div class="pass-field">
                                 <input type="password" placeholder="example: 123%abc" name="password" required><br>
                                 <i class="fa-solid fa-eye" id="show-password"></i>
+                                <?php if (!empty($error) && isset($user)): ?>
+                                    <div class="error-message"><?= htmlspecialchars($error) ?></div>
+                                <?php endif; ?>
                             </div>
                         </div>
 

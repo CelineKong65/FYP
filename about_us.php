@@ -8,28 +8,28 @@ $team_members = [
         'name' => 'Kong Lee Ching',
         'role' => 'Team Leader',
         'description' => 'With a keen eye for detail and a passion for innovation, Kong ensures our platform delivers the best user experience and top-notch products.',
-        'image' => 'team1.jpg'
+        'image' => 'image/kong.jpg'
     ],
     [
         'name' => 'Pan Zhi Xin',
-        'role' => 'Tech Specialist',
-        'description' => 'Our tech-savvy member who ensures our e-commerce platform runs smoothly, making your shopping experience seamless and hassle-free.',
-        'image' => 'team2.jpg'
+        'role' => 'Creative Director',
+        'description' => 'The creative mind behind our branding and marketing efforts, Lawrence ensures our message resonates with watersport enthusiasts everywhere.',
+        'image' => 'image/pan.jpeg'
     ],
     [
         'name' => 'Lawrence Miguel Tan Qi Yuan',
-        'role' => 'Creative Director',
-        'description' => 'The creative mind behind our branding and marketing efforts, Lawrence ensures our message resonates with watersport enthusiasts everywhere. "BUT that not true, is fake haha got ya"',
-        'image' => 'team3.jpg'
+        'role' => 'Tech Specialist',
+        'description' => 'Our tech-savvy member who ensures our e-commerce platform runs smoothly, making your shopping experience seamless and hassle-free.',
+        'image' => 'image/lawrence.jpg'
     ]
 ];
 
 $sports = [
-    'Snorkeling' => 'image/snorkeling.jpg',
-    'Paddleboarding' => 'image/paddleboarding.jpg',
-    'Kayaking' => 'image/kayaking.jpg',
-    'Surfing' => 'image/surfing.jpg',
-    'Scuba Diving' => 'image/goggle2.png'
+    'Beach Volley' => 'image/Beach-Volleyball.png',
+    'Bodyboard' => 'image/Bodyboard.jpg',
+    'Kayak' => 'image/Kayak.jpg',
+    'Wet suit' => 'image/Wetsuit.png',
+    'Scuba Diving Mask' => 'image/Diving-Mask.png'
 ];
 ?>
 
@@ -65,7 +65,7 @@ $sports = [
                 <p class="mission-text">Our mission is simple: to inspire and empower people to embrace the joy of watersports. Whether you're riding the waves, exploring coral reefs, or simply enjoying a day by the lake, we're here to equip you for every splash, dive, and adventure.</p>
             </div>
             
-            <h2 class="section-title scroll-animate">Our Sports</h2>
+            <h2 class="section-title scroll-animate">Our Product</h2>
             <div class="sports-grid">
                 <?php foreach ($sports as $sport => $image): ?>
                 <div class="sport-card scroll-animate">
@@ -97,17 +97,13 @@ $sports = [
                 </div>
             </div>
         </section>
-        
-        <div class="insurance-note scroll-animate">
-            Hope you get your insurance. If not, AIA is watching you
-        </div>
     </div>
     
     <div class="below">
         <div class="container">
             <div class="footer-logo">KPL Watersport</div>
             <p class="footer-tagline">Thank you for choosing KPL Watersport—where your next aquatic adventure begins!</p>
-            <p class="footer-copyright">&copy; <?php echo date('Y'); ?> KPL Watersport A.K.A FYP PROJECT. All rights reserved.</p>
+            <p class="footer-copyright">&copy; <?php echo date('Y'); ?> KPL Watersport. All rights reserved.</p>
         </div>
     </div>
     

@@ -27,9 +27,14 @@ body{
 }
 
 .top{
-    background-color: var(--primary);
+    background-image: url(image/About_background.jpg);
+    background-size: cover;
+    background-repeat: repeat;
+    background-position: center;
+    filter: blur(0.5px);
+    width: 100%;
     color: white;
-    margin-top: 20px;
+    margin-top: 40px;
     padding: 150px 20px;
     text-align: center;
     position: relative;

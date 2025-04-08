@@ -280,3 +280,21 @@ header {
 .findback a:hover{
     color: #007bff94;
 }
+
+.error-message {
+    color: #d32f2f;
+    background-color: #fde8e8;
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+    font-size: 14px;
+    border-left: 4px solid #d32f2f;
+}
+.pass-field {
+    position: relative;
+}
+.pass-field .error-message {
+    position: absolute;
+    bottom: -25px;
+    left: 0;
+}
