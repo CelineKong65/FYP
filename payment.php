@@ -150,7 +150,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="col">
                         <h2>Billing Address</h2>
                         <label for="price"><b>Total Price</b></label>
-                        <input type="text" id="price" value="RM <?= number_format($subtotal, 2) ?>" readonly>
+                        <input type="text" id="price" value="RM <?= number_format($grandTotalWithDelivery, 2) ?>" readonly>
 
                         <label for="fullname"><b>Full Name</b></label>
                         <input type="text" id="fullname" name="fullname" value="<?= htmlspecialchars($custName) ?>" placeholder="Enter full name" required>
