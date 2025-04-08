@@ -8,13 +8,13 @@ $team_members = [
         'name' => 'Kong Lee Ching',
         'role' => 'Team Leader',
         'description' => 'With a keen eye for detail and a passion for innovation, Kong ensures our platform delivers the best user experience and top-notch products.',
-        'image' => 'team1.jpg'
+        'image' => 'image/kong.jpg'
     ],
     [
         'name' => 'Pan Zhi Xin',
         'role' => 'Tech Specialist',
         'description' => 'Our tech-savvy member who ensures our e-commerce platform runs smoothly, making your shopping experience seamless and hassle-free.',
-        'image' => 'team2.jpg'
+        'image' => 'image/pan.jpeg'
     ],
     [
         'name' => 'Lawrence Miguel Tan Qi Yuan',
