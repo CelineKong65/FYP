@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $contact_info = [
     'phone' => '+60 3-1234 5678',
     'email' => 'watersport@gmail.com',
-    'address' => 'TBD'
+    'address' => 'Jalan Ayer Keroh Lama, 75450 Bukit Beruang, Melaka'
 ];
 
 // Store locations
