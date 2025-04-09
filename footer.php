@@ -157,6 +157,10 @@
         display: flex;
         
     }
+    iframe{
+        width: 500px;
+        height: 200px;
+    }
 </style>
 
 <footer class="footer-section">
@@ -174,6 +178,7 @@
                         <li>+60 102282675</li>
                         <li>watersport@gmail.com</li>
                         <li>address</li>
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3986.743684919402!2d102.27353331080134!3d2.2494988580139106!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31d1e56b9710cf4b%3A0x66b6b12b75469278!2z6ams5YWt55Sy5aSa5aqS5L2T5aSn5a2m!5e0!3m2!1szh-CN!2smy!4v1744175640775!5m2!1szh-CN!2smy" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                     </ul>
                     <div class="footer-social">
                         <a href="https://www.facebook.com/" target="_blank">
