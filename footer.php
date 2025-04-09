@@ -131,9 +131,9 @@
     .subscribe-form button {
         height: 40px;
         padding: 0 15px;
-        background-color: #3498db;
+        background-color: #0066cc;
         color: #ffffff;
-        border: 1px solid #3498db;
+        border: 1px solid #0066cc;
         border-radius: 0 5px 5px 0;
         cursor: pointer;
         transition: background-color 0.3s;
@@ -157,6 +157,10 @@
         display: flex;
         
     }
+    iframe{
+        width: 500px;
+        height: 200px;
+    }
 </style>
 
 <footer class="footer-section">
@@ -173,7 +177,12 @@
                     <ul>
                         <li>+60 102282675</li>
                         <li>watersport@gmail.com</li>
-                        <li>address</li>
+                        <li>
+                            <a src="https://maps.app.goo.gl/fTRxNBsoeXojXcuKA" target="_blank" 
+                                style="color: #bdc3c7; text-decoration: none;">
+                                Jalan Ayer Keroh Lama, 75450 Bukit Beruang, Melaka
+                            </a>
+                        </li>
                     </ul>
                     <div class="footer-social">
                         <a href="https://www.facebook.com/" target="_blank">

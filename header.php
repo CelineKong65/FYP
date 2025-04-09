@@ -61,7 +61,7 @@ if ($isLoggedIn) {
         nav ul {
             list-style: none;
             display: flex;
-            gap: 20px;
+            gap: 40px;
             margin: 0;
             padding: 0;
         }
