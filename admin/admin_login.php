@@ -43,11 +43,128 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login</title>
-    <link rel='stylesheet' href='admin_login.css'>
+    <style>
+        *{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    border-radius: 50px;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: url('../image/admin_back.jpg');
+    background-size: cover;
+}
+
+.header
+{
+    display: flex;
+    align-items: center;
+}
+
+img{
+    height: 80px;
+    transform: translateX(-3px);
+    margin-right: 10px;
+}
+
+h3{
+    font-size: 23pt;
+    margin-left: 40px;
+}
+
+#login-form{
+    padding: 70px;
+    border-radius: 16px;
+    width: 500px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 30px;
+    height: 610px;
+    background-color: white;
+}
+
+.input-box{
+    margin: 30px 0;
+}
+
+.input-box input {
+    background-color:#f8f8ff;;
+    width: 100%;
+    border: none;
+    padding: 12px 12px 12px 45px;
+    border-radius: 99px;
+    font-size: 17px;
+    font-weight: 600;
+    margin-top: 10px;
+}
+
+.input-box input::placeholder {
+    color: rgba(0, 0, 0, 0.342);
+    font-size: 17px;
+    font-weight: 500;
+}
+
+p{
+    margin-top: 30px;
+}
+
+a{
+    text-decoration: underline;
+    font-style: italic;
+}
+
+.button {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.forget_password
+{
+    align-items: center;
+    margin: 30px;
+}
+
+p{
+    text-align: center;
+}
+
+.Submit-btn{
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 25px;
+    border: none;
+    border-radius:10px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.back_div {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 10;
+}
+
+.back{
+    background-color: white;
+    color: black;
+    padding: 10px 20px;
+    border-color: transparent;
+    border-radius: 10px;
+    font-size: 15px;
+}
+    </style>
 </head>
 <body>
-    <div class="show-bar"></div>
-    <div class="right-side">
+    <div class="back_div">
+        <button name="back" class="back" onclick="window.location.href='../index.php'">< Back</button>
+    </div>
+    <div>
         <div id="login-title">
             <div id="login-form">
                 <form name="loginfrm" method="post" class="Loginfrm" action="">
