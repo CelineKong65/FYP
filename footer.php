@@ -148,6 +148,15 @@
     .subscribe-form button:hover {
         background-color: #2980b9; 
     }
+
+    .footer-copyright {
+        margin-top: 30px;
+        color: rgba(255,255,255,0.7);
+        align-items: center;
+        justify-content: center;
+        display: flex;
+        
+    }
 </style>
 
 <footer class="footer-section">
@@ -217,5 +226,6 @@
                 </div>
             </div>
         </div>
+        <p class="footer-copyright">&copy; <?php echo date('Y'); ?> KPL Watersport. All rights reserved.</p>
     </div>
 </footer>

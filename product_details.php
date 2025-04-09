@@ -90,7 +90,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
             cursor: pointer;
             padding: 5px;
             margin-left: 10px;
-            background: #3498db;
+            background: #0066cc;
             color: white;
             font-size: 16px;
             margin-top: 10px;
