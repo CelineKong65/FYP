@@ -46,7 +46,7 @@ h2 {
 }
 
 .submit-track-btn {
-    background-color: #3498db;
+    background-color: #0066cc;
     color: white;
     padding: 12px 20px;
     border: none;
@@ -105,7 +105,7 @@ h2 {
     margin: 16px 0;
     padding: 12px;
     background-color: #f9f9f9;
-    border-left: 4px solid #3498db;
+    border-left: 4px solid #0066cc;
     border-radius: 4px;
     white-space: nowrap;
     font-size: 16px; 
