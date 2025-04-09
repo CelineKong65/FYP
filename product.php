@@ -28,7 +28,7 @@ $products = $stmt->fetchAll();
     <title>Product Page</title>
     <link rel="stylesheet" href="product.css">
     <style>
-       
+
         .categories ul {
             list-style: none;
             padding: 0;
