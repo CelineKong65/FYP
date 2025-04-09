@@ -46,8 +46,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <link rel='stylesheet' href='admin_login.css'>
 </head>
 <body>
-    <div class="show-bar"></div>
-    <div class="right-side">
+    <div class="back_div">
+        <button name="back" class="back" onclick="window.location.href='../index.php'">< Back</button>
+    </div>
+    <div>
         <div id="login-title">
             <div id="login-form">
                 <form name="loginfrm" method="post" class="Loginfrm" action="">

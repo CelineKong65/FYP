@@ -157,6 +157,10 @@
         display: flex;
         
     }
+    iframe{
+        width: 500px;
+        height: 200px;
+    }
 </style>
 
 <footer class="footer-section">
