@@ -25,10 +25,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute();
         
         // Success message
-        echo '<script>alert("Thanks for your message, we will read it carefully and then delete it somehow")</script>';
+        echo '<script>alert("Thanks for your message, we will read it carefully and reply as early as we could")</script>';
     } catch (PDOException $e) {
         // Error message
-        echo '<script>alert("Your message is snatch by web spider, go find it and submit again your message. Thank you")</script>';
+        echo '<script>alert("Your message is fail when submiting, please submit again your message. Thanks for your understanding.")</script>';
     }
 }
 
@@ -43,13 +43,15 @@ $contact_info = [
 $stores = [
     [
         'name' => 'Johor Bahru Flagship Store',
-        'address' => '1, Persiaran Southkey 1<br>Southkey, 80150 Johor Bahru<br>Johor Darul Tazim',
+        'address' => '1, Persiaran Southkey 1, Southkey, 80150 Johor Bahru, Johor Darul Tazim',
+        'link' => 'https://maps.app.goo.gl/tKUkBDz8KKBz249a6',
         'hours' => 'Mon-Sun: 10:00 AM - 10:00 PM',
         'phone' => '+60 3-9876 5432'
     ],
     [
         'name' => 'Bandaraya Melaka Aeon Waterfront Store',
-        'address' => '2, Jalan Lagenda<br>Taman 1 Lagenda<br>75400 Melaka',
+        'address' => '2, Jalan Lagenda, Taman 1 Lagenda, 75400 Melaka',
+        'link' => 'https://maps.app.goo.gl/ERbKqSWDiKcLHPp99',
         'hours' => 'Mon-Sun: 10:00 AM - 9:00 PM',
         'phone' => '+60 4-123 4567'
     ]
@@ -129,7 +131,7 @@ $faqs = [
                     <div class="store-img" style="background-image: url('store-<?= strtolower(str_replace(' ', '-', explode(' ', $store['name'])[0])) ?>.jpg')"></div>
                     <div class="store-info">
                         <h3><?= htmlspecialchars($store['name']) ?></h3>
-                        <p><?= $store['address'] ?></p>
+                        <p><a href="<?= $store['link']?>"><?= ($store['address'])?></a></p>
                         <p class="store-hours"><?= htmlspecialchars($store['hours']) ?></p>
                         <p>Tel: <a href="tel:<?= str_replace(' ', '', $store['phone']) ?>"><?= htmlspecialchars($store['phone']) ?></a></p>
                     </div>

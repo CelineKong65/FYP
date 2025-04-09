@@ -124,7 +124,9 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
             <?php if ($error_message): ?>
                 <p class="error"><?php echo $error_message; ?></p>
-            <?php endif; ?>
+            <?php elseif ($success_message): ?>
+                <p class="success"><?php echo $success_message; ?></p>
+            <?php endif ?>
     </div>
 </body>
 </html>

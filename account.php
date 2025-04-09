@@ -23,7 +23,7 @@ $upload_success = '';
 
 // Profile Picture Upload
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES['profile_picture'])) {
-    $target_dir = "uploads/profile_pics/";
+    $target_dir = "image/";
     if (!file_exists($target_dir)) {
         if (!mkdir($target_dir, 0755, true)) {
             $upload_error = "Failed to create upload directory.";
