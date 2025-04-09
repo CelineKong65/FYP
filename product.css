@@ -38,9 +38,7 @@ body {
     font-size: 18px;
 }
 
-.categories ul li a:hover {
-    color: #007BFF;
-}
+s
 
 /* Products Section */
 .products {
@@ -95,7 +93,7 @@ body {
     bottom: -50px;
     left: 0;
     right: 0;
-    background-color: rgba(0, 123, 255, 0.8);
+    background-color:#0066cc;
     color: white;
     text-align: center;
     padding: 10px;
