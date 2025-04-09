@@ -173,7 +173,12 @@
                     <ul>
                         <li>+60 102282675</li>
                         <li>watersport@gmail.com</li>
-                        <li>address</li>
+                        <li>
+                            <a src="https://maps.app.goo.gl/fTRxNBsoeXojXcuKA" target="_blank" 
+                                style="color: #bdc3c7; text-decoration: none;">
+                                Jalan Ayer Keroh Lama, 75450 Bukit Beruang, Melaka
+                            </a>
+                        </li>
                     </ul>
                     <div class="footer-social">
                         <a href="https://www.facebook.com/" target="_blank">
