@@ -38,7 +38,9 @@ body {
     font-size: 18px;
 }
 
-s
+.categories ul li a:hover {
+    color: #007BFF;
+}
 
 /* Products Section */
 .products {
@@ -93,7 +95,7 @@ s
     bottom: -50px;
     left: 0;
     right: 0;
-    background-color:#0066cc;
+    background-color: rgba(0, 123, 255, 0.8);
     color: white;
     text-align: center;
     padding: 10px;
@@ -132,6 +134,5 @@ s
 .pagination .page:hover {
     background-color: #007BFF;
     color: #fff;
-    border-color: #007BFF;
+    border-color: #007BFF;
 }
-
