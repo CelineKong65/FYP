@@ -14,6 +14,7 @@ if(!isset($_SESSION['reset_email'])) {
 }
 
 $error_message = "";
+$success_message = "";
 
 if($_SERVER["REQUEST_METHOD"] == "POST") {
     if (isset($_POST['verify_otp'])) {
@@ -58,10 +59,10 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
     
                 $mail->Subject = 'Resend Password Reset OTP';
     
-                $mail->Body = "Your OTP is: <b>$otp</b>";
+                $mail->Body = "Your OTP is: <b>$newOTP</b>";
     
                 $mail->send();
-                $error_message = "OTP resent successfully.";
+                $success_message = "OTP resent successfully.";
             } catch (Exception $e) {
                 $error_message = "Failed to send OTP. Please try again.";
             }
