@@ -11,16 +11,16 @@ $team_members = [
         'image' => 'image/kong.jpg'
     ],
     [
-        'name' => 'Pan Zhi Xin',
+        'name' => 'Lawrence Miguel Tan Qi Yuan',
         'role' => 'Creative Director',
         'description' => 'The creative mind behind our branding and marketing efforts, Lawrence ensures our message resonates with watersport enthusiasts everywhere.',
-        'image' => 'image/pan.jpeg'
+        'image' => 'image/lawrence.jpg'
     ],
     [
-        'name' => 'Lawrence Miguel Tan Qi Yuan',
+        'name' => 'Pan Zhi Xin',
         'role' => 'Tech Specialist',
         'description' => 'Our tech-savvy member who ensures our e-commerce platform runs smoothly, making your shopping experience seamless and hassle-free.',
-        'image' => 'image/lawrence.jpg'
+        'image' => 'image/pan.jpeg'
     ]
 ];
 
