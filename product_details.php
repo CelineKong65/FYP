@@ -20,11 +20,8 @@ if (!$product) {
     die("Product not found.");
 }
 
-$stmt = $conn->prepare("SELECT Color, Picture FROM product_color WHERE ProductID = :productID");
-$stmt->execute(['productID' => $productID]);
-$colors = $stmt->fetchAll();
-
-$stmt = $conn->prepare("SELECT DISTINCT Size FROM product_size WHERE ProductID = :productID");
+// Fetch available sizes
+$stmt = $conn->prepare("SELECT DISTINCT Size FROM product_size WHERE ProductID = :productID AND Stock > 0");
 $stmt->execute(['productID' => $productID]);
 $sizes = $stmt->fetchAll();
 
@@ -60,23 +57,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
             left: 50%;
             transform: translate(-50%, -50%); /* Centers the div perfectly */
         }
-
-        .color-options {
-            display: flex;
-            justify-content: start;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .color-circle {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            border: 2px solid #ccc;
-            cursor: pointer;
-        }
-        .color-circle.active {
-            border-color: #000;
-        }
         
         .button {
             display: flex;
@@ -98,8 +78,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
             transition: background 0.3s ease;
         }
 
-        .wishlist-btn:hover
-        {
+        .wishlist-btn:hover {
             background: darkblue;
         }
 
@@ -108,7 +87,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
             height: 25px;
         }
 
-
+        .quantity {
+            margin: 15px 0;
+        }
+        .quantity button {
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .quantity input {
+            width: 40px;
+            text-align: center;
+        }
+        .sizes {
+            margin: 15px 0;
+        }
+        .size {
+            padding: 5px 10px;
+            margin-right: 5px;
+            cursor: pointer;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+        }
+        .size.active {
+            background: #333;
+            color: white;
+            border-color: #333;
+        }
     </style>
 </head>
 <body>
@@ -126,16 +130,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
         <div class="product-details">
             <div class="product-images">
                 <?php
-                // Default image
-                $imageSrc = !empty($colors) ? 'image/' . $colors[0]['Picture'] : 'image/default-image.png';
+                $imageSrc = $product['ProductPicture'] ? 'image/' . $product['ProductPicture'] : 'image/default-image.png';
                 ?>
                 <div class="main-image">
-                    <img id="mainProductImage" src="<?= $imageSrc ?>" alt="<?= htmlspecialchars($product['ProductName']) ?>">
-                </div>
-                <div class="thumbnails">
-                    <?php foreach ($colors as $color): ?>
-                        <img src="image/<?= $color['Picture'] ?>" alt="<?= $color['Color'] ?>" onclick="changeImage(this)">
-                    <?php endforeach; ?>
+                    <img src="<?= $imageSrc ?>" alt="<?= htmlspecialchars($product['ProductName']) ?>">
                 </div>
             </div>
             <div class="info">
@@ -143,23 +141,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
                 <p class="price">RM <?= number_format($product['ProductPrice'], 2) ?></p>
                 <p><?= nl2br(htmlspecialchars($product['ProductDesc'])) ?></p>
                 
-                <!-- Color Selection -->
-                <div class="color-options">
-                    <?php foreach ($colors as $color): ?>
-                        <div class="color-circle" style="background-color: <?= $color['Color'] ?>;" onclick="changeImageByColor('image/<?= $color['Picture'] ?>')"></div>
-                    <?php endforeach; ?>
-                </div>
-
                 <div class="quantity">
                     <button type="button" onclick="decreaseQty()">-</button>
                     <input type="text" id="qty" name="qty" value="1">
                     <button type="button" onclick="increaseQty()">+</button>
                 </div>
 
-
                 <!-- Display Sizes Only If Available -->
                 <?php if (!empty($sizes)): ?>
                     <div class="sizes">
+                        <p>Available Sizes:</p>
                         <?php foreach ($sizes as $size): ?>
                             <?php if ($size['Size'] === null): ?>
                                 <button class="size">Standard Only</button>
@@ -174,7 +165,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
                 <form action="" method="POST" onsubmit="return validateSelection()">
                     <input type="hidden" name="productID" value="<?= $productID ?>">
                     <input type="hidden" name="size" id="selectedSize" value="">
-                    <input type="hidden" name="color" id="selectedColor" value="">
                     <input type="hidden" id="hiddenQty" name="qty" value="1">
                 </form>
 
@@ -192,14 +182,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
     </div>
 
     <script>
-    function changeImage(img) {
-        document.getElementById("mainProductImage").src = img.src;
-        }
-
-        function changeImageByColor(imageSrc) {
-            document.getElementById("mainProductImage").src = imageSrc;
-        }
-
         function decreaseQty() {
             let qtyInput = document.getElementById('qty'); 
             let hiddenQty = document.getElementById('hiddenQty'); 
@@ -216,7 +198,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
             hiddenQty.value = qtyInput.value; 
         }
 
-
         document.querySelectorAll('.size').forEach(button => {
             button.addEventListener('click', function () {
                 document.querySelectorAll('.size').forEach(btn => btn.classList.remove('active'));
@@ -224,21 +205,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
                 document.getElementById('selectedSize').value = this.textContent.trim();
             });
         });
-
-        document.querySelectorAll('.color-circle').forEach(circle => {
-            circle.addEventListener('click', function () {
-                document.querySelectorAll('.color-circle').forEach(c => c.classList.remove('active'));
-                this.classList.add('active');
-                document.getElementById('selectedColor').value = this.style.backgroundColor;
-            });
-        });
         
         function validateSelection() {
-            let selectedColor = document.getElementById('selectedColor').value;
             let selectedSize = document.getElementById('selectedSize').value;
 
-            if (selectedColor === "" || selectedSize === "") {
-                alert("Please select a color and size before adding to cart.");
+            if (selectedSize === "") {
+                alert("Please select a size before adding to cart.");
                 return false;
             }
             return true; 
@@ -254,10 +226,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
             let productID = <?= $productID ?>;
             let qty = document.getElementById("qty").value;
             let size = document.getElementById("selectedSize").value;
-            let color = document.getElementById("selectedColor").value;
 
-            if (size === "" || color === "") {
-                alert("Please select a color and size before adding to cart.");
+            if (size === "") {
+                alert("Please select a size before adding to cart.");
                 return;
             }
 
@@ -265,7 +236,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
             formData.append("productID", productID);
             formData.append("qty", qty);
             formData.append("size", size);
-            formData.append("color", color);
 
             fetch("add_to_cart.php", {
                 method: "POST",
@@ -282,7 +252,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
             })
             .catch(error => console.error("Error:", error));
         }
-
         
         function addToWishlist(productID) {
             let isLoggedIn = document.getElementById("isLoggedIn").value; 
@@ -310,8 +279,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
                 alert("Operation failed, please try again.");
             });
         }
-
-
     </script>
 </body>
 </html>

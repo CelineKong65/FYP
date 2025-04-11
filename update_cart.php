@@ -5,16 +5,6 @@ session_start();
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['CartID'])) {
     $cartID = $_POST['CartID'];
     
-    // Check if Color is set
-    if (isset($_POST['Color'])) {
-        $newColor = $_POST['Color'];
-        $query = "UPDATE cart SET Color = :color WHERE CartID = :cartID";
-        $stmt = $conn->prepare($query);
-        $stmt->bindParam(':color', $newColor, PDO::PARAM_STR);
-        $stmt->bindParam(':cartID', $cartID, PDO::PARAM_INT);
-        $stmt->execute();
-    }
-    
     // Check if Size is set
     if (isset($_POST['Size'])) {
         $newSize = $_POST['Size'];

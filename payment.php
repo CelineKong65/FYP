@@ -1,7 +1,6 @@
 <?php
 ob_start();
 session_start(); // Start session to access session variables
-include 'header.php'; 
 include 'config.php'; 
 
 // Retrieve grand total from session
@@ -16,10 +15,13 @@ $cartItems = $_SESSION['cart_items'] ?? [];
 $custID = $_SESSION['user_id'] ?? null;
 $custName = '';
 $custEmail = '';
-$custAddress = '';
+$custStreetAddress = '';
+$custCity = '';
+$custPostcode = '';
+$custState = '';
 
 if ($custID) {
-    $query = "SELECT CustName, CustEmail, CustAddress FROM customer WHERE CustID = :custID";
+    $query = "SELECT CustName, CustEmail, StreetAddress, City, Postcode, State FROM customer WHERE CustID = :custID";
     $stmt = $conn->prepare($query);
     $stmt->bindParam(':custID', $custID, PDO::PARAM_INT);
     $stmt->execute();
@@ -28,7 +30,10 @@ if ($custID) {
     if ($customer) {
         $custName = $customer['CustName'];
         $custEmail = $customer['CustEmail'];
-        $custAddress = $customer['CustAddress'];
+        $custStreetAddress = $customer['StreetAddress'];
+        $custCity = $customer['City'];
+        $custPostcode = $customer['Postcode'];
+        $custState = $customer['State'];
     }
 }
 
@@ -41,13 +46,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $cardCVV = $_POST['cvv'] ?? '';
 
     // Insert data into the orderpayment table
-    $insertQuery = "INSERT INTO orderpayment (CustID, CustName, CustEmail, CustAddress, OrderDate, TotalPrice, CardName, CardNum, CardCVV)
-                    VALUES (:custID, :custName, :custEmail, :custAddress, NOW(), :totalPrice, :cardName, :cardNum, :cardCVV)";
+    $insertQuery = "INSERT INTO orderpayment (CustID, CustName, CustEmail, StreetAddress, City, Postcode, State, OrderDate, TotalPrice, CardName, CardNum, CardCVV)
+                    VALUES (:custID, :custName, :custEmail, :custStreetAddress, :custCity, :custPostcode, :custState, NOW(), :totalPrice, :cardName, :cardNum, :cardCVV)";
     $insertStmt = $conn->prepare($insertQuery);
     $insertStmt->bindParam(':custID', $custID, PDO::PARAM_INT);
     $insertStmt->bindParam(':custName', $custName, PDO::PARAM_STR);
     $insertStmt->bindParam(':custEmail', $custEmail, PDO::PARAM_STR);
-    $insertStmt->bindParam(':custAddress', $custAddress, PDO::PARAM_STR);
+    $insertStmt->bindParam(':custStreetAddress', $custStreetAddress, PDO::PARAM_STR);
+    $insertStmt->bindParam(':custCity', $custCity, PDO::PARAM_STR);
+    $insertStmt->bindParam(':custPostcode', $custPostcode, PDO::PARAM_STR);
+    $insertStmt->bindParam(':custState', $custState, PDO::PARAM_STR);
     $insertStmt->bindParam(':totalPrice', $grandTotalWithDelivery, PDO::PARAM_STR);
     $insertStmt->bindParam(':cardName', $cardName, PDO::PARAM_STR);
     $insertStmt->bindParam(':cardNum', $cardNum, PDO::PARAM_STR);
@@ -61,16 +69,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Insert each cart item into the orderdetails table
         foreach ($cartItems as $item) {
             $productName = $item['ProductName'];
-            $color = $item['Color'];
             $size = $item['Size'];
             $quantity = $item['Quantity'];
 
-            $detailQuery = "INSERT INTO orderdetails (OrderID, ProductName, Color, Size, Quantity)
-                            VALUES (:orderID, :productName, :color, :size, :quantity)";
+            $detailQuery = "INSERT INTO orderdetails (OrderID, ProductName, Size, Quantity)
+                            VALUES (:orderID, :productName, :size, :quantity)";
             $detailStmt = $conn->prepare($detailQuery);
             $detailStmt->bindParam(':orderID', $orderID, PDO::PARAM_INT);
             $detailStmt->bindParam(':productName', $productName, PDO::PARAM_STR);
-            $detailStmt->bindParam(':color', $color, PDO::PARAM_STR);
             $detailStmt->bindParam(':size', $size, PDO::PARAM_STR);
             $detailStmt->bindParam(':quantity', $quantity, PDO::PARAM_INT);
 
@@ -121,7 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="cart-item">
                                 <p>
                                     <?= htmlspecialchars($item['ProductName']) ?> 
-                                    (<?= htmlspecialchars($item['Color']) ?>, <?= htmlspecialchars($item['Size']) ?>) 
+                                    (<?= htmlspecialchars($item['Size']) ?>) 
                                     x <?= htmlspecialchars($item['Quantity']) ?>
                                 </p>
                                 <span class="cart-price">RM <?= number_format($item['Total'], 2) ?></span>
@@ -158,8 +164,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label for="email"><b>Email</b></label>
                         <input type="email" id="email" name="email" value="<?= htmlspecialchars($custEmail) ?>" placeholder="Enter email" required>
 
-                        <label for="address"><b>Address</b></label>
-                        <input type="text" id="address" name="address" value="<?= htmlspecialchars($custAddress) ?>" placeholder="Enter address" required>
+                        <label for="address"><b>Street Address</b></label>
+                        <input type="text" id="address" name="address" value="<?= htmlspecialchars($custStreetAddress) ?>" placeholder="Enter address" required>
+
+                        <label for="city"><b>City</b></label>
+                        <input type="text" id="city" name="city" value="<?= htmlspecialchars($custCity) ?>" placeholder="Enter city" required>
+
+                        <label for="postcode"><b>Postcode</b></label>
+                        <input type="text" id="postcode" name="postcode" value="<?= htmlspecialchars($custPostcode) ?>" placeholder="Enter postcode" required>
+
+                        <label for="state"><b>State</b></label>
+                        <input type="text" id="state" name="state" value="<?= htmlspecialchars($custState) ?>" placeholder="Enter state" required>
                     </div>
 
                     <div class="col">
