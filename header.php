@@ -161,7 +161,6 @@ if ($isLoggedIn) {
                 <li><a href="about_us.php">ABOUT</a></li>
                 <li><a href="product.php">PRODUCTS</a></li>
                 <li><a href="contact.php">CONTACT</a></li>
-                <li><a href="customer_shipping.php">TRACK</a></li>
                 <?php if ($isLoggedIn): ?>
                     <li><a href="feedback.php">FEEDBACK</a></li>
                 <?php endif; ?>
