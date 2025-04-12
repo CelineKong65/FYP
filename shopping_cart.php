@@ -6,7 +6,7 @@ include 'header.php';
 $custID = $_SESSION["user_id"] ?? null;
 
 if ($custID) {
-    $query = "SELECT cart.*, product.ProductName, product.ProductPicture 
+    $query = "SELECT cart.*, product.ProductName, product.ProductPicture, product.ProductID, product.ProductPrice
               FROM cart 
               JOIN product ON cart.ProductID = product.ProductID
               WHERE cart.CustID = :custID";
@@ -15,18 +15,30 @@ if ($custID) {
     $stmt->bindParam(':custID', $custID, PDO::PARAM_INT); 
     $stmt->execute();
     $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Pre-fetch stock information for all products in cart
+    $productStocks = [];
+    foreach ($result as $row) {
+        if (!isset($productStocks[$row['ProductID']])) {
+            $stmt = $conn->prepare("SELECT Size, Stock FROM product_size WHERE ProductID = :productID");
+            $stmt->bindParam(':productID', $row['ProductID'], PDO::PARAM_INT);
+            $stmt->execute();
+            $productStocks[$row['ProductID']] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+    }
 } else {
     $result = [];
+    $productStocks = [];
 }
 
 $totalPrice = 0;
 foreach ($result as $row) {
+    $currentProductStocks = $productStocks[$row['ProductID']] ?? [];
     $totalPrice += $row['ProductPrice'] * $row['Quantity'];
 }
-$grandTotal = $totalPrice + 5.00;
+$grandTotal = $totalPrice; // Delivery fee removed
 
 $_SESSION['subtotal'] = $totalPrice; 
-$_SESSION['delivery_fee'] = 5.00; 
 
 $_SESSION['cart_items'] = [];
 foreach ($result as $row) {
@@ -62,6 +74,20 @@ $cartCount = $row['total'] ?? 0;
             letter-spacing: 0.5px;
             word-spacing: 2px; 
         }
+        select[name="Size"] option:disabled {
+            color: #ccc;
+        }
+        .size-option {
+            position: relative;
+        }
+        .stock-info {
+            font-size: 12px;
+            color: #666;
+            margin-left: 5px;
+        }
+        .out-of-stock {
+            color: #d9534f;
+        }
     </style>
 </head>
 <body>
@@ -82,7 +108,13 @@ $cartCount = $row['total'] ?? 0;
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($result as $row): ?>
+                    <?php foreach ($result as $row): 
+                        $currentProductStocks = $productStocks[$row['ProductID']] ?? [];
+                        $sizeStockMap = [];
+                        foreach ($currentProductStocks as $stock) {
+                            $sizeStockMap[$stock['Size'] ?? 'Standard Only'] = $stock['Stock'];
+                        }
+                    ?>
                     <tr>
                         <td><img src="image/<?= htmlspecialchars($row['ProductPicture']) ?>" alt="<?= htmlspecialchars($row['ProductName']) ?>"></td>
                         <td><?= htmlspecialchars($row['ProductName']) ?></td>
@@ -93,10 +125,25 @@ $cartCount = $row['total'] ?? 0;
                                 <form action="update_cart.php" method="POST">
                                     <input type="hidden" name="CartID" value="<?= $row['CartID'] ?>">
                                     <select name="Size" onchange="this.form.submit()">
-                                        <option value="S" <?= $row['Size'] == 'S' ? 'selected' : '' ?>>S</option>
-                                        <option value="M" <?= $row['Size'] == 'M' ? 'selected' : '' ?>>M</option>
-                                        <option value="L" <?= $row['Size'] == 'L' ? 'selected' : '' ?>>L</option>
-                                        <option value="XL" <?= $row['Size'] == 'XL' ? 'selected' : '' ?>>XL</option>
+                                        <?php 
+                                        $sizes = ['S', 'M', 'L', 'XL'];
+                                        foreach ($sizes as $size): 
+                                            $stock = $sizeStockMap[$size] ?? 0;
+                                            $disabled = $stock <= 0;
+                                            $selected = $row['Size'] == $size;
+                                        ?>
+                                            <option value="<?= $size ?>" 
+                                                <?= $selected ? 'selected' : '' ?>
+                                                <?= $disabled ? 'disabled' : '' ?>
+                                                data-stock="<?= $stock ?>">
+                                                <?= $size ?>
+                                                <?php if ($disabled): ?>
+                                                    (Out of Stock)
+                                                <?php else: ?>
+                                                    (<?= $stock ?> available)
+                                                <?php endif; ?>
+                                            </option>
+                                        <?php endforeach; ?>
                                     </select>
                                 </form>
                             <?php endif; ?>
@@ -105,7 +152,12 @@ $cartCount = $row['total'] ?? 0;
                         <td>
                             <form action="update_cart.php" method="POST">
                                 <input type="hidden" name="CartID" value="<?= $row['CartID'] ?>">
-                                <input type="number" name="Quantity" value="<?= $row['Quantity'] ?>" min="1" onchange="this.form.submit()">
+                                <?php 
+                                $currentStock = $sizeStockMap[$row['Size']] ?? 0;
+                                $maxQuantity = max(1, min($currentStock, 99));
+                                ?>
+                                <input type="number" name="Quantity" value="<?= min($row['Quantity'], $maxQuantity) ?>" 
+                                       min="1" max="<?= $maxQuantity ?>" onchange="this.form.submit()">
                             </form>
                         </td>
                         <td class="total">RM <?= number_format($row['ProductPrice'] * $row['Quantity'], 2) ?></td>
@@ -122,8 +174,6 @@ $cartCount = $row['total'] ?? 0;
 
             <div class="cart-summary">
                 <div class="summary-details">
-                    <p>SUBTOTAL<span class="total-price">RM <?= number_format($totalPrice, 2) ?></span></p>
-                    <p>DELIVERY FEES<span class="delivery-fee">RM <?= number_format(5.00, 2) ?></span></p> 
                     <p><strong>TOTAL</strong> <span class="grand-total">RM <?= number_format($grandTotal, 2) ?></span></p>
                 </div>
                 <button class="checkout" onclick="window.location.href='payment.php'">PROCEED TO CHECK OUT</button>
@@ -132,5 +182,4 @@ $cartCount = $row['total'] ?? 0;
     </div>
 </body>
 </html>
-
 <?php include 'footer.php'; ?>

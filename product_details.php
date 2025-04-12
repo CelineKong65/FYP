@@ -20,10 +20,16 @@ if (!$product) {
     die("Product not found.");
 }
 
-// Fetch available sizes
-$stmt = $conn->prepare("SELECT DISTINCT Size FROM product_size WHERE ProductID = :productID AND Stock > 0");
+// Fetch available sizes with stock information
+$stmt = $conn->prepare("SELECT Size, Stock FROM product_size WHERE ProductID = :productID ORDER BY Size");
 $stmt->execute(['productID' => $productID]);
-$sizes = $stmt->fetchAll();
+$sizeStocks = $stmt->fetchAll();
+
+// Check if product has any stock at all
+$totalStock = 0;
+foreach ($sizeStocks as $sizeStock) {
+    $totalStock += $sizeStock['Stock'];
+}
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
     // Ensure the user is logged in before adding to cart
@@ -32,7 +38,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
         exit();
     }
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -100,18 +105,47 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
         }
         .sizes {
             margin: 15px 0;
+            margin-top: 30px; 
         }
         .size {
-            padding: 5px 10px;
+            padding: 5px 20px;
             margin-right: 5px;
             cursor: pointer;
             background: #f0f0f0;
-            border: 1px solid #ddd;
+            border: 1px solid #000;
+            position: relative;
+            transition: 0.3s;
         }
         .size.active {
             background: #333;
             color: white;
             border-color: #333;
+        }
+        
+        .size.out-of-stock {
+            color: #999;
+            background: #f5f5f5;
+            border-color: #ddd;
+            cursor: not-allowed;
+        }
+        .size .stock-info {
+            position: absolute;
+            bottom: -20px;
+            left: 0;
+            font-size: 12px;
+            color: #666;
+            width: 100%;
+            text-align: center;
+        }
+        .out-of-stock-message {
+            color: #d9534f;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .in-stock-message {
+            color: #5cb85c;
+            font-weight: bold;
+            margin: 15px 0;
         }
     </style>
 </head>
@@ -141,22 +175,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
                 <p class="price">RM <?= number_format($product['ProductPrice'], 2) ?></p>
                 <p><?= nl2br(htmlspecialchars($product['ProductDesc'])) ?></p>
                 
+                <?php if ($totalStock > 0): ?>
+                    <p class="in-stock-message">In Stock</p>
+                <?php else: ?>
+                    <p class="out-of-stock-message">Out of Stock</p>
+                <?php endif; ?>
+                
                 <div class="quantity">
                     <button type="button" onclick="decreaseQty()">-</button>
-                    <input type="text" id="qty" name="qty" value="1">
-                    <button type="button" onclick="increaseQty()">+</button>
+                    <input type="text" id="qty" name="qty" value="1" min="1" <?= $totalStock == 0 ? 'disabled' : '' ?>>
+                    <button type="button" onclick="increaseQty()" <?= $totalStock == 0 ? 'disabled' : '' ?>>+</button>
                 </div>
 
-                <!-- Display Sizes Only If Available -->
-                <?php if (!empty($sizes)): ?>
+                <!-- Display Sizes with Stock Information -->
+                <?php if (!empty($sizeStocks)): ?>
                     <div class="sizes">
                         <p>Available Sizes:</p>
-                        <?php foreach ($sizes as $size): ?>
-                            <?php if ($size['Size'] === null): ?>
-                                <button class="size">Standard Only</button>
-                            <?php else: ?>
-                                <button class="size"><?= htmlspecialchars($size['Size']) ?></button>
-                            <?php endif; ?>
+                        <?php foreach ($sizeStocks as $sizeStock): ?>
+                            <?php 
+                            $size = $sizeStock['Size'] === null ? 'Standard Only' : $sizeStock['Size'];
+                            $stock = $sizeStock['Stock'];
+                            $isOutOfStock = $stock <= 0;
+                            ?>
+                            <button 
+                                class="size <?= $isOutOfStock ? 'out-of-stock' : '' ?>" 
+                                data-stock="<?= $stock ?>"
+                                <?= $isOutOfStock ? 'disabled' : '' ?>
+                            >
+                                <?= htmlspecialchars($size) ?>
+                                <span class="stock-info"><?= $stock ?> available</span>
+                            </button>
                         <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
@@ -172,7 +220,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
                 <input type="hidden" id="isLoggedIn" value="<?= isset($_SESSION['user_id']) ? 'true' : 'false' ?>">
 
                 <div class="button">
-                    <button type="submit" onclick="addToCart()">Add to Cart</button>
+                    <button type="button" onclick="addToCart()" id="addToCartBtn" <?= $totalStock == 0 ? 'disabled' : '' ?>>
+                        <?= $totalStock == 0 ? 'Out of Stock' : 'Add to Cart' ?>
+                    </button>
                     <button type="button" class="wishlist-btn" onclick="addToWishlist(<?= $productID ?>)">
                         <img src="image/circle-heart.png" alt="Wishlist" class="heart-button">
                     </button>
@@ -194,15 +244,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
         function increaseQty() {
             let qtyInput = document.getElementById('qty');
             let hiddenQty = document.getElementById('hiddenQty'); 
-            qtyInput.value++;
-            hiddenQty.value = qtyInput.value; 
+            let selectedSize = document.querySelector('.size.active');
+            let maxStock = selectedSize ? parseInt(selectedSize.dataset.stock) : 999;
+            
+            if (parseInt(qtyInput.value) < maxStock) {
+                qtyInput.value++;
+                hiddenQty.value = qtyInput.value; 
+            } else {
+                alert(`Maximum available stock for this size is ${maxStock}`);
+            }
         }
 
-        document.querySelectorAll('.size').forEach(button => {
+        document.querySelectorAll('.size:not(.out-of-stock)').forEach(button => {
             button.addEventListener('click', function () {
                 document.querySelectorAll('.size').forEach(btn => btn.classList.remove('active'));
                 this.classList.add('active');
-                document.getElementById('selectedSize').value = this.textContent.trim();
+                document.getElementById('selectedSize').value = this.textContent.trim().split('\n')[0];
+                
+                // Update max quantity based on selected size's stock
+                let maxStock = parseInt(this.dataset.stock);
+                let qtyInput = document.getElementById('qty');
+                if (parseInt(qtyInput.value) > maxStock) {
+                    qtyInput.value = maxStock;
+                    document.getElementById('hiddenQty').value = maxStock;
+                }
             });
         });
         
@@ -225,16 +290,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
 
             let productID = <?= $productID ?>;
             let qty = document.getElementById("qty").value;
-            let size = document.getElementById("selectedSize").value;
-
-            if (size === "") {
+            let sizeElement = document.querySelector('.size.active');
+            
+            if (!sizeElement) {
                 alert("Please select a size before adding to cart.");
+                return;
+            }
+
+            let size = sizeElement.textContent.trim().split('\n')[0];
+            let stock = parseInt(sizeElement.dataset.stock);
+
+            if (stock <= 0) {
+                alert("This size is out of stock.");
+                return;
+            }
+
+            if (parseInt(qty) > stock) {
+                alert(`Only ${stock} items available for this size.`);
                 return;
             }
 
             let formData = new FormData();
             formData.append("productID", productID);
-            formData.append("qty", qty);
+            formData.append("qty", qty); // Make sure this line exists
             formData.append("size", size);
 
             fetch("add_to_cart.php", {
@@ -247,7 +325,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
                     document.getElementById("cartCount").textContent = data.cartCount;
                     alert("Item added to cart!");
                 } else {
-                    alert("Failed to add item to cart.");
+                    alert("Failed to add item to cart: " + (data.message || "Unknown error"));
                 }
             })
             .catch(error => console.error("Error:", error));
