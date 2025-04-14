@@ -58,19 +58,12 @@ h2 {
 form.search {
     display: flex;
     justify-content: flex-end;
-    gap:10px
+    gap:10px;
+    margin-bottom: 30px;
 }
 
-.search input{
-    width: 200px;
-}
-
-form.editForm,.addForm{
+form.editForm{
     margin-bottom: 20px;
-}
-
-.editForm input,.addForm input{
-    margin-right: 50px;
 }
 
 .search label{
@@ -81,17 +74,11 @@ form.editForm,.addForm{
 
 .search input{
     padding: 8px;
+    width: 200px;
     font-size: 12px;
     margin-bottom: 10px;
     border: 1px solid #0A2F4F;
     border-radius: 4px;
-}
-
-
-.add-content select, .edit-content select{
-    border: 1px solid #93c5fd; 
-    width: 270px;   
-    margin-right: 6px;
 }
 
 button {
@@ -123,32 +110,9 @@ button[name="edit_customer"]:hover{
     background-color: #e0a800d1;
 }
 
-button[name="delete_customer"]{
-    background-color: red;
-}
-
-button[name="delete_customer"]:hover{
-    background-color: #c82333;
-}
-
-.add_div,.upd_div{
+.upd_div{
     display: flex;
     justify-content: flex-end;
-    margin-top: 20px;
-}
-
-.add{
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 12px;
-}
-
-.add_btn{
-    background-color: #28a745;
-}
-
-.add_btn:hover {
-    background-color: #218838;
 }
 
 table {
@@ -187,6 +151,31 @@ img {
     display: flex;
 }
 
+.status-inactive{
+    color: red;
+}
+
+.status-active{
+    color: #05ac2c;
+}
+
+.btn-inactive{
+    background-color:red;
+}
+
+
+.btn-inactive:hover{
+    background-color: #c82333;
+}
+
+.btn-active{
+    background-color: #05ac2c;
+}
+
+.btn-active:hover {
+    background-color: #218838;
+}
+
 .close {
     float: right;
     font-size: 24px;
@@ -196,7 +185,7 @@ img {
     color: red;
 }
 
-#editModal, #addModal {
+#editModal{
     display: none;
     position: fixed;
     z-index: 1;
@@ -209,23 +198,37 @@ img {
     align-items: center;
 }
 
-.edit-content,.add-content {
+.edit-content {
     background-color: white;
     padding: 20px;
     border-radius: 10px;
-    width: 350px;
+    width: 850px;
     margin: auto;
-    margin-top: 150px;
+    margin-top: 200px;
 }
 
-#editModal h3, #addModal h3 {
+.edit-form{
+    display: flex;
+    gap: 25px;
+    flex-wrap: wrap;
+}
+
+.left, .right {
+    flex: 1;
+    min-width: 250px;
+    display: flex;
+    flex-direction: column;
+}
+
+#editModal h3{
     margin-top: 0;
+    margin-bottom: 30px;
     color: #1e3a8a;
     font-size: 25px;
     text-align: center;
 }
 
-#editModal label, #addModal label {
+#editModal label{
     display: block;
     margin-bottom: 5px;
     color: #1e3a8a;
@@ -233,7 +236,7 @@ img {
     font-size: 15px;
 }
 
-#editModal input, #editModal textarea, #addModal input, #addModal textarea {
+#editModal input, #editModal textarea, #editModal select{
     width: 95%;
     padding: 8px;
     margin-bottom: 13px;
@@ -242,10 +245,19 @@ img {
     font-size: 13px;
 }
 
-#editModal button[type="submit"], #addModal button[type="submit"] {
+#editModal select{
+    width: 100%;
+}
+
+#editModal button[type="submit"]{
     background-color: #1e3a8a;
 }
 
-#editModal button[type="submit"]:hover, #addModal button[type="submit"]:hover {
+#editModal button[type="submit"]:hover{
     background-color: #1d4ed8;
+}
+
+#editModal p{
+    margin: 0;
+    color:gray;
 }

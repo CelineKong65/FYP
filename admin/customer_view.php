@@ -28,12 +28,15 @@ if (isset($_POST['update_customer'])) {
     $name = trim($_POST['name']);
     $email = trim($_POST['email']);
     $phone = trim($_POST['phone']);
-    $address = trim($_POST['address']);
+    $street = trim($_POST['street']);
+    $postcode = trim($_POST['postcode']);
+    $city = trim($_POST['city']);
+    $state = trim($_POST['state']); 
+    $status = trim($_POST['status']);
     $password = trim($_POST['password']);
     $profile_picture = isset($_FILES['profile_picture']['name']) ? $_FILES['profile_picture']['name'] : null;
     $profile_picture_tmp = isset($_FILES['profile_picture']['tmp_name']) ? $_FILES['profile_picture']['tmp_name'] : null;
 
-    // Handle profile picture upload
     if (!empty($profile_picture)) {
         $image_extension = strtolower(pathinfo($profile_picture, PATHINFO_EXTENSION));
         $allowed_types = ['jpg', 'jpeg', 'png'];
@@ -83,111 +86,95 @@ if (isset($_POST['update_customer'])) {
         echo "<script>alert('Email already exists. Please use a different email.'); window.location.href='customer_view.php';</script>";
         exit();
     }
-    $stmt->close();    
-
-    if (!empty($password)) {
-        $update_query = "UPDATE customer SET CustName = ?, CustEmail = ?, CustPassword = ?, CustPhoneNum = ?, CustAddress = ?, CustProfilePicture = ? WHERE CustID = ?";
-        $stmt = $conn->prepare($update_query);
-        $stmt->bind_param("ssssssi", $name, $email, $password, $phone, $address, $image_name, $cust_id);
-    } else {
-        $update_query = "UPDATE customer SET CustName = ?, CustEmail = ?, CustPhoneNum = ?, CustAddress = ?, CustProfilePicture = ? WHERE CustID = ?";
-        $stmt = $conn->prepare($update_query);
-        $stmt->bind_param("sssssi", $name, $email, $phone, $address, $image_name, $cust_id);
-    }
-
-    if ($stmt->execute()) {
-        echo "<script>alert('Customer updated successfully!'); window.location.href='customer_view.php';</script>";
-    } else {
-        echo "<script>alert('Failed to update customer.'); window.location.href='customer_view.php';</script>";
-    }
     $stmt->close();
-    exit();
-}
 
-if (isset($_POST['delete_customer'])) {
-    $cust_id = intval($_POST['cust_id']);
-
-    $delete_query = "DELETE FROM customer WHERE CustID = ?";
-    $stmt = $conn->prepare($delete_query);
-    $stmt->bind_param("i", $cust_id);
-
-    if ($stmt->execute()) {
-        echo "<script>alert('Customer deleted successfully!'); window.location.href='customer_view.php';</script>";
-    } else {
-        echo "<script>alert('Failed to delete customer.'); window.location.href='customer_view.php';</script>";
-    }
-    exit();
-}
-
-if (isset($_POST['add_customer'])) {
-    $name = trim($_POST['name']);
-    $email = strtolower(trim($_POST['email'])); // Normalize the email
-    $password = trim($_POST['password']);
-    $phone = trim($_POST['phone']);
-    $address = trim($_POST['address']);
-    $profile_picture = isset($_FILES['profile_picture']['name']) ? $_FILES['profile_picture']['name'] : null;
-    $profile_picture_tmp = isset($_FILES['profile_picture']['tmp_name']) ? $_FILES['profile_picture']['tmp_name'] : null;
-
-    $check_email_query = "SELECT CustID FROM customer WHERE CustEmail = ?";
-    $stmt = $conn->prepare($check_email_query);
-    $stmt->bind_param("s", $email);
+    $check_name_query = "SELECT CustID FROM customer WHERE CustName = ? AND CustID != ?";
+    $stmt = $conn->prepare($check_name_query);
+    $stmt->bind_param("si", $name, $cust_id);
     $stmt->execute();
     $stmt->store_result();
 
     if ($stmt->num_rows > 0) {
-        echo "<script>alert('Email already exists. Please use a different email.'); window.location.href='customer_view.php';</script>";
+        echo "<script>alert('Name already exists. Please use a different name.'); window.location.href='customer_view.php';</script>";
         exit();
     }
     $stmt->close();
 
-    // Handle profile picture upload
-    if (!empty($profile_picture)) {
-        $image_extension = strtolower(pathinfo($profile_picture, PATHINFO_EXTENSION));
-        $allowed_types = ['jpg', 'jpeg', 'png'];
-        if (!in_array($image_extension, $allowed_types)) {
-            echo "<script>alert('Invalid file format. Only JPG, JPEG, and PNG allowed.'); window.location.href='customer_view.php';</script>";
-            exit();
-        }
+    $check_phone_query = "SELECT CustID FROM customer WHERE CustPhoneNum = ? AND CustID != ?";
+    $stmt = $conn->prepare($check_phone_query);
+    $stmt->bind_param("si", $phone, $cust_id);
+    $stmt->execute();
+    $stmt->store_result();
+    if ($stmt->num_rows > 0) {
+        echo "<script>alert('Phone number already exists. Please use a different phone number.'); window.location.href='customer_view.php';</script>";
+        exit();
+    }
+    $stmt->close();
 
-        // Insert the customer first to get the CustID
-        $insert_query = "INSERT INTO customer (CustName, CustEmail, CustPassword, CustPhoneNum, CustAddress) VALUES (?, ?, ?, ?, ?)";
-        $stmt = $conn->prepare($insert_query);
-        $stmt->bind_param("sssss", $name, $email, $password, $phone, $address);
+    $original_query = "SELECT * FROM customer WHERE CustID = ?";
+    $stmt = $conn->prepare($original_query);
+    $stmt->bind_param("i", $cust_id);
+    $stmt->execute();
+    $original_result = $stmt->get_result();
+    $original_data = $original_result->fetch_assoc();
+    $stmt->close();
 
-        if ($stmt->execute()) {
-            $cust_id = $stmt->insert_id;
-            $image_name = $cust_id . "." . $image_extension;
-            $target_dir = "../image/user/";
-            $target_file = $target_dir . $image_name;
+    $has_changes = (
+        $name !== $original_data['CustName'] ||
+        $email !== $original_data['CustEmail'] ||
+        $phone !== $original_data['CustPhoneNum'] ||
+        $street !== $original_data['StreetAddress'] ||
+        $postcode !== $original_data['Postcode'] ||
+        $city !== $original_data['City'] ||
+        $state !== $original_data['State'] ||
+        $status !== $original_data['CustomerStatus'] ||
+        (!empty($password)) ||
+        ($image_name !== $original_data['CustProfilePicture'])
+    );
 
-            if (move_uploaded_file($profile_picture_tmp, $target_file)) {
-                // Update the customer record with the profile picture filename
-                $update_picture_query = "UPDATE customer SET CustProfilePicture = ? WHERE CustID = ?";
-                $stmt = $conn->prepare($update_picture_query);
-                $stmt->bind_param("si", $image_name, $cust_id);
-                $stmt->execute();
-            } else {
-                echo "<script>alert('Failed to upload image.'); window.location.href='customer_view.php';</script>";
-                exit();
-            }
-        } else {
-            echo "<script>alert('Failed to add customer.'); window.location.href='customer_view.php';</script>";
-            exit();
-        }
+    if (!$has_changes) {
+        echo "<script>alert('No changes detected.'); window.location.href='customer_view.php';</script>";
+        exit();
     } else {
-        $image_name = "user.png"; // Default profile picture
-        $insert_query = "INSERT INTO customer (CustName, CustEmail, CustPassword, CustPhoneNum, CustAddress, CustProfilePicture) VALUES (?, ?, ?, ?, ?, ?)";
-        $stmt = $conn->prepare($insert_query);
-        $stmt->bind_param("ssssss", $name, $email, $password, $phone, $address, $image_name);
+        if (!empty($password)) {
+            $update_query = "UPDATE customer SET CustName = ?, CustEmail = ?, CustPassword = ?, CustPhoneNum = ?, StreetAddress = ?, Postcode = ?, City = ?, State = ?, CustomerStatus  = ?, CustProfilePicture = ? WHERE CustID = ?";
+            $stmt = $conn->prepare($update_query);
+            $stmt->bind_param("ssssssssssi", $name, $email, $password, $phone, $street, $postcode, $city, $state, $status, $image_name, $cust_id);        
+        } else {
+            $update_query = "UPDATE customer SET CustName = ?, CustEmail = ?, CustPhoneNum = ?, StreetAddress = ?, Postcode = ?, City = ?, State = ?, CustomerStatus  = ?, CustProfilePicture = ? WHERE CustID = ?";
+            $stmt = $conn->prepare($update_query);
+            $stmt->bind_param("sssssssssi", $name, $email, $phone, $street, $postcode, $city, $state, $status, $image_name, $cust_id);        
+        }        
+    
+        if ($stmt->execute()) {
+            echo "<script>alert('Customer updated successfully!'); window.location.href='customer_view.php';</script>";
+        } else {
+            echo "<script>alert('Failed to update customer.'); window.location.href='customer_view.php';</script>";
+        }
+        $stmt->close();
+        exit();
     }
     
-    if ($stmt->execute()) {
-        echo "<script>alert('Customer added successfully!'); window.location.href='customer_view.php';</script>";
-    } else {
-        echo "<script>alert('Failed to add customer.'); window.location.href='customer_view.php';</script>";
-    }
-    exit();
 }
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
+    $custID = (int)$_POST['cust_id'];
+    $currentStatus = strtolower($_POST['current_status']);
+    
+    $newStatus = ($currentStatus == 'active') ? 'inactive' : 'active';
+    
+    $stmt = $conn->prepare("UPDATE customer SET CustomerStatus = ? WHERE CustID = ?");
+    $stmt->bind_param("si", $newStatus, $custID);
+    
+    if ($stmt->execute()) {
+        header("Location: customer_view.php");
+        exit();
+    } else {
+        $error = "Status update failed: " . $conn->error;
+    }
+    $stmt->close();
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -219,10 +206,6 @@ if (isset($_POST['add_customer'])) {
                 <input type="text" name="search" placeholder="Search by name or email" value="<?php echo htmlspecialchars($search_query); ?>">
                 <button type="submit" class="search">Search</button>
             </form>
-                    
-            <div class="add">
-                <button onclick="openAddModal()" class="add_btn">Add Customer</button>
-            </div>
 
             <table>
                 <thead>
@@ -234,6 +217,7 @@ if (isset($_POST['add_customer'])) {
                         <th>Phone</th>
                         <th>Address</th>
                         <th>Password</th> 
+                        <th>Status</th> 
                         <th></th>
                     </tr>
                 </thead>
@@ -262,13 +246,36 @@ if (isset($_POST['add_customer'])) {
                                 <td><?php echo $customer['CustName']; ?></td>
                                 <td><?php echo $customer['CustEmail']; ?></td>
                                 <td><?php echo $customer['CustPhoneNum']; ?></td>
-                                <td><?php echo $customer['CustAddress']; ?></td>
-                                <td><?php echo $customer['CustPassword']; ?></td>
                                 <td>
-                                <button name="edit_customer" onclick='editCustomer(<?php echo json_encode($customer["CustID"]); ?>, <?php echo json_encode($customer["CustName"]); ?>, <?php echo json_encode($customer["CustEmail"]); ?>, <?php echo json_encode($customer["CustPhoneNum"]); ?>, <?php echo json_encode($customer["CustAddress"]); ?>, <?php echo json_encode($customer["CustProfilePicture"]); ?>)'>Edit</button>
-                                    <form method="POST" action="" style="display:inline;">
+                                    <?php
+                                    $full_address = trim($customer['StreetAddress'] . ', ' . $customer['Postcode'] . ' ' . $customer['City'] . ', ' . $customer['State']);
+                                    echo htmlspecialchars($full_address);
+                                    ?>
+                                </td>
+                                <td><?php echo $customer['CustPassword']; ?></td>
+                                <td class="<?php echo ($customer['CustomerStatus'] === 'active') ? 'status-active' : 'status-inactive'; ?>">
+                                    <?php echo $customer['CustomerStatus']; ?>
+                                </td>
+                                <td>
+                                    <button name="edit_customer" onclick='editCustomer(
+                                        <?php echo json_encode($customer["CustID"]); ?>,
+                                        <?php echo json_encode($customer["CustName"]); ?>,
+                                        <?php echo json_encode($customer["CustEmail"]); ?>,
+                                        <?php echo json_encode($customer["CustPhoneNum"]); ?>,
+                                        <?php echo json_encode($customer["StreetAddress"]); ?>,
+                                        <?php echo json_encode($customer["Postcode"]); ?>,
+                                        <?php echo json_encode($customer["City"]); ?>,
+                                        <?php echo json_encode($customer["State"]); ?>,
+                                        <?php echo json_encode($customer["CustProfilePicture"]); ?>,
+                                        <?php echo json_encode($customer["CustomerStatus"]); ?>)'>Edit
+                                    </button>
+                                    <form method="post" action="">
+                                        <input type="hidden" name="toggle_status" value="1">
                                         <input type="hidden" name="cust_id" value="<?php echo $customer['CustID']; ?>">
-                                        <button type="submit" name="delete_customer" onclick="return confirm('Are you sure you want to delete this customer?');">Delete</button>
+                                        <input type="hidden" name="current_status" value="<?php echo $customer['CustomerStatus']; ?>">
+                                        <button type="submit" class="btn-status <?php echo ($customer['CustomerStatus'] == 'active') ? 'btn-inactive' : 'btn-active'; ?>">
+                                            <?php echo ($customer['CustomerStatus'] == 'active') ? 'Deactivate' : 'Activate'; ?>
+                                        </button>
                                     </form>
                                 </td>
                             </tr>
@@ -289,19 +296,38 @@ if (isset($_POST['add_customer'])) {
             <h3>Edit Customer</h3>
             <form method="POST" action="" enctype="multipart/form-data" class="edit">
                 <input type="hidden" name="cust_id" id="cust_id">
-                <label>Profile Picture:</label>
-                <input type="file" name="profile_picture" id="profile_picture">
-                <label>Name:</label>
-                <input type="text" name="name" id="name" required>
-                <label>Email:</label>
-                <input type="email" name="email" id="email" required>
-                <label>Phone:</label>
-                <input type="text" name="phone" id="phone" required>
-                <label>Address:</label>
-                <textarea name="address" id="address" required></textarea>             
-                <label>Password:</label>
-                <input type="password" name="password">
-                <p style="color:gray;">(Leave empty to keep the current password)</p>
+
+                <div class="edit-form">
+                    <div class="left">
+                        <label>Profile Picture:</label>
+                        <input class="img" type="file" name="profile_picture" id="profile_picture">
+                        <label>Name:</label>
+                        <input type="text" name="name" id="name" required>
+                        <label>Email:</label>
+                        <input type="email" name="email" id="email" required>
+                        <label>Phone:</label>
+                        <input type="text" name="phone" id="phone" required>
+                        <label>Password:</label>
+                        <input type="password" name="password">
+                        <p>(Leave empty to keep the current password)</p>
+                    </div>
+                    <div class="right">
+                        <label>Street Address:</label>
+                        <input type="text" name="street" id="street" required>
+                        <label>Postcode:</label>
+                        <input type="text" name="postcode" id="postcode" required>
+                        <label>City:</label>
+                        <input type="text" name="city" id="city" required>
+                        <label>State:</label>
+                        <input type="text" name="state" id="state" required>
+                        <label>Status:</label>
+                        <select name="status" id="status" required>
+                            <option value="active" <?php echo isset($customer['CustomerStatus']) && $customer['CustomerStatus'] == 'active' ? 'selected' : ''; ?>>Active</option>
+                            <option value="inactive" <?php echo isset($customer['CustomerStatus']) && $customer['CustomerStatus'] == 'inactive' ? 'selected' : ''; ?>>Inactive</option>
+                        </select>
+                    </div>
+                </div>            
+
                 <div class="upd_div">
                     <button type="submit" name="update_customer">Update</button>
                 </div>
@@ -309,50 +335,25 @@ if (isset($_POST['add_customer'])) {
         </div>
     </div>
 
-    <div id="addModal">
-        <div class="add-content">
-            <span class="close" onclick="closeAddModal()">&times;</span>
-            <h3>Add Customer</h3>
-            <form method="POST" action="" enctype="multipart/form-data">
-                <label>Profile Picture:</label>
-                <input type="file" name="profile_picture">
-                <label>Name:</label>
-                <input type="text" name="name" required>
-                <label>Email:</label>
-                <input type="email" name="email" required>
-                <label>Phone:</label>
-                <input type="text" name="phone" required>
-                <label>Address:</label>
-                <textarea name="address" required></textarea>
-                <label>Password:</label>
-                <input type="password" name="password" required>
-                <div class="add_div">
-                    <button type="submit" name="add_customer">Add</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <script>
-        function editCustomer(id, name, email, phone, address, profile_picture) {
+        function editCustomer(id, name, email, phone, street, postcode, city, state, profile_picture, status) {
             document.getElementById('cust_id').value = id;
             document.getElementById('name').value = name;
             document.getElementById('email').value = email;
             document.getElementById('phone').value = phone;
-            document.getElementById('address').value = address;
+            document.getElementById('street').value = street;
+            document.getElementById('postcode').value = postcode;
+            document.getElementById('city').value = city;
+            document.getElementById('state').value = state;
+            
+            var statusDropdown = document.getElementById('status');
+            statusDropdown.value = status.toLowerCase();
+            
             document.getElementById('editModal').style.display = 'block';
         }
 
         function closeModal() {
             document.getElementById('editModal').style.display = 'none';
-        }
-
-        function openAddModal() {
-            document.getElementById('addModal').style.display = 'block';
-        }
-
-        function closeAddModal() {
-            document.getElementById('addModal').style.display = 'none';
         }
     </script>
 </body>
