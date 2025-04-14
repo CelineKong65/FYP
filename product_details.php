@@ -56,17 +56,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
             gap: 20px;
             justify-content: center;
             align-items: stretch;
-            margin: auto; /* Centers the container */
+            margin: auto; 
             position: absolute;
             top: 55%;
             left: 50%;
-            transform: translate(-50%, -50%); /* Centers the div perfectly */
+            transform: translate(-50%, -50%); 
         }
         
         .button {
             display: flex;
             align-items: center;
-            gap: 10px; /* Adjust the spacing between buttons */
+            gap: 10px; 
         }
 
         .wishlist-btn {
@@ -78,7 +78,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
             background: #0066cc;
             color: white;
             font-size: 16px;
-            margin-top: 10px;
+            margin-top: 30px;
             border-radius: 5px;
             transition: background 0.3s ease;
         }
@@ -130,7 +130,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
         }
         .size .stock-info {
             position: absolute;
-            bottom: -20px;
+            bottom: -30px;
             left: 0;
             font-size: 12px;
             color: #666;
@@ -147,6 +147,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
             font-weight: bold;
             margin: 15px 0;
         }
+        .add-to-cart-btn {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 30px;
+            border-radius: 5px;
+            transition: background 0.3s ease;
+        }
+
+        .add-to-cart-btn:hover {
+            background: darkblue;
+        }
+
     </style>
 </head>
 <body>
@@ -190,7 +206,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
                 <!-- Display Sizes with Stock Information -->
                 <?php if (!empty($sizeStocks)): ?>
                     <div class="sizes">
-                        <p>Available Sizes:</p>
                         <?php foreach ($sizeStocks as $sizeStock): ?>
                             <?php 
                             $size = $sizeStock['Size'] === null ? 'Standard Only' : $sizeStock['Size'];
@@ -199,11 +214,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
                             ?>
                             <button 
                                 class="size <?= $isOutOfStock ? 'out-of-stock' : '' ?>" 
+                                data-size="<?= htmlspecialchars($size) ?>"
                                 data-stock="<?= $stock ?>"
                                 <?= $isOutOfStock ? 'disabled' : '' ?>
                             >
                                 <?= htmlspecialchars($size) ?>
-                                <span class="stock-info"><?= $stock ?> available</span>
+                                <?php if ($size !== 'Standard Only'): ?>
+                                    <span class="stock-info"><?= $stock ?> available</span>
+                                <?php endif; ?>
                             </button>
                         <?php endforeach; ?>
                     </div>
@@ -220,7 +238,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
                 <input type="hidden" id="isLoggedIn" value="<?= isset($_SESSION['user_id']) ? 'true' : 'false' ?>">
 
                 <div class="button">
-                    <button type="button" onclick="addToCart()" id="addToCartBtn" <?= $totalStock == 0 ? 'disabled' : '' ?>>
+                    <button type="button" onclick="addToCart()" id="addToCartBtn" class="add-to-cart-btn" <?= $totalStock == 0 ? 'disabled' : '' ?>>
                         <?= $totalStock == 0 ? 'Out of Stock' : 'Add to Cart' ?>
                     </button>
                     <button type="button" class="wishlist-btn" onclick="addToWishlist(<?= $productID ?>)">
@@ -297,7 +315,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
                 return;
             }
 
-            let size = sizeElement.textContent.trim().split('\n')[0];
+            // Get the size from data-size attribute which already handles "Standard Only" case
+            let size = sizeElement.dataset.size;
             let stock = parseInt(sizeElement.dataset.stock);
 
             if (stock <= 0) {
@@ -312,7 +331,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
 
             let formData = new FormData();
             formData.append("productID", productID);
-            formData.append("qty", qty); // Make sure this line exists
+            formData.append("qty", qty);
             formData.append("size", size);
 
             fetch("add_to_cart.php", {
