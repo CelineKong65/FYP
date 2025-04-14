@@ -147,7 +147,6 @@ table, th, td {
     border: 1px solid #1e3a8a;
 }
 
-
 th, td {
     padding: 12px;
     text-align: left;
@@ -164,6 +163,30 @@ tr:nth-child(even) {
 
 table tr:hover {
     background-color:rgb(237, 236, 236);
+}
+
+.status-inactive{
+    color: red;
+}
+
+.status-active{
+    color: #05ac2c;
+}
+
+.btn-inactive{
+    background-color:red;
+}
+
+.btn-inactive:hover{
+    background-color: #c82333;
+}
+
+.btn-active{
+    background-color: #05ac2c;
+}
+
+.btn-active:hover {
+    background-color: #218838;
 }
 
 .close {
@@ -231,4 +254,9 @@ table tr:hover {
 
 #editModal button[type="submit"]:hover, #addModal button[type="submit"]:hover {
     background-color: #1d4ed8;
+}
+
+#editModal p{
+    margin: 0;
+    color:gray;
 }

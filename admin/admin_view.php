@@ -30,6 +30,7 @@ if (isset($_POST['update_admin'])) {
     $password = trim($_POST['password']);
     $phone = trim($_POST['phone']);
     $position = trim($_POST['position']);
+    $status = trim($_POST['status']);
 
     $check_name_query = "SELECT AdminID FROM admin WHERE AdminName = ? AND AdminID != ?";
     $stmt = $conn->prepare($check_name_query);
@@ -43,51 +44,87 @@ if (isset($_POST['update_admin'])) {
     }
     $stmt->close();  
 
-    if (!empty($password)) {
-        $update_query = "UPDATE admin SET AdminName = ?, AdminEmail = ?, AdminPassword = ?, AdminPhoneNum = ?, AdminPosition = ? WHERE AdminID = ?";
-        $stmt = $conn->prepare($update_query);
-        $stmt->bind_param("sssssi", $name, $email, $password, $phone, $position, $admin_id);
-    } else {
-        $update_query = "UPDATE admin SET AdminName = ?, AdminEmail = ?, AdminPhoneNum = ?, AdminPosition = ? WHERE AdminID = ?";
-        $stmt = $conn->prepare($update_query);
-        $stmt->bind_param("ssssi", $name, $email, $phone, $position, $admin_id);
-    }
-
-    if ($stmt->execute()) {
-        echo "<script>alert('Admin updated successfully!'); window.location.href='admin_view.php';</script>";
-    } else {
-        echo "<script>alert('Failed to update customer.'); window.location.href='admin_view.php';</script>";
-    }
-    $stmt->close();
-    exit();
-}
-
-if (isset($_POST['delete_admin'])) {
-    $admin_id = intval($_POST['admin_id']);
-
-    $check_shipping_query = "SELECT COUNT(*) FROM shipping WHERE AdminID = ?";
-    $stmt = $conn->prepare($check_shipping_query);
-    $stmt->bind_param("i", $admin_id);
+    $check_email_query = "SELECT AdminID FROM admin WHERE AdminEmail = ? AND AdminID != ?";
+    $stmt = $conn->prepare($check_email_query);
+    $stmt->bind_param("si", $email, $admin_id);
     $stmt->execute();
-    $stmt->bind_result($count);
-    $stmt->fetch();
-    $stmt->close();
-
-    if ($count > 0) {
-        echo "<script>alert('Cannot delete this admin. It is referenced in the shipping table.'); window.location.href='admin_view.php';</script>";
+    $stmt->store_result();
+    
+    if ($stmt->num_rows > 0) {
+        echo "<script>alert('Email already exists. Please use a different email.'); window.location.href='admin_view.php';</script>";
         exit();
     }
+    $stmt->close();
 
-    $delete_query = "DELETE FROM admin WHERE AdminID = ?";
-    $stmt = $conn->prepare($delete_query);
-    $stmt->bind_param("i", $admin_id);
-
-    if ($stmt->execute()) {
-        echo "<script>alert('Admin deleted successfully!'); window.location.href='admin_view.php';</script>";
-    } else {
-        echo "<script>alert('Failed to delete admin.'); window.location.href='admin_view.php';</script>";
+    $check_phone_query = "SELECT AdminID FROM admin WHERE AdminPhoneNum = ? AND AdminID != ?";
+    $stmt = $conn->prepare($check_phone_query);
+    $stmt->bind_param("si", $phone, $admin_id);
+    $stmt->execute();
+    $stmt->store_result();
+    if ($stmt->num_rows > 0) {
+        echo "<script>alert('Phone number already exists. Please use a different phone number.'); window.location.href='admin_view.php';</script>";
+        exit();
     }
-    exit();
+    $stmt->close();
+
+
+    $original_query = "SELECT * FROM admin WHERE AdminID = ?";
+    $stmt = $conn->prepare($original_query);
+    $stmt->bind_param("i", $admin_id);
+    $stmt->execute();
+    $original_result = $stmt->get_result();
+    $original_data = $original_result->fetch_assoc();
+    $stmt->close();
+
+    $has_changes = (
+        $name !== $original_data['AdminName'] ||
+        $email !== $original_data['AdminEmail'] ||
+        $phone !== $original_data['AdminPhoneNum'] ||
+        $position !== $original_data['AdminPosition'] ||
+        $status !== $original_data['AdminStatus'] ||
+        (!empty($password))
+    );
+
+    if (!$has_changes) {
+        echo "<script>alert('No changes detected.'); window.location.href='admin_view.php';</script>";
+        exit();
+    } else {
+        if (!empty($password)) {
+            $update_query = "UPDATE admin SET AdminName = ?, AdminEmail = ?, AdminPassword = ?, AdminPhoneNum = ?, AdminPosition = ?, AdminStatus = ? WHERE AdminID = ?";
+            $stmt = $conn->prepare($update_query);
+            $stmt->bind_param("ssssssi", $name, $email, $password, $phone, $position, $status, $admin_id);
+        } else {
+            $update_query = "UPDATE admin SET AdminName = ?, AdminEmail = ?, AdminPhoneNum = ?, AdminPosition = ?, AdminStatus = ? WHERE AdminID = ?";
+            $stmt = $conn->prepare($update_query);
+            $stmt->bind_param("sssssi", $name, $email, $phone, $position, $status, $admin_id);
+        }
+    
+        if ($stmt->execute()) {
+            echo "<script>alert('Admin updated successfully!'); window.location.href='admin_view.php';</script>";
+        } else {
+            echo "<script>alert('Failed to update admin.'); window.location.href='admin_view.php';</script>";
+        }
+        $stmt->close();
+        exit();
+    }
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
+    $admin_id = (int)$_POST['admin_id'];
+    $currentStatus = strtolower($_POST['current_status']);
+    
+    $newStatus = ($currentStatus == 'active') ? 'inactive' : 'active';
+    
+    $stmt = $conn->prepare("UPDATE admin SET AdminStatus = ? WHERE AdminID = ?");
+    $stmt->bind_param("si", $newStatus, $admin_id);
+    
+    if ($stmt->execute()) {
+        header("Location: admin_view.php");
+        exit();
+    } else {
+        $error = "Status update failed: " . $conn->error;
+    }
+    $stmt->close();
 }
 
 
@@ -97,6 +134,7 @@ if (isset($_POST['add_admin'])) {
     $password = trim($_POST['password']);
     $phone = trim($_POST['phone']);
     $position = trim($_POST['position']);
+    $status = 'active';
 
     $check_name_query = "SELECT AdminID FROM admin WHERE AdminName = ?";
     $stmt = $conn->prepare($check_name_query);
@@ -110,9 +148,30 @@ if (isset($_POST['add_admin'])) {
     }
     $stmt->close();
 
-    $insert_query = "INSERT INTO admin (AdminName, AdminEmail, AdminPassword, AdminPhoneNum, AdminPosition) VALUES (?, ?, ?, ?, ?)";
+    $check_email_query = "SELECT AdminID FROM admin WHERE AdminEmail = ?";
+    $stmt = $conn->prepare($check_email_query);
+    $stmt->bind_param("s", $email);
+    
+    if ($stmt->num_rows > 0) {
+        echo "<script>alert('Email already exists. Please use a different email.'); window.location.href='customer_view.php';</script>";
+        exit();
+    }
+    $stmt->close();
+
+    $check_phone_query = "SELECT AdminID FROM admin WHERE AdminPhoneNum = ? ";
+    $stmt = $conn->prepare($check_phone_query);
+    $stmt->bind_param("si", $phone);
+    $stmt->execute();
+    $stmt->store_result();
+    if ($stmt->num_rows > 0) {
+        echo "<script>alert('Phone number already exists. Please use a different phone number.'); window.location.href='customer_view.php';</script>";
+        exit();
+    }
+    $stmt->close();
+
+    $insert_query = "INSERT INTO admin (AdminName, AdminEmail, AdminPassword, AdminPhoneNum, AdminPosition, AdminStatus) VALUES (?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($insert_query);
-    $stmt->bind_param("sssss", $name, $email, $password, $phone, $position);
+    $stmt->bind_param("ssssss", $name, $email, $password, $phone, $position, $status);
 
     if ($stmt->execute()) {
         echo "<script>alert('Admin added successfully!'); window.location.href='admin_view.php';</script>";
@@ -167,6 +226,7 @@ if (isset($_POST['add_admin'])) {
                         <th>Phone</th>
                         <th>Position</th>
                         <th>Password</th> 
+                        <th>Status</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -180,11 +240,26 @@ if (isset($_POST['add_admin'])) {
                                 <td><?php echo $admin['AdminPhoneNum']; ?></td>
                                 <td><?php echo $admin['AdminPosition']; ?></td>
                                 <td><?php echo $admin['AdminPassword']; ?></td>
+                                <td class="<?php echo ($admin['AdminStatus'] === 'active') ? 'status-active' : 'status-inactive'; ?>">
+                                    <?php echo $admin['AdminStatus']; ?>
+                                </td>
                                 <td>
-                                    <button name="edit_admin" onclick='editAdmin(<?php echo json_encode($admin["AdminID"]); ?>, <?php echo json_encode($admin["AdminName"]); ?>, <?php echo json_encode($admin["AdminEmail"]); ?>, <?php echo json_encode($admin["AdminPhoneNum"]); ?>, <?php echo json_encode($admin["AdminPosition"]); ?>, <?php echo json_encode($admin["AdminPassword"]); ?>)'>Edit</button>
-                                    <form method="POST" action="" style="display:inline;">
+                                    <button name="edit_admin" onclick='editAdmin(
+                                            <?php echo json_encode($admin["AdminID"]); ?>,
+                                            <?php echo json_encode($admin["AdminName"]); ?>,
+                                            <?php echo json_encode($admin["AdminEmail"]); ?>,
+                                            <?php echo json_encode($admin["AdminPhoneNum"]); ?>,
+                                            <?php echo json_encode($admin["AdminPosition"]); ?>,
+                                            <?php echo json_encode($admin["AdminPassword"]); ?>,
+                                            <?php echo json_encode($admin["AdminStatus"]); ?>)'>Edit
+                                    </button>
+                                    <form method="post" action="">
+                                        <input type="hidden" name="toggle_status" value="1">
                                         <input type="hidden" name="admin_id" value="<?php echo $admin['AdminID']; ?>">
-                                        <button type="submit" name="delete_admin" onclick="return confirm('Are you sure you want to delete this admin?');">Delete</button>
+                                        <input type="hidden" name="current_status" value="<?php echo $admin['AdminStatus']; ?>">
+                                        <button type="submit" class="btn-status <?php echo ($admin['AdminStatus'] == 'active') ? 'btn-inactive' : 'btn-active'; ?>">
+                                            <?php echo ($admin['AdminStatus'] == 'active') ? 'Deactivate' : 'Activate'; ?>
+                                        </button>
                                     </form>
                                 </td>
                             </tr>
@@ -216,9 +291,14 @@ if (isset($_POST['add_admin'])) {
                     <option value="admin">admin</option>
                     <option value="superadmin">superadmin</option>
                 </select>
+                <label>Status:</label>
+                <select name="status" id="status" required>
+                    <option value="active" <?php echo isset($admin['AdminStatus']) && $admin['AdminStatus'] == 'active' ? 'selected' : ''; ?>>Active</option>
+                    <option value="inactive" <?php echo isset($admin['AdminStatus']) && $admin['AdminStatus'] == 'inactive' ? 'selected' : ''; ?>>Inactive</option>
+                </select>
                 <label>Password:</label>
                 <input type="text" name="password" id="password">
-                <p style="color:gray;">(Leave empty to keep the current password)</p>
+                <p>(Leave empty to keep the current password)</p>
                 <div class="upd_div">
                     <button type="submit" name="update_admin">Update</button>
                 </div>
@@ -252,12 +332,17 @@ if (isset($_POST['add_admin'])) {
     </div>
 
     <script>
-        function editAdmin(admin_id, name, email, phone, position) {
+        function editAdmin(admin_id, name, email, phone, position, password, status) {
             document.getElementById('admin_id').value = admin_id;
             document.getElementById('name').value = name;
             document.getElementById('email').value = email;
             document.getElementById('phone').value = phone;
             document.getElementById('position').value = position; 
+            document.getElementById('password').value = '';
+
+            var statusDropdown = document.getElementById('status');
+            statusDropdown.value = status.toLowerCase();
+
             document.getElementById('editModal').style.display = 'block';
         }
 
