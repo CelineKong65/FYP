@@ -36,7 +36,7 @@ foreach ($result as $row) {
     $currentProductStocks = $productStocks[$row['ProductID']] ?? [];
     $totalPrice += $row['ProductPrice'] * $row['Quantity'];
 }
-$grandTotal = $totalPrice; // Delivery fee removed
+$grandTotal = $totalPrice;
 
 $_SESSION['subtotal'] = $totalPrice; 
 
@@ -88,10 +88,30 @@ $cartCount = $row['total'] ?? 0;
         .out-of-stock {
             color: #d9534f;
         }
+        .error-message {
+            color: #d9534f;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .success-message {
+            color: #5cb85c;
+            text-align: center;
+            margin: 10px 0;
+        }
     </style>
 </head>
 <body>
     <div class="cart-container">
+        <?php if (isset($_SESSION['error'])): ?>
+            <div class="error-message"><?= $_SESSION['error'] ?></div>
+            <?php unset($_SESSION['error']); ?>
+        <?php endif; ?>
+        
+        <?php if (isset($_SESSION['success'])): ?>
+            <div class="success-message"><?= $_SESSION['success'] ?></div>
+            <?php unset($_SESSION['success']); ?>
+        <?php endif; ?>
+
         <?php if (empty($result)): ?>
             <p style="text-align: center; font-size: 18px; font-weight: bold;">No items in Cart</p>
         <?php else: ?>
@@ -112,36 +132,31 @@ $cartCount = $row['total'] ?? 0;
                         $currentProductStocks = $productStocks[$row['ProductID']] ?? [];
                         $sizeStockMap = [];
                         foreach ($currentProductStocks as $stock) {
-                            $sizeStockMap[$stock['Size'] ?? 'Standard Only'] = $stock['Stock'];
+                            $sizeValue = $stock['Size'] === null ? 'Standard Only' : $stock['Size'];
+                            $sizeStockMap[$sizeValue] = $stock['Stock'];
                         }
+                        
+                        // Clean up the stored size value (remove stock info if present)
+                        $currentSize = preg_replace('/\s*\d+ available.*/', '', $row['Size']);
+                        $currentSize = trim($currentSize) === '' ? 'Standard Only' : trim($currentSize);
                     ?>
                     <tr>
                         <td><img src="image/<?= htmlspecialchars($row['ProductPicture']) ?>" alt="<?= htmlspecialchars($row['ProductName']) ?>"></td>
                         <td><?= htmlspecialchars($row['ProductName']) ?></td>
                         <td>
-                            <?php if ($row['Size'] == 'Standard Only'): ?>
-                                Standard Only
+                            <?php if (empty($sizeStockMap)): ?>
+                                <span>Standard Only</span>
                             <?php else: ?>
-                                <form action="update_cart.php" method="POST">
+                                <form action="update_cart.php" method="POST" class="size-form">
                                     <input type="hidden" name="CartID" value="<?= $row['CartID'] ?>">
                                     <select name="Size" onchange="this.form.submit()">
-                                        <?php 
-                                        $sizes = ['S', 'M', 'L', 'XL'];
-                                        foreach ($sizes as $size): 
-                                            $stock = $sizeStockMap[$size] ?? 0;
+                                        <?php foreach ($sizeStockMap as $size => $stock): 
                                             $disabled = $stock <= 0;
-                                            $selected = $row['Size'] == $size;
+                                            $selected = $currentSize === $size;
                                         ?>
-                                            <option value="<?= $size ?>" 
-                                                <?= $selected ? 'selected' : '' ?>
-                                                <?= $disabled ? 'disabled' : '' ?>
-                                                data-stock="<?= $stock ?>">
-                                                <?= $size ?>
-                                                <?php if ($disabled): ?>
-                                                    (Out of Stock)
-                                                <?php else: ?>
-                                                    (<?= $stock ?> available)
-                                                <?php endif; ?>
+                                            <option value="<?= htmlspecialchars($size) ?>" <?= $selected ? 'selected' : '' ?> <?= $disabled ? 'disabled' : '' ?>>
+                                                <?= htmlspecialchars($size) ?> 
+                                                (<?= $disabled ? 'Out of Stock' : "$stock available" ?>)
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
@@ -150,14 +165,16 @@ $cartCount = $row['total'] ?? 0;
                         </td>
                         <td class="price">RM <?= number_format($row['ProductPrice'], 2) ?></td>
                         <td>
-                            <form action="update_cart.php" method="POST">
+                            <form action="update_cart.php" method="POST" class="quantity-form">
                                 <input type="hidden" name="CartID" value="<?= $row['CartID'] ?>">
                                 <?php 
-                                $currentStock = $sizeStockMap[$row['Size']] ?? 0;
-                                $maxQuantity = max(1, min($currentStock, 99));
+                                // Get current size's stock
+                                $currentStock = $sizeStockMap[$currentSize] ?? 99; // Default to 99 if size not found
+                                $maxQuantity = min($currentStock, 99);
                                 ?>
-                                <input type="number" name="Quantity" value="<?= min($row['Quantity'], $maxQuantity) ?>" 
-                                       min="1" max="<?= $maxQuantity ?>" onchange="this.form.submit()">
+                                <input type="number" name="Quantity" value="<?= htmlspecialchars($row['Quantity']) ?>" 
+                                       min="1" max="<?= $maxQuantity ?>" 
+                                       onchange="if(this.value >= 1 && this.value <= <?= $maxQuantity ?>) { this.form.submit(); } else { this.value = <?= $row['Quantity'] ?>; alert('Quantity must be between 1 and <?= $maxQuantity ?>'); }">
                             </form>
                         </td>
                         <td class="total">RM <?= number_format($row['ProductPrice'] * $row['Quantity'], 2) ?></td>
@@ -180,6 +197,16 @@ $cartCount = $row['total'] ?? 0;
             </div>
         <?php endif; ?>
     </div>
+    <script>
+        // Add confirmation for remove item
+        document.querySelectorAll('.remove').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (!confirm('Are you sure you want to remove this item from your cart?')) {
+                    e.preventDefault();
+                }
+            });
+        });
+    </script>
 </body>
 </html>
 <?php include 'footer.php'; ?>
