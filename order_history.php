@@ -1,6 +1,5 @@
 <?php
 session_start();
-include 'header.php';
 include 'config.php';
 
 // Check if the customer is logged in
@@ -12,7 +11,7 @@ if (!isset($_SESSION['user_id'])) {
 $custID = $_SESSION['user_id'];
 
 // Fetch order history for the logged-in customer
-$sql = "SELECT op.OrderID, op.OrderDate, op.TotalPrice, od.ProductName, od.Color, od.Size, od.Quantity 
+$sql = "SELECT op.OrderID, op.OrderDate, op.TotalPrice, od.ProductName, od.Size, od.Quantity 
         FROM orderpayment op
         JOIN orderdetails od ON op.OrderID = od.OrderID
         WHERE op.CustID = :custID
@@ -84,7 +83,7 @@ foreach ($orders as $row) {
                     <div class="order-details">
                         <h4>Items:</h4>
                         <?php foreach ($orderItems as $item): ?>
-                            <p><?php echo htmlspecialchars($item['ProductName']); ?> - <?php echo htmlspecialchars($item['Color']); ?> - <?php echo htmlspecialchars($item['Size']); ?> - Quantity: <?php echo htmlspecialchars($item['Quantity']); ?></p>
+                            <p><?php echo htmlspecialchars($item['ProductName']); ?> - <?php echo htmlspecialchars($item['Size']); ?> - Quantity: <?php echo htmlspecialchars($item['Quantity']); ?></p>
                         <?php endforeach; ?>
                     </div>
                 </div>
@@ -97,3 +96,5 @@ foreach ($orders as $row) {
 <?php
 include 'footer.php'; 
 ?>
+
+
