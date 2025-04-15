@@ -2,7 +2,7 @@
 ob_start();
 session_start();
 include 'config.php';
-include 'header.php';
+
 
 // Retrieve cart items from session
 $cartItems = $_SESSION['cart_items'] ?? [];
@@ -15,6 +15,7 @@ $grandTotalWithDelivery = $subtotal;
 // Retrieve customer details
 $custID = $_SESSION['user_id'] ?? null;
 $custName = '';
+$CustPhoneNum = '';
 $custEmail = '';
 $custStreetAddress = '';
 $custCity = '';
@@ -22,7 +23,7 @@ $custPostcode = '';
 $custState = '';
 
 if ($custID) {
-    $query = "SELECT CustName, CustEmail, StreetAddress, City, Postcode, State FROM customer WHERE CustID = :custID";
+    $query = "SELECT CustName, CustPhoneNum, CustEmail, StreetAddress, City, Postcode, State FROM customer WHERE CustID = :custID";
     $stmt = $conn->prepare($query);
     $stmt->bindParam(':custID', $custID, PDO::PARAM_INT);
     $stmt->execute();
@@ -30,6 +31,7 @@ if ($custID) {
 
     if ($customer) {
         $custName = $customer['CustName'];
+        $custPhoneNum = $customer['CustPhoneNum'];
         $custEmail = $customer['CustEmail'];
         $custStreetAddress = $customer['StreetAddress'];
         $custCity = $customer['City'];
@@ -58,6 +60,9 @@ $grandTotalWithDelivery = $subtotal + $deliveryCharge;
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $formFullName = $_POST['fullname'] ?? '';
+    $formContact = $_POST['contact'] ?? '';
+    $formEmail = $_POST['email'] ?? '';
     $formStreetAddress = $_POST['address'] ?? '';
     $formCity = $_POST['city'] ?? '';
     $formPostcode = $_POST['postcode'] ?? '';
@@ -73,8 +78,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $cardExpDate = $_POST['expdate'] ?? '';
     $cardCVV = $_POST['cvv'] ?? '';
 
-    // Validate card details
+    // Validate all fields
     $errors = [];
+    
+    // Full Name Validation
+    if (empty($formFullName)) {
+        $errors[] = "Full name is required";
+    } elseif (!preg_match('/^[a-zA-Z\s]+$/', $formFullName)) {
+        $errors[] = "Full name should contain only letters and spaces";
+    }
+
+    // Contact Validation
+    if (empty($formContact)) {
+        $errors[] = "Contact number is required";
+    } elseif (!preg_match('/^\d{3}-\d{3,4} \d{4}$/', $formContact)) {
+        $errors[] = "Contact number must be in XXX
+        -XXX XXXX or XXX-XXXX XXXX format";
+    }
+
+    // Email Validation
+    if (empty($formEmail)) {
+        $errors[] = "Email is required";
+    } elseif (!filter_var($formEmail, FILTER_VALIDATE_EMAIL) || !preg_match('/\.com$/', $formEmail)) {
+        $errors[] = "Invalid email format (must end with .com)";
+    }
+
+    // Postcode validation (exactly 5 digits)
+    if ($formPostcode && !preg_match('/^\d{5}$/', $formPostcode)) {
+        $errors[] = "Postcode must be exactly 5 digits";
+    }
     
     // Card Name validation (only letters and spaces)
     if (!preg_match('/^[a-zA-Z\s]+$/', $cardName)) {
@@ -87,15 +119,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     // Expiry Date validation (MM/YY format and not expired)
-    if (!preg_match('/^(0[1-9]|1[0-2])\/?([0-9]{2})$/', $cardExpDate)) {
+    if (empty($cardExpDate)) {
+        $errors[] = "Expiry date is required";
+    } elseif (!preg_match('/^(0[1-9]|1[0-2])\/?([0-9]{2})$/', $cardExpDate)) {
         $errors[] = "Invalid expiry date format (MM/YY)";
     } else {
         $currentYear = date('y');
         $currentMonth = date('m');
-        list($expMonth, $expYear) = explode('/', $cardExpDate);
+        $parts = explode('/', $cardExpDate);
         
-        if ($expYear < $currentYear || ($expYear == $currentYear && $expMonth < $currentMonth)) {
-            $errors[] = "Card has expired";
+        // Check if explode worked correctly
+        if (count($parts) !== 2) {
+            $errors[] = "Invalid expiry date format";
+        } else {
+            $expMonth = $parts[0];
+            $expYear = $parts[1];
+            
+            if ($expYear < $currentYear || ($expYear == $currentYear && $expMonth < $currentMonth)) {
+                $errors[] = "Card has expired";
+            }
         }
     }
     
@@ -107,12 +149,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // If no validation errors, proceed with order processing
     if (empty($errors)) {
         $insertQuery = "INSERT INTO orderpayment 
-            (CustID, CustName, CustEmail, StreetAddress, City, Postcode, State, OrderDate, TotalPrice, CardName, CardNum, CardCVV) 
+            (CustID, ReceiverName, ReceiverContact, CustEmail, StreetAddress, City, Postcode, State, OrderDate, TotalPrice, CardName, CardNum, CardCVV) 
             VALUES 
-            (:custID, :custName, :custEmail, :streetAddress, :city, :postcode, :state, NOW(), :totalPrice, :cardName, :cardNum, :cardCVV)";
+            (:custID, :receiverName, :receiverContact, :custEmail, :streetAddress, :city, :postcode, :state, NOW(), :totalPrice, :cardName, :cardNum, :cardCVV)";
         $insertStmt = $conn->prepare($insertQuery);
         $insertStmt->bindParam(':custID', $custID, PDO::PARAM_INT);
-        $insertStmt->bindParam(':custName', $custName, PDO::PARAM_STR);
+        $insertStmt->bindParam(':receiverName', $custName, PDO::PARAM_STR);
+        $insertStmt->bindParam(':receiverContact', $custPhoneNum, PDO::PARAM_STR);
         $insertStmt->bindParam(':custEmail', $custEmail, PDO::PARAM_STR);
         $insertStmt->bindParam(':streetAddress', $finalStreetAddress, PDO::PARAM_STR);
         $insertStmt->bindParam(':city', $finalCity, PDO::PARAM_STR);
@@ -245,10 +288,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="text" id="price" value="RM <?= number_format($grandTotalWithDelivery, 2) ?>" readonly>
 
                         <label for="fullname"><b>Full Name</b></label>
-                        <input type="text" id="fullname" name="fullname" value="<?= htmlspecialchars($custName) ?>" readonly>
+                        <input type="text" id="fullname" name="fullname" value="<?= htmlspecialchars($custName) ?>" required>
+
+                        <label for="contact"><b>Contact Number</b></label>
+                        <input type="text" id="contact" name="contact" value="<?= htmlspecialchars($custPhoneNum) ?>" pattern="\d{3}-\d{3,4} \d{4}" title="Format: XXX-XXX XXXX or XXX-XXXX XXXX" placeholder="XXX-XXX XXXX" required>
 
                         <label for="email"><b>Email</b></label>
-                        <input type="email" id="email" name="email" value="<?= htmlspecialchars($custEmail) ?>" readonly>
+                        <input type="email" id="email" name="email" value="<?= htmlspecialchars($custEmail) ?>" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.com" title="Email must end with .com" required>
+    
 
                         <label for="address"><b>Street Address</b></label>
                         <input type="text" id="address" name="address" value="<?= htmlspecialchars($custStreetAddress) ?>" required>
@@ -257,7 +304,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="text" id="city" name="city" value="<?= htmlspecialchars($custCity) ?>" required>
 
                         <label for="postcode"><b>Postcode</b></label>
-                        <input type="text" id="postcode" name="postcode" value="<?= htmlspecialchars($custPostcode) ?>" required>
+                        <input type="text" id="postcode" name="postcode" value="<?= htmlspecialchars($custPostcode) ?>" pattern="\d{5}" title="Postcode must be exactly 5 digits" required>
 
                         <label for="state"><b>State</b></label>
                         <select id="state" name="state" required>
@@ -340,6 +387,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Client-side validation
         document.getElementById('paymentForm').addEventListener('submit', function(e) {
+            // Full name validation
+            const fullName = document.getElementById('fullname').value;
+            if (!/^[a-zA-Z\s]+$/.test(fullName)) {
+                alert('Card name should contain only letters and spaces');
+                e.preventDefault();
+                return;
+            }
+
+            // Contact validation
+            const contact = document.getElementById('contact').value;
+            if (!/^\d{3}-\d{3,4} \d{4}$/.test(contact)) {
+                alert('Contact number must be in XXX-XXX XXXX or XXX-XXXX XXXX format');
+                e.preventDefault();
+                return;
+            }
+
+            // Email validation
+            const email = document.getElementById('email').value;
+            if (!/^[^@]+@[^@]+\.com$/.test(email)) {
+                alert('Please enter a valid email address ending with .com');
+                e.preventDefault();
+                return;
+            }
+
+            // Postcode validation
+            const postcode = document.getElementById('postcode').value;
+            if (!/^\d{5}$/.test(postcode)) {
+                alert('Postcode must be exactly 5 digits');
+                e.preventDefault();
+                return;
+            }
+            
             // Card Name validation
             const cardName = document.getElementById('cname').value;
             if (!/^[a-zA-Z\s]+$/.test(cardName)) {
