@@ -46,10 +46,19 @@ $products = $stmt->fetchAll();
         <div class="categories">
             <h2>Categories</h2>
             <ul>
-                <li><a href="swimming.php">Swimming</a></li>
-                <li><a href="surfing.php">Surfing and beach sports</a></li>
-                <li><a href="snorkeling.php">Snorkeling / Scuba diving</a></li>
-                <li><a href="kayaking.php">Kayaking</a></li>
+                <?php
+                    $catQuery = $conn->prepare("SELECT CategoryID, CategoryName FROM category WHERE CategoryStatus = 'active'");
+                    $catQuery->execute();
+                    $categories = $catQuery->fetchAll();
+
+                    if ($categories) {
+                        foreach ($categories as $cat) {
+                            echo "<li><a href='category.php?id=" . htmlspecialchars($cat['CategoryID']) . "'>" . htmlspecialchars($cat['CategoryName']) . "</a></li>";
+                        }
+                    } else {
+                        echo "<li>No active categories found.</li>";
+                    }
+                ?>
             </ul>
         </div>
 

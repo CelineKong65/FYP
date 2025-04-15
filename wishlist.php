@@ -33,7 +33,7 @@ $wishlistItems = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wishlist</title>
-
+    <link rel="stylesheet" href="wishlist.css">
 </head>
 <body>
     <div class="wishlist-container">
