@@ -204,10 +204,6 @@ if (isset($_POST['add_admin'])) {
         <div class="main-content">
             <h2>Admin List</h2>
 
-            <?php if (isset($_SESSION['message'])): ?>
-                <p class="message"><?php echo $_SESSION['message']; unset($_SESSION['message']); ?></p>
-            <?php endif; ?>
-
             <form method="GET" action="" class="search">
                 <input type="text" name="search" placeholder="Search by name or email" value="<?php echo htmlspecialchars($search_query); ?>">
                 <button type="submit" class="search">Search</button>
@@ -227,7 +223,7 @@ if (isset($_POST['add_admin'])) {
                         <th>Position</th>
                         <th>Password</th> 
                         <th>Status</th>
-                        <th></th>
+                        <th style="width: 170px;"></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -253,7 +249,7 @@ if (isset($_POST['add_admin'])) {
                                             <?php echo json_encode($admin["AdminPassword"]); ?>,
                                             <?php echo json_encode($admin["AdminStatus"]); ?>)'>Edit
                                     </button>
-                                    <form method="post" action="">
+                                    <form method="post" action="" style="display: inline;">
                                         <input type="hidden" name="toggle_status" value="1">
                                         <input type="hidden" name="admin_id" value="<?php echo $admin['AdminID']; ?>">
                                         <input type="hidden" name="current_status" value="<?php echo $admin['AdminStatus']; ?>">
