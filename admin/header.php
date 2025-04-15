@@ -11,7 +11,7 @@
             <img src="../image/logo.png" alt="Watersport Equipment Shop Logo">
         </div>
         <div class="header-right">
-            <a href="logout.php" class="logout-button">Logout</a>
+            <a href="logout.php" class="logout-button">LOGOUT</a>
         </div>
     </header>
 </body>

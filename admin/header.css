@@ -41,15 +41,16 @@ h1 {
 }
 
 .logout-button {
-    padding: 8px 16px;
-    background-color: #ff4d4d;
+    padding: 10px 16px;
+    background-color:rgb(246, 65, 65);
     color: white;
     text-decoration: none;
     border-radius: 4px;
-    font-size: 16px;
+    font-size: 12px;
     transition: background-color 0.3s ease;
 }
 
 .logout-button:hover {
     background-color: #cc0000;
+    font-weight: bold;
 }
