@@ -3,7 +3,6 @@ ob_start();
 session_start();
 include 'config.php';
 
-
 // Retrieve cart items from session
 $cartItems = $_SESSION['cart_items'] ?? [];
 $subtotal = $_SESSION['subtotal'] ?? 0;
@@ -15,7 +14,7 @@ $grandTotalWithDelivery = $subtotal;
 // Retrieve customer details
 $custID = $_SESSION['user_id'] ?? null;
 $custName = '';
-$CustPhoneNum = '';
+$custPhoneNum = '';
 $custEmail = '';
 $custStreetAddress = '';
 $custCity = '';
@@ -92,8 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($formContact)) {
         $errors[] = "Contact number is required";
     } elseif (!preg_match('/^\d{3}-\d{3,4} \d{4}$/', $formContact)) {
-        $errors[] = "Contact number must be in XXX
-        -XXX XXXX or XXX-XXXX XXXX format";
+        $errors[] = "Contact number must be in XXX-XXX XXXX or XXX-XXXX XXXX format";
     }
 
     // Email Validation
@@ -128,7 +126,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $currentMonth = date('m');
         $parts = explode('/', $cardExpDate);
         
-        // Check if explode worked correctly
         if (count($parts) !== 2) {
             $errors[] = "Invalid expiry date format";
         } else {
@@ -146,63 +143,109 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = "CVV must be exactly 3 digits";
     }
 
+    // Check stock availability before processing payment
+    foreach ($cartItems as $item) {
+        $checkStockQuery = "SELECT Stock FROM product_size 
+                          WHERE ProductID = (
+                              SELECT ProductID FROM product WHERE ProductName = :productName
+                          ) AND Size = :size";
+        $checkStockStmt = $conn->prepare($checkStockQuery);
+        $checkStockStmt->bindParam(':productName', $item['ProductName'], PDO::PARAM_STR);
+        $checkStockStmt->bindParam(':size', $item['Size'], PDO::PARAM_STR);
+        $checkStockStmt->execute();
+        $stock = $checkStockStmt->fetchColumn();
+        
+        if ($stock < $item['Quantity']) {
+            $errors[] = "Not enough stock for {$item['ProductName']} (Size: {$item['Size']})";
+        }
+    }
+
     // If no validation errors, proceed with order processing
     if (empty($errors)) {
-        $insertQuery = "INSERT INTO orderpayment 
-            (CustID, ReceiverName, ReceiverContact, CustEmail, StreetAddress, City, Postcode, State, OrderDate, TotalPrice, CardName, CardNum, CardCVV) 
-            VALUES 
-            (:custID, :receiverName, :receiverContact, :custEmail, :streetAddress, :city, :postcode, :state, NOW(), :totalPrice, :cardName, :cardNum, :cardCVV)";
-        $insertStmt = $conn->prepare($insertQuery);
-        $insertStmt->bindParam(':custID', $custID, PDO::PARAM_INT);
-        $insertStmt->bindParam(':receiverName', $custName, PDO::PARAM_STR);
-        $insertStmt->bindParam(':receiverContact', $custPhoneNum, PDO::PARAM_STR);
-        $insertStmt->bindParam(':custEmail', $custEmail, PDO::PARAM_STR);
-        $insertStmt->bindParam(':streetAddress', $finalStreetAddress, PDO::PARAM_STR);
-        $insertStmt->bindParam(':city', $finalCity, PDO::PARAM_STR);
-        $insertStmt->bindParam(':postcode', $finalPostcode, PDO::PARAM_STR);
-        $insertStmt->bindParam(':state', $finalState, PDO::PARAM_STR);
-        $insertStmt->bindParam(':totalPrice', $grandTotalWithDelivery, PDO::PARAM_STR);
-        $insertStmt->bindParam(':cardName', $cardName, PDO::PARAM_STR);
-        $insertStmt->bindParam(':cardNum', $cardNum, PDO::PARAM_STR);
-        $insertStmt->bindParam(':cardCVV', $cardCVV, PDO::PARAM_STR);
+        // Start transaction
+        $conn->beginTransaction();
+        
+        try {
+            // Insert payment information
+            $insertQuery = "INSERT INTO orderpayment 
+                (CustID, ReceiverName, ReceiverContact, CustEmail, StreetAddress, City, Postcode, State, OrderDate, TotalPrice, CardName, CardNum, CardCVV) 
+                VALUES 
+                (:custID, :receiverName, :receiverContact, :custEmail, :streetAddress, :city, :postcode, :state, NOW(), :totalPrice, :cardName, :cardNum, :cardCVV)";
+            $insertStmt = $conn->prepare($insertQuery);
+            $insertStmt->bindParam(':custID', $custID, PDO::PARAM_INT);
+            $insertStmt->bindParam(':receiverName', $formFullName, PDO::PARAM_STR);
+            $insertStmt->bindParam(':receiverContact', $formContact, PDO::PARAM_STR);
+            $insertStmt->bindParam(':custEmail', $formEmail, PDO::PARAM_STR);
+            $insertStmt->bindParam(':streetAddress', $finalStreetAddress, PDO::PARAM_STR);
+            $insertStmt->bindParam(':city', $finalCity, PDO::PARAM_STR);
+            $insertStmt->bindParam(':postcode', $finalPostcode, PDO::PARAM_STR);
+            $insertStmt->bindParam(':state', $finalState, PDO::PARAM_STR);
+            $insertStmt->bindParam(':totalPrice', $grandTotalWithDelivery, PDO::PARAM_STR);
+            $insertStmt->bindParam(':cardName', $cardName, PDO::PARAM_STR);
+            $insertStmt->bindParam(':cardNum', $cardNum, PDO::PARAM_STR);
+            $insertStmt->bindParam(':cardCVV', $cardCVV, PDO::PARAM_STR);
+            
+            if ($insertStmt->execute()) {
+                $orderID = $conn->lastInsertId();
 
-        if ($insertStmt->execute()) {
-            $orderID = $conn->lastInsertId();
+                // Process each cart item
+                foreach ($cartItems as $item) {
+                    $productName = $item['ProductName'];
+                    $size = $item['Size'];
+                    $quantity = $item['Quantity'];
+                    
+                    // Get the product price from the database
+                    $priceQuery = "SELECT ProductPrice FROM product WHERE ProductName = :productName";
+                    $priceStmt = $conn->prepare($priceQuery);
+                    $priceStmt->bindParam(':productName', $productName, PDO::PARAM_STR);
+                    $priceStmt->execute();
+                    $productPrice = $priceStmt->fetchColumn();
 
-            foreach ($cartItems as $item) {
-                $productName = $item['ProductName'];
-                $size = $item['Size'];
-                $quantity = $item['Quantity'];
+                    if ($productPrice === false) {
+                        throw new Exception("Could not find price for product: " . $productName);
+                    }
 
-                $detailQuery = "INSERT INTO orderdetails (OrderID, ProductName, Size, Quantity)
-                                VALUES (:orderID, :productName, :size, :quantity)";
-                $detailStmt = $conn->prepare($detailQuery);
-                $detailStmt->bindParam(':orderID', $orderID, PDO::PARAM_INT);
-                $detailStmt->bindParam(':productName', $productName, PDO::PARAM_STR);
-                $detailStmt->bindParam(':size', $size, PDO::PARAM_STR);
-                $detailStmt->bindParam(':quantity', $quantity, PDO::PARAM_INT);
+                    // Insert order details
+                    $detailQuery = "INSERT INTO orderdetails (OrderID, ProductName, Size, Quantity, ProductPrice)
+                                    VALUES (:orderID, :productName, :size, :quantity, :productPrice)";
+                    $detailStmt = $conn->prepare($detailQuery);
+                    $detailStmt->bindParam(':orderID', $orderID, PDO::PARAM_INT);
+                    $detailStmt->bindParam(':productName', $productName, PDO::PARAM_STR);
+                    $detailStmt->bindParam(':size', $size, PDO::PARAM_STR);
+                    $detailStmt->bindParam(':quantity', $quantity, PDO::PARAM_INT);
+                    $detailStmt->bindParam(':productPrice', $productPrice, PDO::PARAM_STR);
+                    $detailStmt->execute();
 
-                if (!$detailStmt->execute()) {
-                    echo "<p>Error saving order details. Please try again.</p>";
-                    exit();
                 }
-            }
 
-            $deleteCartQuery = "DELETE FROM cart WHERE CustID = :custID";
-            $deleteCartStmt = $conn->prepare($deleteCartQuery);
-            $deleteCartStmt->bindParam(':custID', $custID, PDO::PARAM_INT);
+                // Clear the cart from database
+                $deleteCartQuery = "DELETE FROM cart WHERE CustID = :custID";
+                $deleteCartStmt = $conn->prepare($deleteCartQuery);
+                $deleteCartStmt->bindParam(':custID', $custID, PDO::PARAM_INT);
+                $deleteCartStmt->execute();
 
-            if ($deleteCartStmt->execute()) {
+                // Clear the session cart
+                unset($_SESSION['cart_items']);
+                unset($_SESSION['subtotal']);
+                
+                // Commit transaction
+                $conn->commit();
+                
+                // Redirect to success page
                 header('Location: index.php');
                 exit();
             } else {
-                echo "<p>Error clearing cart. Please try again.</p>";
+                throw new Exception("Error saving order information");
             }
-        } else {
-            echo "<p>Error saving order. Please try again.</p>";
+        } catch (Exception $e) {
+            // Rollback transaction on error
+            $conn->rollBack();
+            $errors[] = "Error processing order: " . $e->getMessage();
         }
-    } else {
-        // Display validation errors
+    }
+    
+    // Display validation errors if any
+    if (!empty($errors)) {
         echo '<div class="error-messages">';
         foreach ($errors as $error) {
             echo '<p>' . htmlspecialchars($error) . '</p>';
@@ -275,7 +318,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <span>Total (Incl. Delivery):</span>
                     <span id="total" class="total-price">RM <?= number_format($grandTotalWithDelivery, 2) ?></span>
                 </div>
-
             </div>
         </div>
 
@@ -295,7 +337,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         <label for="email"><b>Email</b></label>
                         <input type="email" id="email" name="email" value="<?= htmlspecialchars($custEmail) ?>" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.com" title="Email must end with .com" required>
-    
 
                         <label for="address"><b>Street Address</b></label>
                         <input type="text" id="address" name="address" value="<?= htmlspecialchars($custStreetAddress) ?>" required>
@@ -390,7 +431,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Full name validation
             const fullName = document.getElementById('fullname').value;
             if (!/^[a-zA-Z\s]+$/.test(fullName)) {
-                alert('Card name should contain only letters and spaces');
+                alert('Full name should contain only letters and spaces');
                 e.preventDefault();
                 return;
             }
@@ -462,7 +503,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         });
     </script>
-
 </body>
 </html>
 
