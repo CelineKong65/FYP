@@ -198,10 +198,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         <div class="main-content">
             <h2>Customer List</h2>
 
-            <?php if (isset($_SESSION['message'])): ?>
-                <p class="message"><?php echo $_SESSION['message']; unset($_SESSION['message']); ?></p>
-            <?php endif; ?>
-
             <form method="GET" action="" class="search">
                 <input type="text" name="search" placeholder="Search by name or email" value="<?php echo htmlspecialchars($search_query); ?>">
                 <button type="submit" class="search">Search</button>

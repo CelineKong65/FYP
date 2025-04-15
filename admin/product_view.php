@@ -286,10 +286,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         <div class="main-content">
             <h2>Product List</h2>
 
-            <?php if (isset($_SESSION['message'])): ?>
-                <p class="message"><?php echo $_SESSION['message']; unset($_SESSION['message']); ?></p>
-            <?php endif; ?>
-
             <form method="GET" action="" class="search">
                 <label for="category">Filter by Category:</label>
                 <select name="category" id="category" onchange="this.form.submit()">
@@ -369,7 +365,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                                     <input type="hidden" name="toggle_status" value="1">
                                     <input type="hidden" name="product_id" value="<?php echo $product['ProductID']; ?>">
                                     <input type="hidden" name="current_status" value="<?php echo $product['ProductStatus']; ?>">
-                                    <button type="submit"><?php echo ($product['ProductStatus'] === 'active') ? 'Deactivate' : 'Activate'; ?></button>
+                                    <button type="submit" class="btn-status <?php echo ($product['ProductStatus'] === 'active') ? 'btn-inactive' : 'btn-active'; ?>">
+                                        <?php echo ($product['ProductStatus'] === 'active') ? 'Deactivate' : 'Activate'; ?>
+                                    </button>
                                 </form>
                             </td>
                         </tr>
@@ -383,6 +381,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
             </table>
         </div>
     </div>
+
     <div id="editModal">
         <div class="edit-content">
             <span class="close" onclick="closeModal()">&times;</span>
