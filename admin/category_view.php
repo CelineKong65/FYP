@@ -28,6 +28,7 @@ if (isset($_POST['add_category'])) {
     $admin_id = $_SESSION['AdminID'];
 
     if (!empty($category_name)) {
+        $status = 'active';
         $check_query = "SELECT CategoryID FROM category WHERE CategoryName = ?";
         $stmt = $conn->prepare($check_query);
         $stmt->bind_param("s", $category_name);
@@ -77,18 +78,36 @@ if (isset($_POST['edit_category'])) {
     exit();
 }
 
-if (isset($_POST['delete_category'])) {
-    $category_id = intval($_POST['category_id']);
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
+    $category_id = (int)$_POST['category_id'];
+    $currentStatus = strtolower($_POST['current_status']);
+    
+    $newStatus = ($currentStatus == 'active') ? 'inactive' : 'active';
 
-    $delete_query = "DELETE FROM category WHERE CategoryID = ?";
-    $stmt = $conn->prepare($delete_query);
-    $stmt->bind_param("i", $category_id);
-    if ($stmt->execute()) {
-        echo "<script>alert('Category deleted successfully!'); window.location.href='category_view.php';</script>";
+    $conn->begin_transaction();
+
+    try {
+        $stmt = $conn->prepare("UPDATE category SET CategoryStatus = ? WHERE CategoryID = ?");
+        $stmt->bind_param("si", $newStatus, $category_id);
+        $stmt->execute();
+        $stmt->close();
+
+        $stmt2 = $conn->prepare("UPDATE product SET ProductStatus = ? WHERE CategoryID = ?");
+        $stmt2->bind_param("si", $newStatus, $category_id);
+        $stmt2->execute();
+        $stmt2->close();
+
+        $conn->commit();
+
+        header("Location: category_view.php");
+        exit();
+    } catch (Exception $e) {
+        $conn->rollback();
+        echo "<script>alert('Failed to update status.'); window.location.href='category_view.php';</script>";
     }
-    $stmt->close();
-    exit();
 }
+
+
 ?>
 
 <!DOCTYPE html>
@@ -100,7 +119,7 @@ if (isset($_POST['delete_category'])) {
     <link rel='stylesheet' href='category_view.css'>
 </head>
 <body>
-<div class="header">
+    <div class="header">
         <?php include 'header.php'; ?>
     </div>
 
@@ -131,7 +150,8 @@ if (isset($_POST['delete_category'])) {
                 <tr>
                     <th>ID</th>
                     <th>Category Name</th>
-                    <th></th>
+                    <th>Status</th>
+                    <th class="action"></th>
                 </tr>
             </thead>
             <tbody>
@@ -140,12 +160,19 @@ if (isset($_POST['delete_category'])) {
                         <tr>
                             <td><?php echo $category['CategoryID']; ?></td>
                             <td><?php echo $category['CategoryName']; ?></td>
+                            <td class="<?php echo ($category['CategoryStatus'] === 'active') ? 'status-active' : 'status-inactive'; ?>">
+                                <?php echo $category['CategoryStatus']; ?>
+                            </td>
                             <td>
                                 <button name="edit_category" onclick='editCategory(<?php echo json_encode($category["CategoryID"]); ?>, <?php echo json_encode($category["CategoryName"]); ?>)'>Edit</button>
-                                <form method="POST" action="" style="display:inline;">
-                                    <input type="hidden" name="category_id" value="<?php echo $category["CategoryID"]; ?>">
-                                    <button type="submit" name="delete_category" onclick="return confirm('Are you sure you want to delete this category?');">Delete</button>
-                                </form>
+                                <form method="post" action="" style="display: inline;">
+                                    <input type="hidden" name="toggle_status" value="1">
+                                    <input type="hidden" name="category_id" value="<?php echo $category['CategoryID']; ?>">
+                                    <input type="hidden" name="current_status" value="<?php echo $category['CategoryStatus']; ?>">
+                                    <button type="submit" class="btn-status <?php echo ($category['CategoryStatus'] == 'active') ? 'btn-inactive' : 'btn-active'; ?>">
+                                        <?php echo ($category['CategoryStatus'] == 'active') ? 'Deactivate' : 'Activate'; ?>
+                                    </button>
+                                 </form>
                             </tr>
                         <?php endwhile; ?>
                     <?php else: ?>
@@ -156,9 +183,6 @@ if (isset($_POST['delete_category'])) {
             </tbody>
         </table>
         </div>
-    </div>
-    <div class="container">
-
     </div>
 
     <div id="editModal" class="edit">

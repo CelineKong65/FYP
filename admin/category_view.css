@@ -102,6 +102,10 @@ table tr:hover {
     background-color:rgb(237, 236, 236);
 }
 
+th.action{
+    width: 180px;
+}
+
 button {
     padding: 10px 16px;
     background-color: #1e3a8a;
@@ -131,12 +135,28 @@ button[name="edit_category"]:hover {
     background-color: #e0a800d1;
 }
 
-button[name="delete_category"] {
-    background-color: red;
+.status-inactive{
+    color: red;
 }
 
-button[name="delete_category"]:hover {
+.status-active{
+    color: #05ac2c;
+}
+
+.btn-inactive{
+    background-color:red;
+}
+
+.btn-inactive:hover{
     background-color: #c82333;
+}
+
+.btn-active{
+    background-color: #05ac2c;
+}
+
+.btn-active:hover {
+    background-color: #218838;
 }
 
 .actions {

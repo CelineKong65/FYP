@@ -89,7 +89,7 @@ select, input{
 
 .add-content select, .edit-content select {
     border: 1px solid #93c5fd;
-    width: 210px;
+    width: 107%;
 }
 
 button {
@@ -121,12 +121,28 @@ button[name="edit_product"]:hover {
     background-color: #e0a800d1;
 }
 
-button[name="delete_product"] {
-    background-color: red;
+.status-inactive{
+    color: red;
 }
 
-button[name="delete_product"]:hover {
+.status-active{
+    color: #05ac2c;
+}
+
+.btn-inactive{
+    background-color:red;
+}
+
+.btn-inactive:hover{
     background-color: #c82333;
+}
+
+.btn-active{
+    background-color: #05ac2c;
+}
+
+.btn-active:hover {
+    background-color: #218838;
 }
 
 .add {
@@ -179,6 +195,10 @@ table tr:hover {
     background-color:rgb(237, 236, 236);
 }
 
+.action{
+    width: 162px;
+}
+
 .price {
     text-align: center;
 }
@@ -215,9 +235,52 @@ img {
     background-color: white;
     padding: 20px;
     border-radius: 10px;
-    width: 350px;
+    width: 450px;
     margin: auto;
     margin-top: 200px;
+}
+
+.edit-form, .add-form{
+    display: flex;
+    gap: 25px;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.left, .right {
+    flex: 1;
+    width: 200px;
+    display: flex;
+    flex-direction: column;
+}
+
+.left{
+    width: 290px;
+    margin-right: 10px;
+}
+
+.right {
+    margin-top: 10px;
+    flex: 0 0 80px;
+    display: flex;
+    flex-direction: column;
+    padding: 0 15px 0 15px;
+    max-height: fit-content;
+    border-left: 1px solid #ddd; 
+}
+
+.description-section {
+    width: 95%;
+}
+
+.upd_button, .add_button {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 15px;
+}
+
+button[name="add_product"] {
+    width: 80px;
 }
 
 #editModal h3, #addModal h3 {
@@ -235,7 +298,7 @@ img {
 }
 
 #editModal input, #editModal textarea, #addModal input, #addModal textarea {
-    width: 95%;
+    width: 100%;
     padding: 8px;
     margin-bottom: 13px;
     border: 1px solid #93c5fd;
