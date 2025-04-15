@@ -1,0 +1,266 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.header {
+    margin-bottom: 50px;
+}
+
+.container {
+    margin-top: 50px;
+    display: flex;
+    flex: 1;
+    margin-left: 250px;
+}
+
+.sidebar {
+    width: 220px;
+    background-color: #0077b6;
+    padding-top: 30px;
+    text-align: center;
+    border-radius: 20px;
+    margin: 30px;
+    height: 650px;
+    margin-top: 150px;
+    position: fixed;
+    left: 0;
+    top: 0; 
+}
+
+.main-content {
+    flex-grow: 1;
+    padding: 20px;
+    margin: 10px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    position: relative;
+}
+
+h2 {
+    color: #1e3a8a;
+    font-size: 40px;
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.message {
+    padding: 10px;
+    color: #1e3a8a;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+form.search {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+form.editForm, .addForm {
+    margin-bottom: 20px;
+}
+
+label{
+    font-weight: bold;
+}
+
+.search label{
+    color: #0A2F4F;
+    transform: translateY(8px);
+    font-size: 14px;
+}
+
+select, input{
+    padding: 8px;
+    font-size: 12px;
+    margin-bottom: 10px;
+    border: 1px solid #0A2F4F;
+    border-radius: 4px;
+}
+
+.search input {
+    width: 280px;
+}
+
+.add-content select, .edit-content select {
+    border: 1px solid #93c5fd;
+    width: 210px;
+}
+
+button {
+    padding: 10px 16px;
+    background-color: #1e3a8a;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 5px;
+    margin-bottom: 10px;
+    font-size: 13px;
+}
+
+button.search {
+    width: 100px;
+}
+
+button:hover {
+    background-color: #1d4ed8;
+}
+
+button[name="edit_shipping"] {
+    color: black;
+    background-color: #ffc107;
+}
+
+button[name="edit_shipping"]:hover {
+    background-color: #e0a800d1;
+}
+
+button[name="delete_shipping"] {
+    background-color: red;
+}
+
+button[name="delete_shipping"]:hover {
+    background-color: #c82333;
+}
+
+.add_div,.upd_div{
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.add {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+.add_btn{
+    background-color: #28a745;
+}
+
+.add_btn:hover {
+    background-color: #218838;
+}
+
+.submit{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+    margin-top: 10px;
+}
+
+table, th, td {
+    font-size: 15px;
+    border: 1px solid #1e3a8a;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+}
+
+th {
+    background-color: #1e3a8a;
+    color: white;
+}
+
+tr:nth-child(even) {
+    background-color: #e3f2fd;
+}
+
+table tr:hover {
+    background-color:rgb(237, 236, 236);
+}
+
+.price {
+    text-align: center;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+.close {
+    float: right;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: red;
+}
+
+#editModal, #addModal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    justify-content: center;
+    align-items: center;
+}
+
+.edit-content, .add-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 350px;
+    margin: auto;
+    margin-top: 120px;
+}
+
+.edit-content{
+    margin-top: 250px;
+}
+
+#editModal h3, #addModal h3 {
+    margin-top: 0;
+    color: #1e3a8a;
+    font-size: 25px;
+    text-align: center;
+}
+
+#editModal label, #addModal label {
+    display: block;
+    margin-bottom: 5px;
+    color: #1e3a8a;
+    font-size: 15px;
+}
+
+#editModal input, #editModal textarea, #editModal select,  #addModal input, #addModal textarea, #addModal select {
+    width: 95%;
+    padding: 8px;
+    margin-bottom: 13px;
+    border: 1px solid #93c5fd;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+#editModal select, #addModal select{
+    width: 100%;
+}
+
+#editModal button[type="submit"], #addModal button[type="submit"] {
+    background-color: #1e3a8a;
+}
+
+#editModal button[type="submit"]:hover, #addModal button[type="submit"]:hover {
+    background-color: #1d4ed8;
+}
