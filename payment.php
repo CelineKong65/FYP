@@ -145,18 +145,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Check stock availability before processing payment
     foreach ($cartItems as $item) {
-        $checkStockQuery = "SELECT Stock FROM product_size 
-                          WHERE ProductID = (
-                              SELECT ProductID FROM product WHERE ProductName = :productName
-                          ) AND Size = :size";
-        $checkStockStmt = $conn->prepare($checkStockQuery);
-        $checkStockStmt->bindParam(':productName', $item['ProductName'], PDO::PARAM_STR);
-        $checkStockStmt->bindParam(':size', $item['Size'], PDO::PARAM_STR);
-        $checkStockStmt->execute();
-        $stock = $checkStockStmt->fetchColumn();
+        $updateStockQuery = "UPDATE product_size ps
+                            JOIN product p ON ps.ProductID = p.ProductID
+                            SET ps.Stock = ps.Stock - :quantity
+                            WHERE p.ProductName = :productName AND ps.Size = :size";
+        $updateStockStmt = $conn->prepare($updateStockQuery);
+        $updateStockStmt->bindParam(':quantity', $item['Quantity'], PDO::PARAM_INT);
+        $updateStockStmt->bindParam(':productName', $item['ProductName'], PDO::PARAM_STR);
+        $updateStockStmt->bindParam(':size', $item['Size'], PDO::PARAM_STR);
+        $updateStockStmt->execute();
         
-        if ($stock < $item['Quantity']) {
-            $errors[] = "Not enough stock for {$item['ProductName']} (Size: {$item['Size']})";
+        if ($updateStockStmt->rowCount() === 0) {
+            throw new Exception("Failed to update stock for product: " . $item['ProductName']);
         }
     }
 
@@ -168,19 +168,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             // Insert payment information
             $insertQuery = "INSERT INTO orderpayment 
-                (CustID, ReceiverName, ReceiverContact, CustEmail, StreetAddress, City, Postcode, State, OrderDate, TotalPrice, CardName, CardNum, CardCVV) 
+                (CustID, ReceiverName, ReceiverContact, ReceiverEmail, StreetAddress, City, Postcode, State, OrderDate, TotalPrice, DeliveryFee, CardName, CardNum, CardCVV) 
                 VALUES 
-                (:custID, :receiverName, :receiverContact, :custEmail, :streetAddress, :city, :postcode, :state, NOW(), :totalPrice, :cardName, :cardNum, :cardCVV)";
+                (:custID, :receiverName, :receiverContact, :receiverEmail, :streetAddress, :city, :postcode, :state, NOW(), :totalPrice, :deliveryFee, :cardName, :cardNum, :cardCVV)";
             $insertStmt = $conn->prepare($insertQuery);
             $insertStmt->bindParam(':custID', $custID, PDO::PARAM_INT);
             $insertStmt->bindParam(':receiverName', $formFullName, PDO::PARAM_STR);
             $insertStmt->bindParam(':receiverContact', $formContact, PDO::PARAM_STR);
-            $insertStmt->bindParam(':custEmail', $formEmail, PDO::PARAM_STR);
+            $insertStmt->bindParam(':receiverEmail', $formEmail, PDO::PARAM_STR);
             $insertStmt->bindParam(':streetAddress', $finalStreetAddress, PDO::PARAM_STR);
             $insertStmt->bindParam(':city', $finalCity, PDO::PARAM_STR);
             $insertStmt->bindParam(':postcode', $finalPostcode, PDO::PARAM_STR);
             $insertStmt->bindParam(':state', $finalState, PDO::PARAM_STR);
             $insertStmt->bindParam(':totalPrice', $grandTotalWithDelivery, PDO::PARAM_STR);
+            $insertStmt->bindParam(':deliveryFee', $deliveryCharge, PDO::PARAM_STR);
             $insertStmt->bindParam(':cardName', $cardName, PDO::PARAM_STR);
             $insertStmt->bindParam(':cardNum', $cardNum, PDO::PARAM_STR);
             $insertStmt->bindParam(':cardCVV', $cardCVV, PDO::PARAM_STR);
