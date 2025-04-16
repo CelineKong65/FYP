@@ -1,6 +1,7 @@
 <?php
 session_start();
 include 'config.php';
+include 'header.php';
 
 // Check if the customer is logged in
 if (!isset($_SESSION['user_id'])) {
@@ -9,24 +10,27 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $custID = $_SESSION['user_id'];
+$search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-// Fetch order history for the logged-in customer
-$sql = "SELECT op.OrderID, op.OrderDate, op.TotalPrice, od.ProductName, od.Size, od.Quantity 
-        FROM orderpayment op
-        JOIN orderdetails od ON op.OrderID = od.OrderID
-        WHERE op.CustID = :custID
-        ORDER BY op.OrderDate DESC";
+$sql = "SELECT o.OrderID, o.ReceiverName, o.ReceiverContact, o.StreetAddress, o.City, o.Postcode, o.State, 
+        o.OrderDate, o.OrderStatus, o.TotalPrice 
+        FROM orderpayment o";
 
-$stmt = $conn->prepare($sql);
-$stmt->bindParam(':custID', $custID, PDO::PARAM_INT);
-$stmt->execute();
-$orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Organize orders into an array grouped by OrderID
-$groupedOrders = [];
-foreach ($orders as $row) {
-    $groupedOrders[$row['OrderID']][] = $row;
+$params = [];
+if (!empty($search_query)) {
+    $sql .= " WHERE o.ReceiverName LIKE :search OR o.ReceiverContact LIKE :search";
 }
+
+$sql .= " ORDER BY o.OrderDate DESC";
+$stmt = $conn->prepare($sql);
+
+if (!empty($search_query)) {
+    $search_param = "%$search_query%";
+    $stmt->bindParam(':search', $search_param);
+}
+
+$stmt->execute();
+$order_result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -35,66 +39,64 @@ foreach ($orders as $row) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order History</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f8f8f8;
-        }
-        .order-history {
-            max-width: 800px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            margin-top: 100px;
-            margin-bottom: 100px;
-        }
-        .order {
-            margin-bottom: 20px;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        .order h3 {
-            margin-top: 0;
-        }
-        .order-details {
-            margin-left: 20px;
-        }
-        .order-details p {
-            margin: 5px 0;
-        }
-    </style>
+    <link rel='stylesheet' href='order_history.css'>
 </head>
 <body>
-    <div class="order-history">
-        <h1>Order History</h1>
-        <?php if (empty($groupedOrders)): ?>
-            <p>No orders found.</p>
-        <?php else: ?>
-            <?php foreach ($groupedOrders as $orderID => $orderItems): ?>
-                <div class="order">
-                    <h3>Order ID: <?php echo htmlspecialchars($orderID); ?></h3>
-                    <p>Order Date: <?php echo htmlspecialchars($orderItems[0]['OrderDate']); ?></p>
-                    <p>Total Price: RM <?php echo number_format($orderItems[0]['TotalPrice'], 2); ?></p>
-                    <div class="order-details">
-                        <h4>Items:</h4>
-                        <?php foreach ($orderItems as $item): ?>
-                            <p><?php echo htmlspecialchars($item['ProductName']); ?> - <?php echo htmlspecialchars($item['Size']); ?> - Quantity: <?php echo htmlspecialchars($item['Quantity']); ?></p>
+    <div class="history-container">
+        <div class="main-content">
+            <h2>Order History</h2>
+
+            <form method="GET" action="" class="search">
+                <input type="text" name="search" placeholder="Search by name or contact" value="<?php echo htmlspecialchars($search_query); ?>">
+                <button type="submit">Search</button>
+            </form>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th colspan="3">Receiver Info</th>
+                        <th>Order Time</th>
+                        <th>Order Status</th>
+                        <th>Total Price (RM)</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if ($order_result && count($order_result) > 0): ?>
+                        <?php foreach ($order_result as $orderpayment): ?>
+                            <tr>
+                                <td><?php echo $orderpayment['OrderID']; ?></td>
+                                <td colspan="3" style="line-height: 1.75;">
+                                    <strong><?php echo $orderpayment['ReceiverName']; ?></strong><br>
+                                    <?php echo $orderpayment['ReceiverContact']; ?><br>
+                                    <?php
+                                    $full_address = trim($orderpayment['StreetAddress'] . ', ' . $orderpayment['Postcode'] . ' ' . $orderpayment['City'] . ', ' . $orderpayment['State']);
+                                    echo htmlspecialchars($full_address);
+                                    ?>
+                                </td>
+                                <td><?php echo $orderpayment['OrderDate']; ?></td>
+                                <td class="<?php echo ($orderpayment['OrderStatus'] == 'Out for delivery') ? 'status-completed' : 'status-pending'; ?>">
+                                    <?php echo $orderpayment['OrderStatus']; ?>
+                                </td>                               
+                                <td>RM <?php echo number_format($orderpayment['TotalPrice'], 2); ?></td>
+                                <td>
+                                    <button name="view_details" onclick="window.location.href='order_details.php?order_id=<?php echo $orderpayment['OrderID']; ?>'">View Details</button>
+                                </td>
+                            </tr>
                         <?php endforeach; ?>
-                    </div>
-                </div>
-            <?php endforeach; ?>
-        <?php endif; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="8" style="text-align: center; color: red;"><b>No orders found.</b></td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
     </div>
 </body>
 </html>
 
-<?php
-include 'footer.php'; 
+<?php 
+include 'footer.php';
 ?>
-
-
