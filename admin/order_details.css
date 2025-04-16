@@ -1,1 +1,151 @@
-<link rel='stylesheet' href='order_details.css'>
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.container {
+    margin: 0 auto;
+    flex: 1;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    width: 80%;
+    margin-top: 80px;
+
+    border-radius: 20px;
+    transform: translateY(50px);
+}
+
+.main-content {
+    flex-grow: 1;
+    padding: 20px;
+    margin: 50px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    height: fit-content;
+}
+
+button {
+    padding: 10px;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    font-size: 15px;
+    width: 80px;
+}
+
+button[name="print"]{
+    background-color: #ffc107;
+    color: white;
+}
+
+button[name="print"]:hover{
+    background-color: #e0a800d1;
+    transition: 0.3s ease;
+}
+
+button[name="back"]:hover{
+    background-color: #dc3545;
+    transition: 0.3s ease;
+}
+
+button[name="back"]{
+    background-color: #c82333;
+}
+
+table {
+    width: 100%;
+    font-size: 15px;
+    margin-top: 10px;
+    border-collapse: separate;
+}
+
+table, th, td {
+    font-size: 15px;
+    border: 1px rgba(30, 59, 138, 0.44) solid;
+
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+}
+
+th {
+    background-color:#1e3a8a;
+    color: white;
+}
+
+.order-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.order-header h2 {
+    margin: 0;
+    flex-grow: 1;
+    text-align: center;
+    color: #1e3a8a;
+    font-size: 35px;
+}
+
+.order-header button a {
+    text-decoration: none;
+    color: white;
+}
+
+h3{
+    font-size: 20px;
+}
+
+.cust-info, .rec-info{
+    font-size: 15px;
+}
+
+.rec-info, .order_item{
+    border-top: 1px solid #ddd; 
+}
+
+p{
+    line-height: 1.5;
+}
+
+.status-completed {
+    color: #05ac2c;
+}
+
+.status-pending {
+    color: red;
+}
+
+
+
+table td:last-child {
+    text-align: right;
+}
+
+table tr:last-child td {
+    font-size: 17px;
+    background-color: #f0f8ff
+}
+
+img{
+    width: 100px;
+    border: none;
+}
+
+.highlight-row {
+    background-color: #f0f8ff;
+    font-weight: bold;
+}
+
+.center
+{
+    text-align: center;
+}

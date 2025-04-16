@@ -43,165 +43,7 @@ $customer = $stmt->get_result()->fetch_assoc();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order Details</title>
-    <style>
-        body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-}
-
-.container {
-    margin: 0 auto;
-    flex: 1;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    width: 90%;
-    margin-top: 80px;
-    min-height: 700px;
-    max-height: fit-content;
-    border-radius: 20px;
-    transform: translateY(50px);
-}
-
-.main-content {
-    flex-grow: 1;
-    padding: 20px;
-    margin: 50px;
-    background-color: #ffffff;
-    border-radius: 10px;
-    height: fit-content;
-}
-
-button {
-    padding: 10px;
-    background-color: #1e3a8a;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    margin-right: 5px;
-    margin-bottom: 10px;
-    font-size: 13px;
-    width: 80px;
-}
-
-button[name="print"]{
-    background-color: #ffc107;
-    color: white;
-}
-
-button[name="print"]:hover{
-    background-color: #e0a800d1;
-}
-
-button[name="back"]:hover{
-    background-color:rgb(245, 34, 55);
-    transition: 0.3s ease;
-}
-
-button[name="back"]{
-    background-color: #c82333;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 15px;
-    margin-top: 10px;
-}
-
-table, th, td {
-    font-size: 15px;
-    border: 1px solid #1e3a8a;
-}
-
-
-th, td {
-    padding: 12px;
-    text-align: left;
-}
-
-th {
-    background-color: #1e3a8a;
-    color: white;
-}
-
-tr:nth-child(even) {
-    background-color: #e3f2fd;
-}
-
-table tr:hover {
-    background-color:rgb(237, 236, 236);
-}
-
-.order-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-}
-
-.order-header h2 {
-    margin: 0;
-    flex-grow: 1;
-    text-align: center;
-    color: #1e3a8a;
-    font-size: 35px;
-}
-
-.order-header button a {
-    text-decoration: none;
-    color: white;
-}
-
-h3{
-    font-size: 20px;
-}
-
-.cust-info, .rec-info{
-    font-size: 15px;
-}
-
-.rec-info, .order_item{
-    border-top: 1px solid #ddd; 
-}
-
-p{
-    line-height: 1.5;
-}
-
-.status-completed {
-    color: #05ac2c;
-}
-
-.status-pending {
-    color: red;
-}
-
-.total_price {
-    margin-top: 30px;
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    padding: 20px 30px;
-    background-color: #f1f5fb;
-    border: 1px solid #dbe2ef;
-    border-radius: 12px;
-    box-shadow: 0 4px 8px rgba(69, 188, 248, 0.35);
-    gap: 15px;
-    font-size: 18px;
-    font-weight: bold;
-    color: #1e3a8a;
-}
-
-.total_price p {
-    margin: 0;
-}
-
-
-    </style>
+    <link rel='stylesheet' href='order_details.css'>
 </head>
 <body>
     <div class="header">
@@ -223,8 +65,9 @@ p{
             </div>
             <div class="rec-info">
                 <h3>Receiver Information</h3>
-                <p><b>Name:</b> <?php echo $orderpayment['ReceiverName']; ?></p>
+                <p><b>Name:</b> <?php echo htmlspecialchars($customer['CustName']); ?></p>
                 <p><b>Contact Number:</b> <?php echo $orderpayment['ReceiverContact']; ?></p>
+                <p><b>Email:</b> <?php echo $orderpayment['ReceiverEmail']; ?></p>
                 <p><b>Address:</b> <?php echo $orderpayment['StreetAddress'] . ', ' . $orderpayment['Postcode'] . ' ' . $orderpayment['City'] . ', ' . $orderpayment['State']; ?></p>
                 <p><b>Order Date:</b> <?php echo $orderpayment['OrderDate']; ?></p>
                 <p><b>Order Status:</b> 
@@ -240,10 +83,11 @@ p{
                     <thead>
                         <tr>
                             <th>No.</th>
+                            <th></th>
                             <th colspan="2">Product</th>
-                            <th>Price</th>
-                            <th>Quantity</th>
-                            <th>Total</th>
+                            <th class="center">Price (RM)</th>
+                            <th class="center">Qty</th>
+                            <th style="text-align: right;">Total (RM)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -251,23 +95,41 @@ p{
                         $counter = 1;
 
                         while ($orderdetails = $order_details->fetch_assoc()): 
-                            $total_item = $orderdetails['Price'] * $orderdetails['Quantity'];
+                            $total_item = $orderdetails['ProductPrice'] * $orderdetails['Quantity'];
                         ?>
                         <tr>
                             <td><?php echo $counter++; ?></td>
-                            <td colspan="2"><?php echo $orderdetails['ProductName']; ?><br>Size: <?php echo $orderdetails['Size']; ?></td>
-                            <td>RM <?php echo number_format($orderdetails['Price'], 2); ?></td>
-                            <td><?php echo $orderdetails['Quantity']; ?></td>
-                            <td>RM <?php echo number_format($total_item, 2); ?></td>
+                            <td style="display: grid; place-items: center;">
+                                <?php
+                                $imageName = strtolower(str_replace(' ', '-', $orderdetails['ProductName']));
+                                $jpgPath = "../image/{$imageName}.jpg";
+                                $pngPath = "../image/{$imageName}.png";
+
+                                if (file_exists($jpgPath)) {
+                                    echo "<img src='{$jpgPath}' alt='{$orderdetails['ProductName']}'>";
+                                } elseif (file_exists($pngPath)) {
+                                    echo "<img src='{$pngPath}' alt='{$orderdetails['ProductName']}'>";
+                                } else {
+                                    echo "<img src='../image/placeholder.jpg' alt='Image not available' width='150'>";
+                                }
+                                ?>
+                            <td colspan="2" style="line-height: 1.5;"><strong><?php echo $orderdetails['ProductName']; ?></strong><br>Size: <?php echo $orderdetails['Size']; ?></td>
+                            <td class="center"><?php echo number_format($orderdetails['ProductPrice'], 2); ?></td>
+                            <td class="center"><?php echo $orderdetails['Quantity']; ?></td>
+                            <td><?php echo number_format($total_item, 2); ?></td>
                         </tr>
                         <?php endwhile; ?>
+                        <tr class="highlight-row">
+                            <td colspan="6" style="text-align: right;">Delivery Fee:</td>
+                            <td>RM <?php echo number_format($orderpayment['DeliveryFee'], 2); ?></td>
+                        </tr>
+                        <tr class="highlight-row">
+                            <td colspan="6" style="text-align: right;">TOTAL</td>
+                            <td>RM <?php echo number_format($orderpayment['TotalPrice'], 2); ?></td>
+                        </tr>
+
                     </tbody>
                 </table> 
-            </div>
-
-            <div class="total_price">
-                <p>TOTAL</p>
-                <p><strong>RM <?php echo number_format($orderpayment['TotalPrice'], 2); ?></strong></p>
             </div>
 
         </div>
