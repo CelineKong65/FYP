@@ -83,8 +83,8 @@ if (isset($_POST['edit_status'])) {
                         <th>ID</th>
                         <th colspan="3">Receiver Info</th>
                         <th>Order Time</th>
-                        <th>Order Status</th>
-                        <th>Total Price (RM)</th>
+                        <th style="text-align: center;">Order Status</th>
+                        <th style="text-align: center;">Total Price</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -102,10 +102,10 @@ if (isset($_POST['edit_status'])) {
                                     ?>
                                 </td>
                                 <td><?php echo $orderpayment['OrderDate']; ?></td>
-                                <td class="<?php echo ($orderpayment['OrderStatus'] == 'Out for delivery') ? 'status-completed' : 'status-pending'; ?>">
+                                <td class="<?php echo ($orderpayment['OrderStatus'] == 'Out for delivery') ? 'status-completed' : 'status-pending'; ?>" style="text-align: center;">
                                     <?php echo $orderpayment['OrderStatus']; ?>
                                 </td>                               
-                                <td>RM <?php echo number_format($orderpayment['TotalPrice'], 2); ?></td>
+                                <td style="text-align: center;">RM <?php echo number_format($orderpayment['TotalPrice'], 2); ?></td>
                                 <td>
                                     <button type="button" name="change_status" onclick="editStatus('<?php echo $orderpayment['OrderID']; ?>', '<?php echo $orderpayment['OrderStatus']; ?>')">Edit Status</button>
                                     <button name="view_details" onclick="window.location.href='order_details.php?order_id=<?php echo $orderpayment['OrderID']; ?>'">View Details</button>

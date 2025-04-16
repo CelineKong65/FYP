@@ -307,7 +307,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
             <table>
             <thead>
                 <tr>
-                    <th>ID</th>
+                    <th style="text-align: center;">ID</th>
                     <th>Image</th>
                     <th>Name</th>
                     <th style="text-align: center;">Price (RM)</th>
@@ -321,7 +321,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                 <?php if ($product_result->num_rows > 0): ?>
                     <?php while ($product = $product_result->fetch_assoc()): ?>
                         <tr>
-                            <td><?php echo $product['ProductID']; ?></td>
+                            <td style="text-align: center;"><?php echo $product['ProductID']; ?></td>
                             <td style="display: grid; place-items: center;">
                                 <?php
                                 $imageName = strtolower(str_replace(' ', '-', $product['ProductName']));
