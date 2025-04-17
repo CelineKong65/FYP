@@ -228,9 +228,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
                                 <?= $isOutOfStock ? 'disabled' : '' ?>
                             >
                                 <?= htmlspecialchars($size) ?>
-                                <?php if ($size !== 'Standard Only'): ?>
-                                    <span class="stock-info"><?= $stock ?> available</span>
-                                <?php endif; ?>
+                                <span class="stock-info"><?= $stock ?> available</span>
                             </button>
                         <?php endforeach; ?>
                     </div>

@@ -145,14 +145,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Check stock availability before processing payment
     foreach ($cartItems as $item) {
-        $updateStockQuery = "UPDATE product_size ps
-                            JOIN product p ON ps.ProductID = p.ProductID
-                            SET ps.Stock = ps.Stock - :quantity
-                            WHERE p.ProductName = :productName AND ps.Size = :size";
+        // Use IS NULL comparison when size is "Standard Only"
+        if ($item['Size'] === 'Standard Only') {
+            $updateStockQuery = "UPDATE product_size ps
+                                JOIN product p ON ps.ProductID = p.ProductID
+                                SET ps.Stock = ps.Stock - :quantity
+                                WHERE p.ProductName = :productName AND ps.Size IS NULL";
+        } else {
+            $updateStockQuery = "UPDATE product_size ps
+                                JOIN product p ON ps.ProductID = p.ProductID
+                                SET ps.Stock = ps.Stock - :quantity
+                                WHERE p.ProductName = :productName AND ps.Size = :size";
+        }
+        
         $updateStockStmt = $conn->prepare($updateStockQuery);
         $updateStockStmt->bindParam(':quantity', $item['Quantity'], PDO::PARAM_INT);
         $updateStockStmt->bindParam(':productName', $item['ProductName'], PDO::PARAM_STR);
-        $updateStockStmt->bindParam(':size', $item['Size'], PDO::PARAM_STR);
+        
+        // Only bind size parameter if not "Standard Only"
+        if ($item['Size'] !== 'Standard Only') {
+            $updateStockStmt->bindParam(':size', $item['Size'], PDO::PARAM_STR);
+        }
+        
         $updateStockStmt->execute();
         
         if ($updateStockStmt->rowCount() === 0) {
