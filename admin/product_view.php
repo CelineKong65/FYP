@@ -16,17 +16,17 @@ $selected_category = isset($_GET['category']) ? $_GET['category'] : '';
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 $product_query = "
-    SELECT p.*, 
-           COALESCE(ps_S.Stock, 0) as stock_S,
-           COALESCE(ps_M.Stock, 0) as stock_M,
-           COALESCE(ps_L.Stock, 0) as stock_L,
-           COALESCE(ps_XL.Stock, 0) as stock_XL,
-           CASE WHEN ps_S.ProductID IS NULL THEN 0 ELSE 1 END as has_S,
-           CASE WHEN ps_M.ProductID IS NULL THEN 0 ELSE 1 END as has_M,
-           CASE WHEN ps_L.ProductID IS NULL THEN 0 ELSE 1 END as has_L,
-           CASE WHEN ps_XL.ProductID IS NULL THEN 0 ELSE 1 END as has_XL,
-           EXISTS (SELECT 1 FROM product_size WHERE ProductID = p.ProductID AND Size IS NULL) as has_no_size,
-           (SELECT Stock FROM product_size WHERE ProductID = p.ProductID AND Size IS NULL LIMIT 1) as no_size_stock
+    SELECT p.*,
+            COALESCE(ps_S.Stock, 0) as stock_S,
+            COALESCE(ps_M.Stock, 0) as stock_M,
+            COALESCE(ps_L.Stock, 0) as stock_L,
+            COALESCE(ps_XL.Stock, 0) as stock_XL,
+            CASE WHEN ps_S.ProductID IS NULL THEN 0 ELSE 1 END as has_S,
+            CASE WHEN ps_M.ProductID IS NULL THEN 0 ELSE 1 END as has_M,
+            CASE WHEN ps_L.ProductID IS NULL THEN 0 ELSE 1 END as has_L,
+            CASE WHEN ps_XL.ProductID IS NULL THEN 0 ELSE 1 END as has_XL,
+            EXISTS (SELECT 1 FROM product_size WHERE ProductID = p.ProductID AND Size IS NULL) as has_no_size,
+            (SELECT Stock FROM product_size WHERE ProductID = p.ProductID AND Size IS NULL LIMIT 1) as no_size_stock
     FROM product p
     LEFT JOIN product_size ps_S ON p.ProductID = ps_S.ProductID AND ps_S.Size = 'S'
     LEFT JOIN product_size ps_M ON p.ProductID = ps_M.ProductID AND ps_M.Size = 'M'
@@ -80,7 +80,7 @@ if (isset($_POST['update_product'])) {
     $category_id = intval($_POST['category_id']);
     $image = $_FILES['image']['name'];
     $image_tmp = $_FILES['image']['tmp_name'];
-    
+
     $has_sizes = isset($_POST['has_sizes']) && $_POST['has_sizes'] == 'on';
     $stock = isset($_POST['stock']) ? intval($_POST['stock']) : 0;
     $stock_S = isset($_POST['stock_S']) ? intval($_POST['stock_S']) : 0;
@@ -137,19 +137,18 @@ if (isset($_POST['update_product'])) {
     $conn->begin_transaction();
 
     try {
-        $update_query = "UPDATE product SET 
-                ProductName = ?, 
-                ProductPrice = ?, 
-                ProductDesc = ?, 
-                CategoryID = ?, 
-                ProductPicture = ?
-                WHERE ProductID = ?";
+        $update_query = "UPDATE product SET
+                            ProductName = ?,
+                            ProductPrice = ?,
+                            ProductDesc = ?,
+                            CategoryID = ?,
+                            ProductPicture = ?
+                            WHERE ProductID = ?";
         $stmt = $conn->prepare($update_query);
         $stmt->bind_param("sdsisi", $name, $price, $description, $category_id, $image_name, $product_id);
         $stmt->execute();
         $stmt->close();
 
-        // Delete all existing size records for this product
         $delete_sizes = $conn->prepare("DELETE FROM product_size WHERE ProductID = ?");
         $delete_sizes->bind_param("i", $product_id);
         $delete_sizes->execute();
@@ -184,7 +183,7 @@ if (isset($_POST['update_product'])) {
         $conn->rollback();
         echo "<script>alert('Failed to update product: " . addslashes($e->getMessage()) . "'); window.location.href='product_view.php';</script>";
     }
-    
+
     exit();
 }
 
@@ -204,7 +203,7 @@ if (isset($_POST['add_product'])) {
     $description = trim($_POST['description']);
     $category_id = intval($_POST['category_id']);
     $admin_id = $_SESSION['AdminID'];
-    
+
     $has_sizes = isset($_POST['has_sizes']) && $_POST['has_sizes'] == 'on';
     $stock = isset($_POST['stock']) ? intval($_POST['stock']) : 0;
     $stock_S = isset($_POST['stock_S']) ? intval($_POST['stock_S']) : 0;
@@ -212,7 +211,6 @@ if (isset($_POST['add_product'])) {
     $stock_L = isset($_POST['stock_L']) ? intval($_POST['stock_L']) : 0;
     $stock_XL = isset($_POST['stock_XL']) ? intval($_POST['stock_XL']) : 0;
 
-    // Validate stock quantities
     if ($has_sizes) {
         if ($stock_S < 0 || $stock_M < 0 || $stock_L < 0 || $stock_XL < 0) {
             echo "<script>alert('Stock quantities must be 0 or greater.'); window.location.href='product_view.php';</script>";
@@ -244,10 +242,10 @@ if (isset($_POST['add_product'])) {
 
     if (move_uploaded_file($image_tmp, $target_file)) {
         $conn->begin_transaction();
-        
+
         try {
-            $insert_query = "INSERT INTO product (ProductName, ProductPrice, ProductDesc, CategoryID, AdminID, ProductPicture) 
-                            VALUES (?, ?, ?, ?, ?, ?)";
+            $insert_query = "INSERT INTO product (ProductName, ProductPrice, ProductDesc, CategoryID, AdminID, ProductPicture)
+                                    VALUES (?, ?, ?, ?, ?, ?)";
             $stmt = $conn->prepare($insert_query);
             $stmt->bind_param("sdsiss", $name, $price, $description, $category_id, $admin_id, $image_name);
             $stmt->execute();
@@ -290,12 +288,12 @@ if (isset($_POST['add_product'])) {
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     $productID = (int)$_POST['product_id'];
     $currentStatus = strtolower($_POST['current_status']);
-    
+
     $newStatus = ($currentStatus == 'active') ? 'inactive' : 'active';
-    
+
     $stmt = $conn->prepare("UPDATE product SET ProductStatus = ? WHERE productID = ?");
     $stmt->bind_param("si", $newStatus, $productID);
-    
+
     if ($stmt->execute()) {
         header("Location: product_view.php");
         exit();
@@ -341,96 +339,94 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                 <input type="text" name="search" placeholder="Search by product name" value="<?php echo htmlspecialchars($search_query); ?>">
                 <button type="submit" class="search">Search</button>
             </form>
-                    
+
             <div class="add">
                 <button onclick="openAddModal()" class="add_btn">Add Product</button>
             </div>
 
             <table>
-            <thead>
-                <tr>
-                    <th style="text-align: center;">ID</th>
-                    <th>Image</th>
-                    <th>Name</th>
-                    <th style="text-align: center;">Price (RM)</th>
-                    <th style="width: 350px;">Description</th>
-                    <th style="text-align: center;">Stock</th>
-                    <th style="text-align: center;">Status</th>
-                    <th class="action"></th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if ($product_result->num_rows > 0): ?>
-                    <?php while ($product = $product_result->fetch_assoc()): ?>
-                        <tr>
-                            <td style="text-align: center;"><?php echo $product['ProductID']; ?></td>
-                            <td style="display: grid; place-items: center;">
-                                <?php
-                                $imageName = strtolower(str_replace(' ', '-', $product['ProductName']));
-                                $jpgPath = "../image/{$imageName}.jpg";
-                                $pngPath = "../image/{$imageName}.png";
-
-                                if (file_exists($jpgPath)) {
-                                    echo "<img src='{$jpgPath}' alt='{$product['ProductName']}' width='150'>";
-                                } elseif (file_exists($pngPath)) {
-                                    echo "<img src='{$pngPath}' alt='{$product['ProductName']}' width='150'>";
-                                } else {
-                                    echo "<img src='../image/placeholder.jpg' alt='Image not available' width='150'>";
-                                }
-                                ?>
-                            </td>
-                            <td><?php echo $product['ProductName']; ?></td>
-                            <td style="text-align: center;"><?php echo number_format($product['ProductPrice'], 2); ?></td>
-                            <td><?php echo $product['ProductDesc']; ?></td>
-                            <td style="text-align: center; line-height: 1.5;">
-                                <?php
-                                if ($product['has_no_size']) {
-                                    echo $product['no_size_stock'];
-                                } else {
-                                    $sizes = [];
-                                    if ($product['has_S']) $sizes[] = "S: " . $product['stock_S'];
-                                    if ($product['has_M']) $sizes[] = "M: " . $product['stock_M'];
-                                    if ($product['has_L']) $sizes[] = "L: " . $product['stock_L'];
-                                    if ($product['has_XL']) $sizes[] = "XL: " . $product['stock_XL'];
-                                    
-                                    echo implode("<br>", $sizes);
-                                }
-                                ?>
-                            </td>
-                            <td style="text-align: center;" class="<?php echo ($product['ProductStatus'] === 'active') ? 'status-active' : 'status-inactive'; ?>">
-                                <?php echo $product['ProductStatus']; ?>
-                            </td>
-                            <td>
-                            <button name="edit_product" onclick='editProduct(
-                                <?php echo json_encode($product["ProductID"]); ?>, 
-                                <?php echo json_encode($product["ProductName"]); ?>, 
-                                <?php echo json_encode($product["ProductPrice"]); ?>, 
-                                <?php echo json_encode($product["ProductDesc"]); ?>, 
-                                <?php echo json_encode($product["stock_S"] ?? 0); ?>, 
-                                <?php echo json_encode($product["stock_M"] ?? 0); ?>, 
-                                <?php echo json_encode($product["stock_L"] ?? 0); ?>, 
-                                <?php echo json_encode($product["stock_XL"] ?? 0); ?>, 
-                                <?php echo json_encode($product["CategoryID"]); ?>,
-                                <?php echo json_encode($product["has_no_size"]); ?>,
-                                <?php echo json_encode($product["no_size_stock"] ?? 0); ?>
-                            )'>Edit</button>
-                                <form method="post" action="" style="display: inline;">
-                                    <input type="hidden" name="toggle_status" value="1">
-                                    <input type="hidden" name="product_id" value="<?php echo $product['ProductID']; ?>">
-                                    <input type="hidden" name="current_status" value="<?php echo $product['ProductStatus']; ?>">
-                                    <button type="submit" class="btn-status <?php echo ($product['ProductStatus'] === 'active') ? 'btn-inactive' : 'btn-active'; ?>">
-                                        <?php echo ($product['ProductStatus'] === 'active') ? 'Deactivate' : 'Activate'; ?>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                    <?php endwhile; ?>
-                <?php else: ?>
+                <thead>
                     <tr>
-                        <td colspan="6" style="text-align: center;color:red;"><b>No products found for this category.</b></td>
+                        <th style="text-align: center;">ID</th>
+                        <th>Image</th>
+                        <th>Name</th>
+                        <th style="text-align: center;">Price (RM)</th>
+                        <th style="width: 350px;">Description</th>
+                        <th style="text-align: center;">Stock</th>
+                        <th style="text-align: center;">Status</th>
+                        <th class="action"></th>
                     </tr>
-                <?php endif; ?>
-            </tbody>
+                </thead>
+                <tbody>
+                    <?php if ($product_result->num_rows > 0): ?>
+                        <?php while ($product = $product_result->fetch_assoc()): ?>
+                            <tr>
+                                <td style="text-align: center;"><?php echo $product['ProductID']; ?></td>
+                                <td style="display: grid; place-items: center;">
+                                    <?php
+                                    $imageName = $product['ProductPicture'];
+                                    $imagePath = "../image/" . $imageName;
+
+                                    if (file_exists($imagePath) && !empty($imageName)) {
+                                        echo "<img src='{$imagePath}' alt='{$product['ProductName']}' width='150'>";
+                                    } else {
+                                        echo "<img src='../image/placeholder.jpg' alt='Image not available' width='150'>";
+                                    }
+                                    ?>
+                                </td>
+                                <td><?php echo $product['ProductName']; ?></td>
+                                <td style="text-align: center;"><?php echo number_format($product['ProductPrice'], 2); ?></td>
+                                <td><?php echo $product['ProductDesc']; ?></td>
+                                <td style="text-align: center; line-height: 1.5;">
+                                    <?php
+                                    if ($product['has_no_size']) {
+                                        echo $product['no_size_stock'];
+                                    } else {
+                                        $sizes = [];
+                                        if ($product['has_S']) $sizes[] = "S: " . $product['stock_S'];
+                                        if ($product['has_M']) $sizes[] = "M: " . $product['stock_M'];
+                                        if ($product['has_L']) $sizes[] = "L: " . $product['stock_L'];
+                                        if ($product['has_XL']) $sizes[] = "XL: " . $product['stock_XL'];
+
+                                        echo implode("<br>", $sizes);
+                                    }
+                                    ?>
+                                </td>
+                                <td style="text-align: center;" class="<?php echo ($product['ProductStatus'] === 'active') ? 'status-active' : 'status-inactive'; ?>">
+                                    <?php echo $product['ProductStatus']; ?>
+                                </td>
+                                <td>
+                                    <button name="edit_product" onclick='editProduct(
+                                        <?php echo json_encode($product["ProductID"]); ?>,
+                                        <?php echo json_encode($product["ProductName"]); ?>,
+                                        <?php echo json_encode($product["ProductPrice"]); ?>,
+                                        <?php echo json_encode($product["ProductDesc"]); ?>,
+                                        <?php echo json_encode($product["stock_S"] ?? 0); ?>,
+                                        <?php echo json_encode($product["stock_M"] ?? 0); ?>,
+                                        <?php echo json_encode($product["stock_L"] ?? 0); ?>,
+                                        <?php echo json_encode($product["stock_XL"] ?? 0); ?>,
+                                        <?php echo json_encode($product["CategoryID"]); ?>,
+                                        <?php echo json_encode($product["has_no_size"]); ?>,
+                                        <?php echo json_encode($product["no_size_stock"] ?? 0); ?>,
+                                        <?php echo json_encode($product["ProductPicture"]); ?>
+                                    )'>Edit</button>
+                                    <form method="post" action="" style="display: inline;">
+                                        <input type="hidden" name="toggle_status" value="1">
+                                        <input type="hidden" name="product_id" value="<?php echo $product['ProductID']; ?>">
+                                        <input type="hidden" name="current_status" value="<?php echo $product['ProductStatus']; ?>">
+                                        <button type="submit" class="btn-status <?php echo ($product['ProductStatus'] === 'active') ? 'btn-inactive' : 'btn-active'; ?>">
+                                            <?php echo ($product['ProductStatus'] === 'active') ? 'Deactivate' : 'Activate'; ?>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <?php endwhile; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="8" style="text-align: center;color:red;"><b>No products found for this category.</b></td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
             </table>
         </div>
     </div>
@@ -466,7 +462,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                         <div class="size-toggle">
                             <input type="checkbox" id="has_sizes" name="has_sizes" onchange="toggleSizeFields()">
                             <label for="has_sizes">This product has sizes</label>
-                        </div>                        
+                        </div>
                         <div id="size_fields">
                             <label for="stock_S">S:</label>
                             <input type="number" name="stock_S" id="stock_S" min="0" step="1.00" value="0">
@@ -551,12 +547,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
             document.getElementById('no_size_field').style.display = hasSizes ? 'none' : 'block';
         }
 
-        function editProduct(id, name, price, description, stock_S, stock_M, stock_L, stock_XL, category_id, hasNoSize, noSizeStock) {
+        function editProduct(id, name, price, description, stock_S, stock_M, stock_L, stock_XL, category_id, hasNoSize, noSizeStock, productPicture) {
             document.getElementById('product_id').value = id;
             document.getElementById('name').value = name;
             document.getElementById('price').value = price;
             document.getElementById('description').value = description;
             document.getElementById('category_id').value = category_id;
+            document.getElementById('existing_image').value = productPicture; // Set the existing image name
             
             if (hasNoSize) {
                 document.getElementById('has_sizes').checked = false;
@@ -570,6 +567,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
             }
             toggleSizeFields();
             document.getElementById('editModal').style.display = "block";
+
+            var categorySelect = document.getElementById('category_id');
+            for (var i = 0; i < categorySelect.options.length; i++) {
+                if (categorySelect.options[i].value == category_id) {
+                    categorySelect.options[i].selected = true;
+                    break;
+                }
+            }
         }
 
         function closeModal() {
@@ -580,7 +585,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
             var hasSizes = document.getElementById('add_has_sizes').checked;
             document.getElementById('add_size_fields').style.display = hasSizes ? 'block' : 'none';
             document.getElementById('add_no_size_field').style.display = hasSizes ? 'none' : 'block';
-            
+
             // Toggle required attributes
             document.getElementById('add_stock').required = !hasSizes;
             document.getElementById('add_stock_S').required = hasSizes;
