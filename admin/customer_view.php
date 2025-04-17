@@ -111,6 +111,17 @@ if (isset($_POST['update_customer'])) {
     }
     $stmt->close();
 
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/\.com$/', $email)) {
+        echo "<script>alert('Invalid email format. Email must be valid and end with .com'); window.location.href='customer_view.php';</script>";
+        exit();
+    }
+    
+    // Validate phone
+    if (!preg_match('/^\d{3}-\d{3,4} \d{4}$/', $phone)) {
+        echo "<script>alert('Invalid phone number format. Use XXX-XXX XXXX or XXX-XXXX XXXX.'); window.location.href='customer_view.php';</script>";
+        exit();
+    }
+    
     $original_query = "SELECT * FROM customer WHERE CustID = ?";
     $stmt = $conn->prepare($original_query);
     $stmt->bind_param("i", $cust_id);
