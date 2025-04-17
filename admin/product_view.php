@@ -164,7 +164,7 @@ if (isset($_POST['update_product'])) {
             ];
 
             foreach ($sizes as $size => $quantity) {
-                if ($quantity > 0) {
+                if ($quantity >= 0) {
                     $insert_size = $conn->prepare("INSERT INTO product_size (ProductID, Size, Stock) VALUES (?, ?, ?)");
                     $insert_size->bind_param("isi", $product_id, $size, $quantity);
                     $insert_size->execute();
