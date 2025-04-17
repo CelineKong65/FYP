@@ -2,7 +2,7 @@
 include 'config.php';
 session_start();
 
-$custID = 1; // Assuming customer ID is 1, update as needed
+$custID = $_SESSION['user_id'];
 
 // Delete all items from the cart for the specific customer
 $query = "DELETE FROM cart WHERE CustID = :custID";

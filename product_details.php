@@ -62,7 +62,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
             left: 50%;
             transform: translate(-50%, -50%); 
         }
-        
+
         .button {
             display: flex;
             align-items: center;
@@ -121,7 +121,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
             color: white;
             border-color: #333;
         }
-        
+
         .size.out-of-stock {
             color: #999;
             background: #f5f5f5;
@@ -162,7 +162,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
         .add-to-cart-btn:hover {
             background: darkblue;
         }
-
     </style>
 </head>
 <body>
