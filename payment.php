@@ -2,6 +2,7 @@
 ob_start();
 session_start();
 include 'config.php';
+include 'header.php';
 
 // Retrieve cart items from session
 $cartItems = $_SESSION['cart_items'] ?? [];
@@ -281,23 +282,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-    <style>
-        .error-messages {
-            color: red;
-            margin-bottom: 15px;
-            border: 1px solid red;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        .error-messages p {
-            margin: 5px 0;
-        }
-        .ui-datepicker {
-            background: white;
-            border: 1px solid #ddd;
-            padding: 10px;
-        }
-    </style>
 </head>
 <body>
     <div class="checkout-wrapper">
