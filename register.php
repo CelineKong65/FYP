@@ -1,62 +1,66 @@
 <?php
-include 'config.php'; // Include database connection
+session_start();
+include 'config.php';
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
+$errors = [];
+$step = isset($_GET['step']) ? (int)$_GET['step'] : 1;
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && $step == 1) {
+    // Sanitize inputs
     $custName = $_POST['custName'];
     $custEmail = $_POST['custEmail'];
     $custPassword = $_POST['custPassword'];
     $custPhoneNum = $_POST['custPhoneNum'];
-    $custAddress = $_POST['custAddress'];
+
+    // Validate gmail format
+    if (!preg_match("/^[a-zA-Z0-9._%+-]+@gmail\.com$/i", $custEmail)) {
+        $errors['custEmail'] = "Please use a valid gmail address (e.g. example@gmail.com)";
+    }
 
     // Validate password format
     if (!preg_match("/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])\S{8,}$/", $custPassword)) {
-        echo "<script>alert('Password must be at least 8 characters long, include at least one letter, one number, and one special character, and no spaces.'); history.back();</script>";
-        exit();
+        $errors['custPassword'] = "Password must follow requirements";
     }
 
-    // Check if email, phone number, or address already exists
-    $sql_check = "SELECT CustName, CustEmail, CustPhoneNum, CustAddress FROM customer WHERE CustName = ? OR CustEmail = ? OR CustPhoneNum = ? OR CustAddress = ?";
+    // Check if gmail or phone number already exists
+    $sql_check = "SELECT CustEmail, CustPhoneNum FROM customer WHERE CustEmail = ? OR CustPhoneNum = ?";
     $stmt_check = $conn->prepare($sql_check);
-    $stmt_check->execute([$custName, $custEmail, $custPhoneNum, $custAddress]);
+    $stmt_check->execute([$custEmail, $custPhoneNum]);
     $result = $stmt_check->fetchAll(PDO::FETCH_ASSOC);
 
     if (count($result) > 0) {
         foreach ($result as $row) {
-            if ($row['CustName'] == $custName) {
-                echo "<script>alert('Name already exists.'); history.back();</script>";
-            } elseif ($row["CustEmail"] == $custEmail) {
-                echo "<script>alert('Email already exists.'); history.back();</script>";
-            } elseif ($row["CustPhoneNum"] == $custPhoneNum) {
-                echo "<script>alert('Phone Number already exists.'); history.back();</script>";
-            } elseif ($row["CustAddress"] == $custAddress) {
-                echo "<script>alert('Address already exists.'); history.back();</script>";
+            if ($row["CustName"] == $custName){
+                $errors['custName'] == "Username already exists";
+            }
+
+            if ($row["CustEmail"] == $custEmail) {
+                $errors['custEmail'] = "Email already exists";
+            }
+
+            if ($row["CustPhoneNum"] == $custPhoneNum) {
+                $errors['custPhoneNum'] = "Phone Number already exists";
             }
         }
+    }
+
+    // If no errors, store in session and proceed to step 2
+    if (empty($errors)) {
+        $_SESSION['register_data'] = [
+            'custName' => $custName,
+            'custEmail' => $custEmail,
+            'custPassword' => $custPassword,
+            'custPhoneNum' => $custPhoneNum
+        ];
+        header("Location: register.php?step=2");
         exit();
     }
-    
-    // Insert data into customer table
-    $sql = "INSERT INTO customer (CustName, CustEmail, CustPassword, CustPhoneNum, CustAddress) 
-            VALUES (?, ?, ?, ?, ?)";
-    $stmt = $conn->prepare($sql);
-    $stmt->execute([$custName, $custEmail, $custPassword, $custPhoneNum, $custAddress]);
-
-    if ($stmt->rowCount()>0) {
-        echo "<script>alert('Registration successful!'); window.location.href='login.php';</script>";
-    } else {
-        echo "<script>alert('Error: " . $stmt->error . "');
-        history.back();</script>";
-    }
-
-    $stmt->close();
-    $conn->close();
 }
 ?>
-
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Customer Registration</title>
+    <title>Customer Registration - Step <?php echo $step; ?></title>
     <link rel="stylesheet" type="text/css" href="register.css">
     <script src="https://kit.fontawesome.com/c2f7d169d6.js" crossorigin="anonymous"></script>
 </head>
@@ -66,7 +70,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <img src="image/logo.png" alt="Watersport Equipment Shop Logo">
         </div>
         <div class="return">
-        <a onclick="history.back();"><i class="fa-solid fa-rotate-left"><h2>RETURN</h2></i></a>
+            <a onclick="history.back();"><i class="fa-solid fa-rotate-left"><h2>RETURN</h2></i></a>
         </div>
     </header>
 
@@ -77,66 +81,60 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <div class="right-side">
             <div class="right-side-inner">
                 <div class="frame">
-                    <h2>Register</h2>
-                    <form method="POST" action="" id="register-form">
-                        <label>Name:</label>
-                        <input type="text" placeholder="Username" name="custName" required><br>
-                        
-                        <label>Email:</label>
-                        <input type="email" placeholder="123abc@gmail.com" name="custEmail" required><br>
-                        
-                        <label>Password:</label>
-                        <div class="wrapper">
-                            <div class="pass-field">
-                                <input type="password" placeholder="123$abcd" name="custPassword" required><br>
-                                <i class="fa-solid fa-eye" id="show-password"></i>
+                    <h2>Register - Step <?php echo $step; ?></h2>
+                    
+                    <?php if ($step == 1): ?>
+                        <form method="POST" action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>?step=1" id="register-form">
+                            <!-- Basic Info Fields -->
+                            <label>Name:</label>
+                            <input type="text" placeholder="Username" name="custName" value="<?php echo isset($_POST['custName']) ? htmlspecialchars($_POST['custName']) : ''; ?>" required>
+                            <?php if (isset($errors['custName'])): ?>
+                                <div class="error-message"><?php echo $errors['custName']; ?></div>
+                            <?php endif; ?>
+                            <br>
+
+                            <label>Email:</label>
+                            <input type="email" placeholder="123abc@gmail.com" name="custEmail" value="<?php echo isset($_POST['custEmail']) ? htmlspecialchars($_POST['custEmail']) : ''; ?>" required>
+                            <?php if (isset($errors['custEmail'])): ?>
+                                <div class="error-message"><?php echo $errors['custEmail']; ?></div>
+                            <?php endif; ?>
+                            <br>
+
+                            <label>Password:</label>
+                            <div class="wrapper">
+                                <div class="pass-field">
+                                    <input type="password" placeholder="123$abcd" name="custPassword" required>
+                                    <i class="fa-solid fa-eye" id="show-password"></i>
+                                </div>
+                                <?php if (isset($errors['custPassword'])): ?>
+                                    <div class="error-message"><?php echo $errors['custPassword']; ?></div>
+                                <?php endif; ?>
+
+                                <div class="content">
+                                    <p>Password minimum requirements</p>
+                                    <ul class="password-req">
+                                        <li><i class="fa-solid fa-circle"></i><span>At least 8 characters</span></li>
+                                        <li><i class="fa-solid fa-circle"></i><span>At least 1 uppercase letter</span></li>
+                                        <li><i class="fa-solid fa-circle"></i><span>At least 1 lowercase letter</span></li>
+                                        <li><i class="fa-solid fa-circle"></i><span>At least 1 number</span></li>
+                                        <li><i class="fa-solid fa-circle"></i><span>At least 1 special symbol</span></li>
+                                        <li><i class="fa-solid fa-circle"></i><span>No spaces</span></li>
+                                    </ul>
+                                </div>
                             </div>
 
-                            <!-- Password Requirement -->
-                            <div class="content">
-                                <p>Password minimum requirements</p>
-                                <ul class="password-req">
-                                    <li>
-                                        <i class="fa-solid fa-circle"></i>
-                                        <span>At least 8 characters</span>
-                                    </li>
+                            <label>Phone Number:</label>
+                            <input type="text" placeholder="012-345 6789" name="custPhoneNum" value="<?php echo isset($_POST['custPhoneNum']) ? htmlspecialchars($_POST['custPhoneNum']) : ''; ?>" required>
+                            <?php if (isset($errors['custPhoneNum'])): ?>
+                                <div class="error-message"><?php echo $errors['custPhoneNum']; ?></div>
+                            <?php endif; ?>
+                            <br>
 
-                                    <li>
-                                        <i class="fa-solid fa-circle"></i>
-                                        <span>At least 1 uppercase letter [A...Z]</span>
-                                    </li>
-
-                                    <li>
-                                        <i class="fa-solid fa-circle"></i>
-                                        <span>At least 1 lowercase letter [a...z]</span>
-                                    </li>
-
-                                    <li>
-                                        <i class="fa-solid fa-circle"></i>
-                                        <span>At least 1 number</span>
-                                    </li>
-
-                                    <li>
-                                        <i class="fa-solid fa-circle"></i>
-                                        <span>At least 1 special symbol [!...$]</span>
-                                    </li>
-
-                                    <li>
-                                        <i class="fa-solid fa-circle"></i>
-                                        <span>No spaces</span>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        <label>Phone Number:</label>
-                        <input type="text" placeholder="012-345 6789" name="custPhoneNum"><br>
-                        
-                        <label>Address:</label>
-                        <textarea name="custAddress" placeholder="4, Jalan Melodies 8, Taman Rainbow, 80100, Johor bahru, Johor" rows="4" cols="69"></textarea><br>
-                        
-                        <button type="submit" class="reg">Register</button>
-                    </form>
+                            <button type="submit" class="reg">Continue with Address</button>
+                        </form>
+                    <?php else: ?>
+                        <?php include 'register_address.php'; ?>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

@@ -138,7 +138,7 @@ header {
     background-color: #007bff94;
 }
 
-.frame input {
+.frame input{
     height: 35px;
     color: white;
     max-width: 500px;
@@ -161,6 +161,28 @@ header {
 }
 
 .frame input:not(:placeholder-shown), textarea:not(:placeholder-shown) {
+    background-color: #007bff94;
+    color: white;
+    outline: none;
+    border-color: #007BFF;
+}
+
+.state{
+    color: #000;
+    height: 35px;
+    max-width: 500px;
+    width: 100%;
+    padding: 6px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+}
+
+.state option:hover {
+    border: 1px solid #4c5157;
+    background-color: #b3b0b0;
+}
+
+.state option:focus {
     background-color: #007bff94;
     color: white;
     outline: none;
@@ -249,4 +271,57 @@ header {
 
 .wrapper .fa-eye:hover{
     color: #505050;
+}
+
+.error-message {
+    color: red;
+    font-size: 0.8rem;
+    margin-top: 2px;
+    display: block;
+}
+
+input.error, select.error {
+    border-color: red;
+}
+
+.bot .error-message{
+    width: 100%;
+    margin-top: 5px;
+}
+
+.bot{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-top: 10px;
+    width: 100%;
+}
+
+.bot input[type="checkbox"]{
+    margin: 0;
+    width: 25px;
+}
+
+.bot label{
+    margin: 15px 10px;
+    font-size: 16px;
+    color: black;
+}
+
+.back-btn{
+    font-size: 18px;
+    transition: 0.5s;
+    color: #007BFF;
+    width: 500px;
+    padding: 8px;
+    margin-top: 20px;
+    border-radius: 10px;
+    border: 0px solid rgba(0, 0, 0, 0.1);
+    background-color: white;
+}
+
+.back-btn:hover{
+    transition: 0.5s;
+    color: white;
+    background-color: #007BFF;
 }
