@@ -315,7 +315,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                         <label>City:</label>
                         <input type="text" name="city" id="city" required>
                         <label>State:</label>
-                        <input type="text" name="state" id="state" required>
+                        <select name="state" id="state" required>
+                            <option value="">-- Select City/State --</option>
+                            <option value="Johor">Johor</option>
+                            <option value="Kedah">Kedah</option>
+                            <option value="Kelantan">Kelantan</option>
+                            <option value="Melaka">Melaka</option>
+                            <option value="Negeri Sembilan">Negeri Sembilan</option>
+                            <option value="Pahang">Pahang</option>
+                            <option value="Pulau Pinang">Pulau Pinang</option>
+                            <option value="Perak">Perak</option>
+                            <option value="Perlis">Perlis</option>
+                            <option value="Selangor">Selangor</option>
+                            <option value="Terengganu">Terengganu</option>
+                            <option value="Sabah">Sabah</option>
+                            <option value="Sarawak">Sarawak</option>
+                        </select>
                         <label>Status:</label>
                         <select name="status" id="status" required>
                             <option value="active" <?php echo isset($customer['CustomerStatus']) && $customer['CustomerStatus'] == 'active' ? 'selected' : ''; ?>>Active</option>
