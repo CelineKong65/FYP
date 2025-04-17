@@ -148,9 +148,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         <table>
             <thead>
                 <tr>
-                    <th>ID</th>
+                    <th style="text-align: center;">ID</th>
                     <th>Category Name</th>
-                    <th>Status</th>
+                    <th style="text-align: center;">Status</th>
                     <th class="action"></th>
                 </tr>
             </thead>
@@ -158,9 +158,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                 <?php if ($category_result->num_rows > 0): ?>
                     <?php while ($category = $category_result->fetch_assoc()): ?>
                         <tr>
-                            <td><?php echo $category['CategoryID']; ?></td>
+                            <td style="text-align: center;"><?php echo $category['CategoryID']; ?></td>
                             <td><?php echo $category['CategoryName']; ?></td>
-                            <td class="<?php echo ($category['CategoryStatus'] === 'active') ? 'status-active' : 'status-inactive'; ?>">
+                            <td class="<?php echo ($category['CategoryStatus'] === 'active') ? 'status-active' : 'status-inactive'; ?>" style="text-align: center;">
                                 <?php echo $category['CategoryStatus']; ?>
                             </td>
                             <td>

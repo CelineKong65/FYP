@@ -8,25 +8,8 @@ if (!isset($_SESSION['AdminID'])) {
 
 include 'db_connection.php';
 
-// Fetch all contact records
 $contact_query = "SELECT * FROM contact_record ORDER BY Submission_date DESC";
 $contact_result = $conn->query($contact_query);
-
-if (isset($_POST['delete_contact'])) {
-    $contact_id = intval($_POST['contact_id']);
-    
-    $delete_query = "DELETE FROM contact_record WHERE Contact_id = ?";
-    $stmt = $conn->prepare($delete_query);
-    $stmt->bind_param("i", $contact_id);
-    
-    if ($stmt->execute()) {
-        echo "<script>alert('Contact record deleted successfully!'); window.location.href='contact_view.php';</script>";
-        exit();
-    } else {
-        echo "<script>alert('Failed to delete contact record.'); window.location.href='contact_view.php';</script>";
-        exit();
-    }
-}
 
 ?>
 
@@ -51,36 +34,23 @@ if (isset($_POST['delete_contact'])) {
         <div class="main-content">
             <h2>Contact Records</h2>
             
-            <?php
-            // Display success/error messages
-            if (isset($_SESSION['message'])) {
-                echo '<div class="alert alert-success">' . $_SESSION['message'] . '</div>';
-                unset($_SESSION['message']);
-            }
-            if (isset($_SESSION['error'])) {
-                echo '<div class="alert alert-error">' . $_SESSION['error'] . '</div>';
-                unset($_SESSION['error']);
-            }
-            ?>
-            
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th style="text-align: center;">ID</th>
                         <th>Name</th>
                         <th>Email</th>
                         <th>Phone</th>
                         <th>Subject</th>
                         <th>Message</th>
                         <th>Date</th>
-                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if ($contact_result && $contact_result->num_rows > 0): ?>
                         <?php while ($contact = $contact_result->fetch_assoc()): ?>
                             <tr>
-                                <td><?php echo $contact['Contact_id']; ?></td>
+                                <td style="text-align: center;"><?php echo $contact['Contact_id']; ?></td>
                                 <td><?php echo htmlspecialchars($contact['CustName']); ?></td>
                                 <td><?php echo htmlspecialchars($contact['CustEmail']); ?></td>
                                 <td><?php echo htmlspecialchars($contact['CustPhoneNum'] ?? '-'); ?></td>
@@ -89,12 +59,6 @@ if (isset($_POST['delete_contact'])) {
                                     <?php echo htmlspecialchars($contact['Message']); ?>
                                 </td>
                                 <td><?php echo date('Y-m-d H:i', strtotime($contact['Submission_date'])); ?></td>
-                                <td>
-                                    <form method="POST" action="" style="display: inline;">
-                                        <input type="hidden" name="contact_id" value="<?php echo $contact['Contact_id']; ?>">
-                                        <button type="submit" name="delete_contact" class="delete-btn" onclick="return confirm('Are you sure you want to delete this contact record?')">Delete</button>
-                                    </form>
-                                </td>
                             </tr>
                         <?php endwhile; ?>
                     <?php else: ?>

@@ -21,40 +21,67 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_profile'])) {
     $email = $_POST['email'];
     $phone = $_POST['phone'];
     $current_password = $_POST['current_password'] ?? '';
-    $new_password = $_POST['password'] ?? '';
+    $new_password = $_POST['new_password'] ?? '';
     
     $password_update = "";
     $params = [$name, $email, $phone];
 
-    if (!empty($new_password)) {
-        if (empty($current_password)) {
-            echo "<script>alert('Current password is required to change password.'); window.location.href='profile.php';</script>";
-            exit();
-        } else {
-            $password_query = "SELECT AdminPassword FROM admin WHERE AdminID = ?";
-            $stmt = $conn->prepare($password_query);
-            $stmt->bind_param("i", $admin_id);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $db_password = $result->fetch_assoc()['AdminPassword'];
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/\.com$/', $email)) {
+        echo "<script>alert('Invalid email format. Email must be valid and end with .com'); window.location.href='profile.php';</script>";
+        exit();
+    }
     
-            if ($current_password !== $db_password) {
-                echo "<script>alert('Current password is incorrect.'); window.location.href='profile.php';</script>";
-                exit();
-            } else {
-                $password_update = ", AdminPassword = ?";
-                $params[] = $new_password;
-            }
-        }
+    if (!preg_match('/^\d{3}-\d{3,4} \d{4}$/', $phone)) {
+        echo "<script>alert('Invalid phone number format. Use XXX-XXX XXXX or XXX-XXXX XXXX.'); window.location.href='profile.php';</script>";
+        exit();
     }
 
-    // Prepare update query
+    if (!empty($current_password)) {
+        $password_query = "SELECT AdminPassword FROM admin WHERE AdminID = ?";
+        $stmt = $conn->prepare($password_query);
+        $stmt->bind_param("i", $admin_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $db_password = $result->fetch_assoc()['AdminPassword'];
+        
+        if ($current_password !== $db_password) {
+            echo "<script>alert('Current password is incorrect.'); window.location.href='profile.php';</script>";
+            exit();
+        }
+        
+        if (empty($new_password)) {
+            echo "<script>alert('New password is required when changing password.'); window.location.href='profile.php';</script>";
+            exit();
+        }
+        
+        if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/', $new_password)) {
+            echo "<script>alert('New password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.'); window.location.href='profile.php';</script>";
+            exit();
+        }
+        
+        $password_update = ", AdminPassword = ?";
+        $params[] = $new_password;
+    } elseif (!empty($new_password)) {
+        echo "<script>alert('Current password is required to change password.'); window.location.href='profile.php';</script>";
+        exit();
+    }
+
+    $name_check_query = "SELECT AdminID FROM admin WHERE AdminName = ? AND AdminID != ?";
+    $stmt = $conn->prepare($name_check_query);
+    $stmt->bind_param("si", $name, $admin_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        echo "<script>alert('The name \"$name\" is already taken. Please choose a different name.'); window.location.href='profile.php';</script>";
+        exit();
+    }
+
     $update_query = "UPDATE admin SET AdminName = ?, AdminEmail = ?, AdminPhoneNum = ?" . $password_update . " WHERE AdminID = ?";
     $params[] = $admin_id;
 
     $stmt = $conn->prepare($update_query);
 
-    // Bind parameters dynamically
     if (!empty($new_password)) {
         $stmt->bind_param("ssssi", ...$params);
     } else {
@@ -78,6 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_profile'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Profile</title>
     <link rel="stylesheet" href="profile.css">
+    <script src="https://kit.fontawesome.com/c2f7d169d6.js" crossorigin="anonymous"></script>
 </head>
 <body>
     <div class="header">
@@ -145,13 +173,48 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_profile'])) {
                         </div>
                         
                         <div class="form-group">
-                            <label for="current_password">Current Password (required for password change)</label>
+                            <label for="current_password">Current Password (Leave empty to keep the current password)</label>
                             <input type="password" id="current_password" name="current_password">
                         </div>
-                        
+
                         <div class="form-group">
-                            <label for="password">New Password (Leave empty to keep the current password)</label>
-                            <input type="password" id="password" name="password">
+                            <label for="new_password">New Password</label>
+                            <div class="pass-field">
+                                <input type="password" id="new_password" name="new_password" placeholder="123$abcd">
+                                <i class="fa-solid fa-eye" id="show-password"></i>
+                            </div>
+                            
+                            <div class="content">
+                                <p>Password minimum requirements</p>
+                                <ul class="password-req">
+                                    <li>
+                                        <i class="fa-solid fa-circle"></i>
+                                        <span>At least 8 characters</span>
+                                    </li>
+                                    <li>
+                                        <i class="fa-solid fa-circle"></i>
+                                        <span>At least 1 uppercase letter [A...Z]</span>
+                                    </li>
+                                    <li>
+                                        <i class="fa-solid fa-circle"></i>
+                                        <span>At least 1 lowercase letter [a...z]</span>
+                                    </li>
+                                    <li>
+                                        <i class="fa-solid fa-circle"></i>
+                                        <span>At least 1 number</span>
+                                    </li>
+                                    <li>
+                                        <i class="fa-solid fa-circle"></i>
+                                        <span>At least 1 special symbol [!...$]</span>
+                                    </li>
+                                    <li>
+                                        <i class="fa-solid fa-circle"></i>
+                                        <span>No spaces</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        </div>
                             <div class="upd_div">
                                 <button type="submit" name="update_profile" class="btn">Update</button>
                             </div>
@@ -162,20 +225,82 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_profile'])) {
         </div>
     </div>
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const currentPassword = document.getElementById("current_password");
-            const newPassword = document.getElementById("password");
-            const form = document.querySelector("form");
+document.addEventListener("DOMContentLoaded", function() {
+    const passwordInput = document.querySelector(".pass-field input");
+    const eyeIcon = document.querySelector(".pass-field i");
+    const requirementList = document.querySelectorAll(".password-req li");
 
-            form.addEventListener("submit", function(event) {
-                if (currentPassword.value.trim() !== "" && newPassword.value.trim() === "") {
-                    alert("Please enter a new password if you are providing a current password.");
-                    newPassword.focus();
-                    event.preventDefault();
+    const requirements = [
+        {regex: /\S{8,}/, index: 0},       // Minimum 8 non-whitespace characters
+        {regex: /[A-Z]/, index: 1},        // At least one uppercase
+        {regex: /[a-z]/, index: 2},        // At least one lowercase
+        {regex: /\d/, index: 3},           // At least one digit
+        {regex: /[@$!%*#?&]/, index: 4},   // At least one special symbol
+        {regex: /^\S*$/, index: 5}         // No space
+    ];
+
+    passwordInput.addEventListener("keyup", (e) => {
+        requirements.forEach(item => {
+            const isValid = item.regex.test(e.target.value);
+            const requirementItem = requirementList[item.index];
+
+            if(isValid){
+                requirementItem.firstElementChild.className = "fa-solid fa-circle-check";
+                requirementItem.classList.add("valid");
+            }else{
+                requirementItem.firstElementChild.className = "fa-solid fa-circle";
+                requirementItem.classList.remove("valid");
+            }
+        });
+    });
+
+    eyeIcon.addEventListener("click", () => {
+        passwordInput.type = passwordInput.type === "password" ? "text" : "password";
+        eyeIcon.className = `fa-solid fa-eye${passwordInput.type === "password" ? "" : "-slash"}`;
+    });
+
+    const form = document.querySelector("form");
+    form.addEventListener("submit", function(event) {
+        const currentPassword = document.getElementById("current_password");
+        const newPassword = document.getElementById("new_password");
+        const requirementItems = document.querySelectorAll(".password-req li");
+        
+        // Check if new password is being set
+        if (newPassword.value.trim() !== "") {
+            // Check current password is provided
+            if (currentPassword.value.trim() === "") {
+                alert("Please enter your current password to change your password.");
+                currentPassword.focus();
+                event.preventDefault();
+                return;
+            }
+            
+            // Check all requirements are met
+            let allValid = true;
+            requirementItems.forEach(item => {
+                if (!item.classList.contains("valid")) {
+                    allValid = false;
                 }
             });
-        });
-    </script>
+            
+            if (!allValid) {
+                alert("Please ensure your new password meets all requirements.");
+                newPassword.focus();
+                event.preventDefault();
+                return;
+            }
+            
+            // Additional regex validation
+            if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/.test(newPassword.value)) {
+                alert("New password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
+                newPassword.focus();
+                event.preventDefault();
+                return;
+            }
+        }
+    });
+});
 
+    </script>
 </body>
 </html>

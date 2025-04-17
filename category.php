@@ -48,56 +48,7 @@ $products = $stmt->fetchAll();
     <meta charset="UTF-8">
     <title><?= htmlspecialchars($categoryName) ?> Products</title>
     <link rel="stylesheet" href="product.css">
-    <style>
-        .categories {
-            width: 200px;
-            padding: 10px 20px;
-        }
-
-        .categories h2 {
-            margin-bottom: 10px;
-        }
-
-        .categories ul {
-            margin-top: 0;
-            padding-left: 0;
-            list-style: none;
-        }
-
-        .categories li {
-            margin-bottom: 8px;
-        }
-
-        .pagination .page {
-            padding: 8px 12px;
-            margin: 2px;
-            text-decoration: none;
-            border: 1px solid #ccc;
-            color: #333;
-            border-radius: 4px;
-        }
-        .pagination .page.active {
-            background-color: #333;
-            color: #fff;
-            border-color: #333;
-        }
-        .product-image img {
-            max-width: 100%;
-            height: auto;
-        }
-        .view-details {
-            margin-top: 10px;
-            padding: 8px 15px;
-            background-color: #0066cc;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .view-details:hover {
-            background-color: #0055aa;
-        }
-    </style>
+    <link rel="stylesheet" href="category.css">
 </head>
 <body>
 

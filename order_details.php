@@ -1,40 +1,49 @@
 <?php
-session_start();
+include 'config.php';
+include 'header.php';
 
-if (!isset($_SESSION['AdminID'])) {
-    header("Location: admin_login.php");
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
     exit();
 }
 
-include 'db_connection.php';
-
 if (!isset($_GET['order_id'])) {
-    header("Location: order_view.php");
+    header("Location: order_history.php");
     exit();
 }
 
 $order_id = $_GET['order_id'];
 
-$order_query_sql = "SELECT * FROM orderpayment WHERE OrderID = ?";
+$order_query_sql = "SELECT * FROM orderpayment WHERE OrderID = :order_id";
 $stmt = $conn->prepare($order_query_sql);
-$stmt->bind_param("i", $order_id);
+$stmt->bindParam(':order_id', $order_id, PDO::PARAM_INT);
 $stmt->execute();
-$orderpayment = $stmt->get_result()->fetch_assoc();
+$orderpayment = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// Check if orderpayment exists
+if (!$orderpayment) {
+    die("Order not found.");
+}
 
 // Get order details
-$order_details_query = "SELECT * FROM orderdetails WHERE OrderID = ?";
+$order_details_query = "SELECT * FROM orderdetails WHERE OrderID = :order_id";
 $stmt = $conn->prepare($order_details_query);
-$stmt->bind_param("i", $order_id);
+$stmt->bindParam(':order_id', $order_id, PDO::PARAM_INT);
 $stmt->execute();
-$order_details = $stmt->get_result();
+$order_details = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Customer info query
 $cust_id = $orderpayment['CustID'];
-$customer_query = "SELECT CustName, CustEmail FROM customer WHERE CustID = ?";
+$customer_query = "SELECT CustName, CustEmail FROM customer WHERE CustID = :cust_id";
 $stmt = $conn->prepare($customer_query);
-$stmt->bind_param("i", $cust_id);
+$stmt->bindParam(':cust_id', $cust_id, PDO::PARAM_INT);
 $stmt->execute();
-$customer = $stmt->get_result()->fetch_assoc();
+$customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
+// Check if customer exists
+if (!$customer) {
+    die("Customer not found.");
+}
 ?>
 
 <!DOCTYPE html>
@@ -46,14 +55,10 @@ $customer = $stmt->get_result()->fetch_assoc();
     <link rel='stylesheet' href='order_details.css'>
 </head>
 <body>
-    <div class="header">
-        <?php include 'header.php'; ?>
-    </div>
-
-    <div class="container">
+    <div class="order-details-container">
         <div class="main-content">
             <div class="order-header">
-                <button name="back" class="view-details-btn" onclick="window.location.href='order_view.php'">Back</button>
+                <button name="back" class="view-details-btn" onclick="window.location.href='order_history.php'">Back</button>
                 <h2>Order Details - #<?php echo $order_id; ?></h2>
                 <button name="print" onclick="printOrder()">Print</button>
             </div>
@@ -65,7 +70,7 @@ $customer = $stmt->get_result()->fetch_assoc();
             </div>
             <div class="rec-info">
                 <h3>Receiver Information</h3>
-                <p><b>Name:</b> <?php echo($orderpayment['ReceiverName']); ?></p>
+                <p><b>Name:</b> <?php echo htmlspecialchars($orderpayment['ReceiverName']); ?></p>
                 <p><b>Contact Number:</b> <?php echo $orderpayment['ReceiverContact']; ?></p>
                 <p><b>Email:</b> <?php echo $orderpayment['ReceiverEmail']; ?></p>
                 <p><b>Address:</b> <?php echo $orderpayment['StreetAddress'] . ', ' . $orderpayment['Postcode'] . ' ' . $orderpayment['City'] . ', ' . $orderpayment['State']; ?></p>
@@ -94,7 +99,7 @@ $customer = $stmt->get_result()->fetch_assoc();
                         <?php 
                         $counter = 1;
 
-                        while ($orderdetails = $order_details->fetch_assoc()): 
+                        foreach ($order_details as $orderdetails): 
                             $total_item = $orderdetails['ProductPrice'] * $orderdetails['Quantity'];
                         ?>
                         <tr>
@@ -102,8 +107,8 @@ $customer = $stmt->get_result()->fetch_assoc();
                             <td style="display: grid; place-items: center;">
                                 <?php
                                 $imageName = strtolower(str_replace(' ', '-', $orderdetails['ProductName']));
-                                $jpgPath = "../image/{$imageName}.jpg";
-                                $pngPath = "../image/{$imageName}.png";
+                                $jpgPath = "image/{$imageName}.jpg";
+                                $pngPath = "image/{$imageName}.png";
 
                                 if (file_exists($jpgPath)) {
                                     echo "<img src='{$jpgPath}' alt='{$orderdetails['ProductName']}'>";
@@ -118,7 +123,7 @@ $customer = $stmt->get_result()->fetch_assoc();
                             <td class="center"><?php echo $orderdetails['Quantity']; ?></td>
                             <td><?php echo number_format($total_item, 2); ?></td>
                         </tr>
-                        <?php endwhile; ?>
+                        <?php endforeach; ?>
                         <tr class="highlight-row">
                             <td colspan="6" style="text-align: right;">Delivery Fee:</td>
                             <td>RM <?php echo number_format($orderpayment['DeliveryFee'], 2); ?></td>
@@ -142,3 +147,5 @@ $customer = $stmt->get_result()->fetch_assoc();
     </script>
 </body>
 </html>
+
+<?php include 'footer.php' ?>

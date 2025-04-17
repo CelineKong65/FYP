@@ -6,8 +6,17 @@ if (!isset($_SESSION['AdminID'])) {
     header("Location: admin_login.php");
     exit();
 }
-
 include 'db_connection.php';
+
+$loggedInAdminID = $_SESSION['AdminID'];
+$position_check_query = "SELECT AdminPosition FROM admin WHERE AdminID = ?";
+$stmt = $conn->prepare($position_check_query);
+$stmt->bind_param("i", $loggedInAdminID);
+$stmt->execute();
+$result = $stmt->get_result();
+$adminData = $result->fetch_assoc();
+$loggedInPosition = $adminData['AdminPosition'];
+$stmt->close();
 
 $admin_query = "SELECT * FROM admin";
 $admin_result = $conn->query($admin_query);
@@ -27,10 +36,8 @@ if (isset($_POST['update_admin'])) {
     $admin_id = isset($_POST['admin_id']) ? intval($_POST['admin_id']) : 0;
     $name = trim($_POST['name']);
     $email = trim($_POST['email']);
-    $password = trim($_POST['password']);
     $phone = trim($_POST['phone']);
     $position = trim($_POST['position']);
-    $status = trim($_POST['status']);
 
     $check_name_query = "SELECT AdminID FROM admin WHERE AdminName = ? AND AdminID != ?";
     $stmt = $conn->prepare($check_name_query);
@@ -49,6 +56,7 @@ if (isset($_POST['update_admin'])) {
     $stmt->bind_param("si", $email, $admin_id);
     $stmt->execute();
     $stmt->store_result();
+
     
     if ($stmt->num_rows > 0) {
         echo "<script>alert('Email already exists. Please use a different email.'); window.location.href='admin_view.php';</script>";
@@ -67,7 +75,16 @@ if (isset($_POST['update_admin'])) {
     }
     $stmt->close();
 
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/\.com$/', $email)) {
+        echo "<script>alert('Invalid email format (must end with .com)'); window.location.href='admin_view.php';</script>";
+        exit();
+    }
 
+    if (!preg_match('/^\d{3}-\d{3,4} \d{4}$/', $phone)) {
+        echo "<script>alert('Contact number must be in XXX-XXX XXXX or XXX-XXXX XXXX format'); window.location.href='admin_view.php';</script>";
+        exit();
+    }
+    
     $original_query = "SELECT * FROM admin WHERE AdminID = ?";
     $stmt = $conn->prepare($original_query);
     $stmt->bind_param("i", $admin_id);
@@ -80,23 +97,16 @@ if (isset($_POST['update_admin'])) {
         $name !== $original_data['AdminName'] ||
         $email !== $original_data['AdminEmail'] ||
         $phone !== $original_data['AdminPhoneNum'] ||
-        $position !== $original_data['AdminPosition'] ||
-        $status !== $original_data['AdminStatus'] ||
-        (!empty($password))
+        $position !== $original_data['AdminPosition']
     );
 
     if (!$has_changes) {
         echo "<script>alert('No changes detected.'); window.location.href='admin_view.php';</script>";
         exit();
     } else {
-        if (!empty($password)) {
-            $update_query = "UPDATE admin SET AdminName = ?, AdminEmail = ?, AdminPassword = ?, AdminPhoneNum = ?, AdminPosition = ?, AdminStatus = ? WHERE AdminID = ?";
+            $update_query = "UPDATE admin SET AdminName = ?, AdminEmail = ?, AdminPhoneNum = ?, AdminPosition = ? WHERE AdminID = ?";
             $stmt = $conn->prepare($update_query);
-            $stmt->bind_param("ssssssi", $name, $email, $password, $phone, $position, $status, $admin_id);
-        } else {
-            $update_query = "UPDATE admin SET AdminName = ?, AdminEmail = ?, AdminPhoneNum = ?, AdminPosition = ?, AdminStatus = ? WHERE AdminID = ?";
-            $stmt = $conn->prepare($update_query);
-            $stmt->bind_param("sssssi", $name, $email, $phone, $position, $status, $admin_id);
+            $stmt->bind_param("ssssi", $name, $email, $phone, $position, $admin_id);
         }
     
         if ($stmt->execute()) {
@@ -106,27 +116,7 @@ if (isset($_POST['update_admin'])) {
         }
         $stmt->close();
         exit();
-    }
 }
-
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
-    $admin_id = (int)$_POST['admin_id'];
-    $currentStatus = strtolower($_POST['current_status']);
-    
-    $newStatus = ($currentStatus == 'active') ? 'inactive' : 'active';
-    
-    $stmt = $conn->prepare("UPDATE admin SET AdminStatus = ? WHERE AdminID = ?");
-    $stmt->bind_param("si", $newStatus, $admin_id);
-    
-    if ($stmt->execute()) {
-        header("Location: admin_view.php");
-        exit();
-    } else {
-        $error = "Status update failed: " . $conn->error;
-    }
-    $stmt->close();
-}
-
 
 if (isset($_POST['add_admin'])) {
     $name = trim($_POST['name']);
@@ -160,7 +150,7 @@ if (isset($_POST['add_admin'])) {
 
     $check_phone_query = "SELECT AdminID FROM admin WHERE AdminPhoneNum = ? ";
     $stmt = $conn->prepare($check_phone_query);
-    $stmt->bind_param("si", $phone);
+    $stmt->bind_param("s", $phone);
     $stmt->execute();
     $stmt->store_result();
     if ($stmt->num_rows > 0) {
@@ -168,6 +158,16 @@ if (isset($_POST['add_admin'])) {
         exit();
     }
     $stmt->close();
+
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/\.com$/', $email)) {
+        echo "<script>alert('Invalid email format (must end with .com)'); window.location.href='admin_view.php';</script>";
+        exit();
+    }
+
+    if (!preg_match('/^\d{3}-\d{3,4} \d{4}$/', $phone)) {
+        echo "<script>alert('Contact number must be in XXX-XXX XXXX or XXX-XXXX XXXX format'); window.location.href='admin_view.php';</script>";
+        exit();
+    }
 
     $insert_query = "INSERT INTO admin (AdminName, AdminEmail, AdminPassword, AdminPhoneNum, AdminPosition, AdminStatus) VALUES (?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($insert_query);
@@ -181,6 +181,36 @@ if (isset($_POST['add_admin'])) {
     $stmt->close();
     exit();
 }
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
+    if ($loggedInPosition !== 'superadmin') {
+        echo "<script>alert('Only Super Admin can change admin status.'); window.location.href='admin_view.php';</script>";
+        exit();
+    }
+
+    $admin_id = (int)$_POST['admin_id'];
+
+    if ($admin_id == $loggedInAdminID) {
+        echo "<script>alert('You cannot deactivate yourself!'); window.location.href='admin_view.php';</script>";
+        exit();
+    }
+    
+    $currentStatus = strtolower($_POST['current_status']);
+
+    $newStatus = ($currentStatus == 'active') ? 'inactive' : 'active';
+
+    $stmt = $conn->prepare("UPDATE admin SET AdminStatus = ? WHERE AdminID = ?");
+    $stmt->bind_param("si", $newStatus, $admin_id);
+
+    if ($stmt->execute()) {
+        header("Location: admin_view.php");
+        exit();
+    } else {
+        $error = "Status update failed: " . $conn->error;
+    }
+    $stmt->close();
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -212,56 +242,61 @@ if (isset($_POST['add_admin'])) {
                 <input type="text" name="search" placeholder="Search by name or email" value="<?php echo htmlspecialchars($search_query); ?>">
                 <button type="submit" class="search">Search</button>
             </form>
-                    
-            <div class="add">
-                <button onclick="openAddModal()" class="add_btn">Add Admin</button>
-            </div>
+
+            <?php if ($loggedInPosition === 'superadmin'): ?>        
+                <div class="add">
+                    <button onclick="openAddModal()" class="add_btn">Add Admin</button>
+                </div>
+            <?php endif; ?>
 
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th style="text-align: center;">ID</th>
                         <th>Name</th>
                         <th>Email</th>
                         <th>Phone</th>
                         <th>Position</th>
-                        <th>Password</th> 
-                        <th>Status</th>
-                        <th></th>
+                        <?php if ($loggedInPosition === 'superadmin'): ?>
+                        <th style="text-align: center;">Status</th>
+                            <th style="width: 180px;"></th>
+                        <?php endif; ?>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if ($admin_result && $admin_result->num_rows > 0): ?>
                         <?php while ($admin = $admin_result->fetch_assoc()): ?>
                             <tr>
-                                <td><?php echo $admin['AdminID']; ?></td>
+                                <td style="text-align: center;"><?php echo $admin['AdminID']; ?></td>
                                 <td><?php echo $admin['AdminName']; ?></td>
                                 <td><?php echo $admin['AdminEmail']; ?></td>
                                 <td><?php echo $admin['AdminPhoneNum']; ?></td>
                                 <td><?php echo $admin['AdminPosition']; ?></td>
-                                <td><?php echo $admin['AdminPassword']; ?></td>
-                                <td class="<?php echo ($admin['AdminStatus'] === 'active') ? 'status-active' : 'status-inactive'; ?>">
-                                    <?php echo $admin['AdminStatus']; ?>
-                                </td>
-                                <td>
-                                    <button name="edit_admin" onclick='editAdmin(
-                                            <?php echo json_encode($admin["AdminID"]); ?>,
-                                            <?php echo json_encode($admin["AdminName"]); ?>,
-                                            <?php echo json_encode($admin["AdminEmail"]); ?>,
-                                            <?php echo json_encode($admin["AdminPhoneNum"]); ?>,
-                                            <?php echo json_encode($admin["AdminPosition"]); ?>,
-                                            <?php echo json_encode($admin["AdminPassword"]); ?>,
-                                            <?php echo json_encode($admin["AdminStatus"]); ?>)'>Edit
-                                    </button>
-                                    <form method="post" action="">
-                                        <input type="hidden" name="toggle_status" value="1">
-                                        <input type="hidden" name="admin_id" value="<?php echo $admin['AdminID']; ?>">
-                                        <input type="hidden" name="current_status" value="<?php echo $admin['AdminStatus']; ?>">
-                                        <button type="submit" class="btn-status <?php echo ($admin['AdminStatus'] == 'active') ? 'btn-inactive' : 'btn-active'; ?>">
-                                            <?php echo ($admin['AdminStatus'] == 'active') ? 'Deactivate' : 'Activate'; ?>
+                                <?php if ($loggedInPosition === 'superadmin'): ?>
+                                    <td class="<?php echo ($admin['AdminStatus'] === 'active') ? 'status-active' : 'status-inactive'; ?>" style="text-align: center;">
+                                        <?php echo $admin['AdminStatus']; ?>
+                                    </td>
+                                    <td>
+                                        <button name="edit_admin" onclick='editAdmin(
+                                                <?php echo json_encode($admin["AdminID"]); ?>,
+                                                <?php echo json_encode($admin["AdminName"]); ?>,
+                                                <?php echo json_encode($admin["AdminEmail"]); ?>,
+                                                <?php echo json_encode($admin["AdminPhoneNum"]); ?>,
+                                                <?php echo json_encode($admin["AdminPosition"]); ?>,
+                                                <?php echo json_encode($admin["AdminPassword"]); ?>)'>Edit
                                         </button>
-                                    </form>
-                                </td>
+                                        <?php if ($admin['AdminPosition'] !== 'superadmin'): ?>
+                                            <form method="post" action="" style="display: inline;">
+                                                <input type="hidden" name="toggle_status" value="1">
+                                                <input type="hidden" name="admin_id" value="<?php echo $admin['AdminID']; ?>">
+                                                <input type="hidden" name="current_status" value="<?php echo $admin['AdminStatus']; ?>">
+                                                <button type="submit" class="btn-status <?php echo ($admin['AdminStatus'] == 'active') ? 'btn-inactive' : 'btn-active'; ?>">
+                                                    <?php echo ($admin['AdminStatus'] == 'active') ? 'Deactivate' : 'Activate'; ?>
+                                                </button>
+                                            </form>
+                                        <?php endif; ?>
+                                    </td>
+                                <?php endif; ?>
                             </tr>
                         <?php endwhile; ?>
                     <?php else: ?>
@@ -287,18 +322,9 @@ if (isset($_POST['add_admin'])) {
                 <label>Phone:</label>
                 <input type="text" name="phone" id="phone" required>
                 <label>Position:</label>
-                <select name="position" id="position" required>
-                    <option value="admin">admin</option>
-                    <option value="superadmin">superadmin</option>
-                </select>
-                <label>Status:</label>
-                <select name="status" id="status" required>
-                    <option value="active" <?php echo isset($admin['AdminStatus']) && $admin['AdminStatus'] == 'active' ? 'selected' : ''; ?>>Active</option>
-                    <option value="inactive" <?php echo isset($admin['AdminStatus']) && $admin['AdminStatus'] == 'inactive' ? 'selected' : ''; ?>>Inactive</option>
-                </select>
-                <label>Password:</label>
-                <input type="text" name="password" id="password">
-                <p>(Leave empty to keep the current password)</p>
+                <div id="position-container">
+                    <!-- Position field will be inserted here dynamically -->
+                </div>
                 <div class="upd_div">
                     <button type="submit" name="update_admin">Update</button>
                 </div>
@@ -322,8 +348,6 @@ if (isset($_POST['add_admin'])) {
                     <option value="admin">admin</option>
                     <option value="superadmin">superadmin</option>
                 </select>
-                <label>Password:</label>
-                <input type="text" name="password" id="password" required>
                 <div class="add_div">
                     <button type="submit" name="add_admin">Add</button>
                 </div>
@@ -332,16 +356,27 @@ if (isset($_POST['add_admin'])) {
     </div>
 
     <script>
-        function editAdmin(admin_id, name, email, phone, position, password, status) {
+        function editAdmin(admin_id, name, email, phone, position, password) {
             document.getElementById('admin_id').value = admin_id;
             document.getElementById('name').value = name;
             document.getElementById('email').value = email;
             document.getElementById('phone').value = phone;
-            document.getElementById('position').value = position; 
-            document.getElementById('password').value = '';
-
-            var statusDropdown = document.getElementById('status');
-            statusDropdown.value = status.toLowerCase();
+            
+            const positionContainer = document.getElementById('position-container');
+            
+            if (position === 'superadmin') {
+                positionContainer.innerHTML = `
+                    <div class="position-display">${position}</div>
+                    <input type="hidden" name="position" value="superadmin">
+                `;
+            } else {
+                positionContainer.innerHTML = `
+                    <select name="position" id="position" required>
+                        <option value="admin" ${position === 'admin' ? 'selected' : ''}>admin</option>
+                        <option value="superadmin" ${position === 'superadmin' ? 'selected' : ''}>superadmin</option>
+                    </select>
+                `;
+            }
 
             document.getElementById('editModal').style.display = 'block';
         }
