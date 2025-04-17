@@ -48,13 +48,6 @@ h2 {
     margin-bottom: 50px;
 }
 
-.message {
-    padding: 10px;
-    color: #1e3a8a;
-    border-radius: 4px;
-    margin-bottom: 20px;
-}
-
 form.search {
     display: flex;
     justify-content: flex-end;
@@ -107,14 +100,6 @@ button[name="edit_admin"]:hover{
     background-color: #e0a800d1;
 }
 
-button[name="delete_admin"]{
-    background-color: red;
-}
-
-button[name="delete_admin"]:hover{
-    background-color: #c82333;
-}
-
 .add_div,.upd_div{
     display: flex;
     justify-content: flex-end;
@@ -136,9 +121,10 @@ button[name="delete_admin"]:hover{
 }
 
 table {
-    width: 100%;
+    width: 90%;
     border-collapse: collapse;
     font-size: 15px;
+    margin: 0 auto;
     margin-top: 10px;
 }
 
@@ -256,7 +242,10 @@ table tr:hover {
     background-color: #1d4ed8;
 }
 
-#editModal p{
-    margin: 0;
-    color:gray;
+.position-display {
+    padding: 8px;
+    border: 1px solid #93c5fd;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    margin-bottom: 13px;
 }

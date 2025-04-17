@@ -42,9 +42,9 @@ $feedback_result = $conn->query($feedback_query);
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th style="text-align: center;">ID</th>
                         <th>Name</th>
-                        <th>Rating</th>
+                        <th style="text-align: center;">Rating</th>
                         <th>Message</th>
                     </tr>
                 </thead>
@@ -52,9 +52,9 @@ $feedback_result = $conn->query($feedback_query);
                     <?php if ($feedback_result && $feedback_result->num_rows > 0): ?>
                         <?php while ($feedback = $feedback_result->fetch_assoc()): ?>
                             <tr>
-                                <td><?php echo $feedback['FeedbackID']; ?></td>
+                                <td style="text-align: center;"><?php echo $feedback['FeedbackID']; ?></td>
                                 <td><?php echo htmlspecialchars($feedback['CustName']); ?></td>
-                                <td><?php echo htmlspecialchars($feedback['Rating']); ?></td>
+                                <td style="text-align: center;"><?php echo htmlspecialchars($feedback['Rating']); ?></td>
                                 <td><?php echo htmlspecialchars($feedback['Feedback']); ?></td>
                             </tr>
                         <?php endwhile; ?>
