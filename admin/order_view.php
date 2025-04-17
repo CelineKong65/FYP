@@ -41,11 +41,10 @@ if (isset($_POST['edit_status'])) {
     $update_stmt->execute();
 
     if ($update_stmt->execute()) {
-        $_SESSION['message'] = 'Order status updated successfully!';
-        header("Location: order_view.php");
+        echo "<script>alert('Order status updated successfully!'); window.location.href='order_view.php';</script>";
         exit();
     } else {
-        $_SESSION['message'] = 'Failed to update order status';
+        echo "<script>alert('Failed to update order status.'); window.location.href='order_view.php';</script>";
     }
 }
 
@@ -58,6 +57,233 @@ if (isset($_POST['edit_status'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order List</title>
     <link rel='stylesheet' href='order_view.css'>
+    <style>
+        body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.header {
+    margin-bottom: 50px;
+}
+
+.container {
+    margin-top: 50px;
+    display: flex;
+    flex: 1;
+    margin-left: 250px;
+}
+
+.sidebar {
+    width: 220px;
+    background-color: #0077b6;
+    padding-top: 30px;
+    text-align: center;
+    border-radius: 20px;
+    margin: 30px;
+    height: 650px;
+    margin-top: 150px;
+    position: fixed;
+    left: 0;
+    top: 0; 
+}
+
+.main-content {
+    flex-grow: 1;
+    padding: 20px;
+    margin: 10px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    position: relative;
+}
+
+h2 {
+    color: #1e3a8a;
+    font-size: 40px;
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.message {
+    padding: 10px;
+    color: #1e3a8a;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+form.search {
+    display: flex;
+    justify-content: flex-end;
+    gap:10px
+}
+
+form.editForm,.addForm{
+    margin-bottom: 20px;
+}
+
+.editForm input,.addForm input{
+    margin-right: 50px;
+}
+
+.search input {
+    width: 200px;
+    padding: 8px;
+    font-size: 12px;
+    margin-bottom: 10px;
+    border: 1px solid #0A2F4F;
+    border-radius: 4px;
+}
+
+button {
+    padding: 10px 16px;
+    background-color: #1e3a8a;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 5px;
+    margin-bottom: 10px;
+    font-size: 13px;
+}
+
+button.search{
+    width: 95px;
+}
+
+button:hover {
+    background-color: #1d4ed8;
+}
+
+.status-completed {
+    color: #05ac2c;
+}
+
+.status-pending {
+    color: red;
+}
+
+button[name="change_status"]{
+    color: black;
+    background-color: #ffc107;
+    width: 104px;
+}
+
+button[name="change_status"]:hover{
+    background-color: #e0a800d1;
+}
+
+button[name="view_details"]{
+    background-color: #05ac2c;
+}
+
+button[name="view_details"]:hover{
+    background-color: #218838;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+    margin-top: 10px;
+}
+
+table, th, td {
+    font-size: 15px;
+    border: 1px solid #1e3a8a;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+}
+
+th {
+    background-color: #1e3a8a;
+    color: white;
+}
+
+tr:nth-child(even) {
+    background-color: #e3f2fd;
+}
+
+table tr:hover {
+    background-color:rgb(237, 236, 236);
+}
+
+.close {
+    float: right;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.close:hover{
+    color: red;
+}
+
+#editModal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    justify-content: center;
+    align-items: center;
+}
+
+.edit-content{
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 350px;
+    margin: auto;
+    margin-top: 250px;
+}
+
+#editModal h3{
+    margin-top: 0;
+    color: #1e3a8a;
+    font-size: 25px;
+    text-align: center;
+}
+
+#editModal label{
+    display: block;
+    margin-bottom: 5px;
+    color: #1e3a8a;
+    font-weight: bold;
+    font-size: 15px;
+}
+
+#editModal select{
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 13px;
+    border: 1px solid #93c5fd;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+#editModal button[type="submit"]{
+    background-color: #1e3a8a;
+}
+
+#editModal button[type="submit"]:hover{
+    background-color: #1d4ed8;
+}
+
+.submit_btn {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 15px;
+}
+    </style>
 </head>
 <body>
     <div class="header">
@@ -102,7 +328,7 @@ if (isset($_POST['edit_status'])) {
                                     ?>
                                 </td>
                                 <td><?php echo $orderpayment['OrderDate']; ?></td>
-                                <td class="<?php echo ($orderpayment['OrderStatus'] == 'Out for delivery') ? 'status-completed' : 'status-pending'; ?>" style="text-align: center;">
+                                <td class="<?php echo ($orderpayment['OrderStatus'] == 'Out for delivery' || $orderpayment['OrderStatus'] == 'Delivered') ? 'status-completed' : 'status-pending'; ?>" style="text-align: center;">
                                     <?php echo $orderpayment['OrderStatus']; ?>
                                 </td>                               
                                 <td style="text-align: center;">RM <?php echo number_format($orderpayment['TotalPrice'], 2); ?></td>

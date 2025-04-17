@@ -65,7 +65,7 @@ $customer = $stmt->get_result()->fetch_assoc();
             </div>
             <div class="rec-info">
                 <h3>Receiver Information</h3>
-                <p><b>Name:</b> <?php echo htmlspecialchars($customer['CustName']); ?></p>
+                <p><b>Name:</b> <?php echo($orderpayment['ReceiverName']); ?></p>
                 <p><b>Contact Number:</b> <?php echo $orderpayment['ReceiverContact']; ?></p>
                 <p><b>Email:</b> <?php echo $orderpayment['ReceiverEmail']; ?></p>
                 <p><b>Address:</b> <?php echo $orderpayment['StreetAddress'] . ', ' . $orderpayment['Postcode'] . ' ' . $orderpayment['City'] . ', ' . $orderpayment['State']; ?></p>
