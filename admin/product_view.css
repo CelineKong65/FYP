@@ -87,9 +87,8 @@ select, input{
     width: 200px;
 }
 
-.add-content select, .edit-content select {
-    border: 1px solid #93c5fd;
-    width: 107%;
+button.search {
+    width: 105px;
 }
 
 button {
@@ -102,10 +101,6 @@ button {
     margin-right: 5px;
     margin-bottom: 10px;
     font-size: 13px;
-}
-
-button.search {
-    width: 105px;
 }
 
 button:hover {
@@ -235,38 +230,28 @@ img {
     background-color: white;
     padding: 20px;
     border-radius: 10px;
-    width: 450px;
     margin: auto;
     margin-top: 200px;
+    width: 490px;
 }
 
 .edit-form, .add-form{
     display: flex;
-    gap: 25px;
-    flex-wrap: wrap;
-    justify-content: space-between;
-}
-
-.left, .right {
-    flex: 1;
-    width: 200px;
-    display: flex;
-    flex-direction: column;
+    justify-content: space-around;
 }
 
 .left{
-    width: 290px;
-    margin-right: 10px;
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #ddd;
 }
 
 .right {
-    margin-top: 10px;
-    flex: 0 0 80px;
     display: flex;
     flex-direction: column;
-    padding: 0 15px 0 15px;
     max-height: fit-content;
-    border-left: 1px solid #ddd; 
+    width: 110px;
 }
 
 .description-section {
@@ -297,8 +282,8 @@ button[name="add_product"] {
     font-size: 15px;
 }
 
-#editModal input, #editModal textarea, #addModal input, #addModal textarea {
-    width: 100%;
+#editModal input, #editModal textarea, #editModal select, #addModal input, #addModal textarea, #addModal select {
+    width: 90%;
     padding: 8px;
     margin-bottom: 13px;
     border: 1px solid #93c5fd;
@@ -306,10 +291,24 @@ button[name="add_product"] {
     font-size: 13px;
 }
 
+#editModal select, #addModal select{
+    width: 96%;
+}
 #editModal button[type="submit"], #addModal button[type="submit"] {
     background-color: #1e3a8a;
 }
 
 #editModal button[type="submit"]:hover, #addModal button[type="submit"]:hover {
     background-color: #1d4ed8;
+}
+
+.size-toggle {
+    margin-bottom: 10px;
+}
+
+.size-toggle label {
+    font-size: 15px;
+    color: #1e3a8a;
+    margin: 0;
+    text-align: center;
 }

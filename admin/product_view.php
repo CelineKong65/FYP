@@ -24,7 +24,9 @@ $product_query = "
            CASE WHEN ps_S.ProductID IS NULL THEN 0 ELSE 1 END as has_S,
            CASE WHEN ps_M.ProductID IS NULL THEN 0 ELSE 1 END as has_M,
            CASE WHEN ps_L.ProductID IS NULL THEN 0 ELSE 1 END as has_L,
-           CASE WHEN ps_XL.ProductID IS NULL THEN 0 ELSE 1 END as has_XL
+           CASE WHEN ps_XL.ProductID IS NULL THEN 0 ELSE 1 END as has_XL,
+           EXISTS (SELECT 1 FROM product_size WHERE ProductID = p.ProductID AND Size IS NULL) as has_no_size,
+           (SELECT Stock FROM product_size WHERE ProductID = p.ProductID AND Size IS NULL LIMIT 1) as no_size_stock
     FROM product p
     LEFT JOIN product_size ps_S ON p.ProductID = ps_S.ProductID AND ps_S.Size = 'S'
     LEFT JOIN product_size ps_M ON p.ProductID = ps_M.ProductID AND ps_M.Size = 'M'
@@ -79,14 +81,24 @@ if (isset($_POST['update_product'])) {
     $image = $_FILES['image']['name'];
     $image_tmp = $_FILES['image']['tmp_name'];
     
-    $stock_S = intval($_POST['stock_S']);
-    $stock_M = intval($_POST['stock_M']);
-    $stock_L = intval($_POST['stock_L']);
-    $stock_XL = intval($_POST['stock_XL']);
+    $has_sizes = isset($_POST['has_sizes']) && $_POST['has_sizes'] == 'on';
+    $stock = isset($_POST['stock']) ? intval($_POST['stock']) : 0;
+    $stock_S = isset($_POST['stock_S']) ? intval($_POST['stock_S']) : 0;
+    $stock_M = isset($_POST['stock_M']) ? intval($_POST['stock_M']) : 0;
+    $stock_L = isset($_POST['stock_L']) ? intval($_POST['stock_L']) : 0;
+    $stock_XL = isset($_POST['stock_XL']) ? intval($_POST['stock_XL']) : 0;
 
-    if ($stock_S < 0 || $stock_M < 0 || $stock_L < 0 || $stock_XL < 0) {
-        echo "<script>alert('Stock quantities must be 0 or greater.'); window.location.href='product_view.php';</script>";
-        exit();
+    // Validate stock quantities
+    if ($has_sizes) {
+        if ($stock_S < 0 || $stock_M < 0 || $stock_L < 0 || $stock_XL < 0) {
+            echo "<script>alert('Stock quantities must be 0 or greater.'); window.location.href='product_view.php';</script>";
+            exit();
+        }
+    } else {
+        if ($stock < 0) {
+            echo "<script>alert('Stock quantity must be 0 or greater.'); window.location.href='product_view.php';</script>";
+            exit();
+        }
     }
 
     $check_query = "SELECT COUNT(*) FROM product WHERE ProductName = ? AND ProductID != ?";
@@ -137,22 +149,36 @@ if (isset($_POST['update_product'])) {
         $stmt->execute();
         $stmt->close();
 
-        $sizes = [
-            'S' => $stock_S,
-            'M' => $stock_M,
-            'L' => $stock_L,
-            'XL' => $stock_XL
-        ];
+        // Delete all existing size records for this product
+        $delete_sizes = $conn->prepare("DELETE FROM product_size WHERE ProductID = ?");
+        $delete_sizes->bind_param("i", $product_id);
+        $delete_sizes->execute();
+        $delete_sizes->close();
 
-        $update_size = $conn->prepare("UPDATE product_size SET Stock = ? WHERE ProductID = ? AND Size = ?");
-        foreach ($sizes as $size => $quantity) {
-            $update_size->bind_param("iis", $quantity, $product_id, $size);
-            $update_size->execute();
+        if ($has_sizes) {
+            $sizes = [
+                'S' => $stock_S,
+                'M' => $stock_M,
+                'L' => $stock_L,
+                'XL' => $stock_XL
+            ];
+
+            foreach ($sizes as $size => $quantity) {
+                if ($quantity > 0) {
+                    $insert_size = $conn->prepare("INSERT INTO product_size (ProductID, Size, Stock) VALUES (?, ?, ?)");
+                    $insert_size->bind_param("isi", $product_id, $size, $quantity);
+                    $insert_size->execute();
+                    $insert_size->close();
+                }
+            }
+        } else {
+            $insert_size = $conn->prepare("INSERT INTO product_size (ProductID, Size, Stock) VALUES (?, NULL, ?)");
+            $insert_size->bind_param("ii", $product_id, $stock);
+            $insert_size->execute();
+            $insert_size->close();
         }
-        $update_size->close();
 
         $conn->commit();
-        
         echo "<script>alert('Product updated successfully!'); window.location.href='product_view.php';</script>";
     } catch (Exception $e) {
         $conn->rollback();
@@ -160,7 +186,6 @@ if (isset($_POST['update_product'])) {
     }
     
     exit();
-
 }
 
 if (isset($_POST['add_product'])) {
@@ -180,14 +205,24 @@ if (isset($_POST['add_product'])) {
     $category_id = intval($_POST['category_id']);
     $admin_id = $_SESSION['AdminID'];
     
-    $stock_S = intval($_POST['stock_S']);
-    $stock_M = intval($_POST['stock_M']);
-    $stock_L = intval($_POST['stock_L']);
-    $stock_XL = intval($_POST['stock_XL']);
+    $has_sizes = isset($_POST['has_sizes']) && $_POST['has_sizes'] == 'on';
+    $stock = isset($_POST['stock']) ? intval($_POST['stock']) : 0;
+    $stock_S = isset($_POST['stock_S']) ? intval($_POST['stock_S']) : 0;
+    $stock_M = isset($_POST['stock_M']) ? intval($_POST['stock_M']) : 0;
+    $stock_L = isset($_POST['stock_L']) ? intval($_POST['stock_L']) : 0;
+    $stock_XL = isset($_POST['stock_XL']) ? intval($_POST['stock_XL']) : 0;
 
-    if ($stock_S < 0 || $stock_M < 0 || $stock_L < 0 || $stock_XL < 0) {
-        echo "<script>alert('Stock quantities must be 0 or greater.'); window.location.href='product_view.php';</script>";
-        exit();
+    // Validate stock quantities
+    if ($has_sizes) {
+        if ($stock_S < 0 || $stock_M < 0 || $stock_L < 0 || $stock_XL < 0) {
+            echo "<script>alert('Stock quantities must be 0 or greater.'); window.location.href='product_view.php';</script>";
+            exit();
+        }
+    } else {
+        if ($stock < 0) {
+            echo "<script>alert('Stock quantity must be 0 or greater.'); window.location.href='product_view.php';</script>";
+            exit();
+        }
     }
 
     $check_query = "SELECT COUNT(*) FROM product WHERE ProductName = ?";
@@ -219,19 +254,26 @@ if (isset($_POST['add_product'])) {
             $product_id = $conn->insert_id;
             $stmt->close();
 
-            $sizes = [
-                'S' => $stock_S,
-                'M' => $stock_M,
-                'L' => $stock_L,
-                'XL' => $stock_XL
-            ];
+            if ($has_sizes) {
+                $sizes = [
+                    'S' => $stock_S,
+                    'M' => $stock_M,
+                    'L' => $stock_L,
+                    'XL' => $stock_XL
+                ];
 
-            foreach ($sizes as $size => $quantity) {
-                $insert_size = $conn->prepare("INSERT INTO product_size (ProductID, Size, Stock) VALUES (?, ?, ?)");
-                $insert_size->bind_param("isi", $product_id, $size, $quantity);
+                foreach ($sizes as $size => $quantity) {
+                    $insert_size = $conn->prepare("INSERT INTO product_size (ProductID, Size, Stock) VALUES (?, ?, ?)");
+                    $insert_size->bind_param("isi", $product_id, $size, $quantity);
+                    $insert_size->execute();
+                    $insert_size->close();
+                }
+            } else {
+                $insert_size = $conn->prepare("INSERT INTO product_size (ProductID, Size, Stock) VALUES (?, NULL, ?)");
+                $insert_size->bind_param("ii", $product_id, $stock);
                 $insert_size->execute();
                 $insert_size->close();
-            }            
+            }
 
             $conn->commit();
             echo "<script>alert('Product added successfully!'); window.location.href='product_view.php';</script>";
@@ -341,26 +383,37 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                             <td style="text-align: center;"><?php echo number_format($product['ProductPrice'], 2); ?></td>
                             <td><?php echo $product['ProductDesc']; ?></td>
                             <td style="text-align: center; line-height: 1.5;">
-                                S: <?php echo $product['stock_S'] ; ?><br>
-                                M: <?php echo $product['stock_M'] ; ?><br>
-                                L: <?php echo $product['stock_L'] ; ?><br>
-                                XL: <?php echo $product['stock_XL'] ; ?>
+                                <?php
+                                if ($product['has_no_size']) {
+                                    echo $product['no_size_stock'];
+                                } else {
+                                    $sizes = [];
+                                    if ($product['has_S']) $sizes[] = "S: " . $product['stock_S'];
+                                    if ($product['has_M']) $sizes[] = "M: " . $product['stock_M'];
+                                    if ($product['has_L']) $sizes[] = "L: " . $product['stock_L'];
+                                    if ($product['has_XL']) $sizes[] = "XL: " . $product['stock_XL'];
+                                    
+                                    echo implode("<br>", $sizes);
+                                }
+                                ?>
                             </td>
                             <td style="text-align: center;" class="<?php echo ($product['ProductStatus'] === 'active') ? 'status-active' : 'status-inactive'; ?>">
                                 <?php echo $product['ProductStatus']; ?>
                             </td>
                             <td>
-                                <button name="edit_product" onclick='editProduct(
-                                    <?php echo json_encode($product["ProductID"]); ?>, 
-                                    <?php echo json_encode($product["ProductName"]); ?>, 
-                                    <?php echo json_encode($product["ProductPrice"]); ?>, 
-                                    <?php echo json_encode($product["ProductDesc"]); ?>, 
-                                    <?php echo json_encode($product["stock_S"] ?? 0); ?>, 
-                                    <?php echo json_encode($product["stock_M"] ?? 0); ?>, 
-                                    <?php echo json_encode($product["stock_L"] ?? 0); ?>, 
-                                    <?php echo json_encode($product["stock_XL"] ?? 0); ?>, 
-                                    <?php echo json_encode($product["CategoryID"]); ?>
-                                )'>Edit</button>
+                            <button name="edit_product" onclick='editProduct(
+                                <?php echo json_encode($product["ProductID"]); ?>, 
+                                <?php echo json_encode($product["ProductName"]); ?>, 
+                                <?php echo json_encode($product["ProductPrice"]); ?>, 
+                                <?php echo json_encode($product["ProductDesc"]); ?>, 
+                                <?php echo json_encode($product["stock_S"] ?? 0); ?>, 
+                                <?php echo json_encode($product["stock_M"] ?? 0); ?>, 
+                                <?php echo json_encode($product["stock_L"] ?? 0); ?>, 
+                                <?php echo json_encode($product["stock_XL"] ?? 0); ?>, 
+                                <?php echo json_encode($product["CategoryID"]); ?>,
+                                <?php echo json_encode($product["has_no_size"]); ?>,
+                                <?php echo json_encode($product["no_size_stock"] ?? 0); ?>
+                            )'>Edit</button>
                                 <form method="post" action="" style="display: inline;">
                                     <input type="hidden" name="toggle_status" value="1">
                                     <input type="hidden" name="product_id" value="<?php echo $product['ProductID']; ?>">
@@ -388,6 +441,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
             <h3>Edit Product</h3>
             <form method="POST" action="" enctype="multipart/form-data" class="edit">
                 <input type="hidden" name="product_id" id="product_id">
+                <input type="hidden" name="existing_image" id="existing_image">
                 <div class="edit-form">
                     <div class="left">
                         <label>Image:</label>
@@ -405,22 +459,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                                 </option>
                             <?php endwhile; ?>
                         </select>
-                    </div>
-                    <div class="right">
-                        <label for="stock_S">S:</label>
-                        <input type="number" name="stock_S" id="stock_S" min="0" step="1.00" required>
-                        <label for="stock_M">M:</label>
-                        <input type="number" name="stock_M" id="stock_M" min="0" step="1.00" required>
-                        <label for="stock_L">L:</label>
-                        <input type="number" name="stock_L" id="stock_L" min="0" step="1.00" required>
-                        <label for="stock_XL">XL:</label>
-                        <input type="number" name="stock_XL" id="stock_XL" min="0" step="1.00" required>
-                    </div>
-                </div>
-                <div class="description-section">
                         <label>Description:</label>
                         <textarea name="description" id="description" required></textarea>
                     </div>
+                    <div class="right">
+                        <div class="size-toggle">
+                            <input type="checkbox" id="has_sizes" name="has_sizes" onchange="toggleSizeFields()">
+                            <label for="has_sizes">This product has sizes</label>
+                        </div>                        
+                        <div id="size_fields">
+                            <label for="stock_S">S:</label>
+                            <input type="number" name="stock_S" id="stock_S" min="0" step="1.00" value="0">
+                            <label for="stock_M">M:</label>
+                            <input type="number" name="stock_M" id="stock_M" min="0" step="1.00" value="0">
+                            <label for="stock_L">L:</label>
+                            <input type="number" name="stock_L" id="stock_L" min="0" step="1.00" value="0">
+                            <label for="stock_XL">XL:</label>
+                            <input type="number" name="stock_XL" id="stock_XL" min="0" step="1.00" value="0">
+                        </div>
+                        <div id="no_size_field">
+                            <label for="stock">Stock:</label>
+                            <input type="number" name="stock" id="stock" min="0" step="1.00" value="0">
+                        </div>
+                    </div>
+                </div>
                 <div class="upd_button">
                     <button type="submit" name="update_product">Update</button>
                 </div>
@@ -429,62 +491,84 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     </div>
 
     <div id="addModal">
-        <div class="add-content">
-            <span class="close" onclick="closeAddModal()">&times;</span>
-            <h3>Add New Product</h3>
-            <form method="POST" action="" enctype="multipart/form-data">
-                <input type="hidden" name="product_id" id="product_id">
-                <div class="add-form">
-                    <div class="left">
-                        <label>Image:</label>
-                        <input type="file" name="image">
-                        <label>Name:</label>
-                        <input type="text" name="name" id="name" required>
-                        <label>Price:</label>
-                        <input type="number" min="1.00" step="1.00" name="price" id="price" required>
-                        <label>Category:</label>
-                        <select name="category_id" id="category_id" required>
-                            <?php $category_result->data_seek(0); ?>
-                            <?php while ($row = $category_result->fetch_assoc()): ?>
-                                <option value="<?php echo $row['CategoryID']; ?>">
-                                    <?php echo $row['CategoryName']; ?>
-                                </option>
-                            <?php endwhile; ?>
-                        </select>
+    <div class="add-content">
+        <span class="close" onclick="closeAddModal()">&times;</span>
+        <h3>Add New Product</h3>
+        <form method="POST" action="" enctype="multipart/form-data">
+            <input type="hidden" name="product_id" id="product_id">
+            <div class="add-form">
+                <div class="left">
+                    <label>Image:</label>
+                    <input type="file" name="image" required>
+                    <label>Name:</label>
+                    <input type="text" name="name" id="add_name" required>
+                    <label>Price:</label>
+                    <input type="number" min="1.00" step="1.00" name="price" id="add_price" required>
+                    <label>Category:</label>
+                    <select name="category_id" id="add_category_id" required>
+                        <?php $category_result->data_seek(0); ?>
+                        <?php while ($row = $category_result->fetch_assoc()): ?>
+                            <option value="<?php echo $row['CategoryID']; ?>">
+                                <?php echo $row['CategoryName']; ?>
+                            </option>
+                        <?php endwhile; ?>
+                    </select>
+                    <label>Description:</label>
+                    <textarea name="description" id="add_description" required></textarea>
+                </div>
+                <div class="right">
+                    <div class="size-toggle">
+                        <input type="checkbox" id="add_has_sizes" name="has_sizes" onchange="toggleAddSizeFields()">
+                        <label for="add_has_sizes">This product has sizes</label>
                     </div>
-                    <div class="right">
-                        <label for="stock_S">S:</label>
-                        <input type="number" name="stock_S" id="stock_S" min="0" step="1.00" required>
-                        <label for="stock_M">M:</label>
-                        <input type="number" name="stock_M" id="stock_M" min="0" step="1.00" required>
-                        <label for="stock_L">L:</label>
-                        <input type="number" name="stock_L" id="stock_L" min="0" step="1.00" required>
-                        <label for="stock_XL">XL:</label>
-                        <input type="number" name="stock_XL" id="stock_XL" min="0" step="1.00" required>
+                    <div id="add_size_fields" style="display:none;">
+                        <label for="add_stock_S">S:</label>
+                        <input type="number" name="stock_S" id="add_stock_S" min="0" step="1.00" value="0">
+                        <label for="add_stock_M">M:</label>
+                        <input type="number" name="stock_M" id="add_stock_M" min="0" step="1.00" value="0">
+                        <label for="add_stock_L">L:</label>
+                        <input type="number" name="stock_L" id="add_stock_L" min="0" step="1.00" value="0">
+                        <label for="add_stock_XL">XL:</label>
+                        <input type="number" name="stock_XL" id="add_stock_XL" min="0" step="1.00" value="0">
+                    </div>
+                    <div id="add_no_size_field">
+                        <label for="add_stock">Stock:</label>
+                        <input type="number" name="stock" id="add_stock" min="0" step="1.00" value="0" required>
                     </div>
                 </div>
-                <div class="description-section">
-                        <label>Description:</label>
-                        <textarea name="description" id="description" required></textarea>
-                    </div>
-                <div class="add_button">
-                    <button type="submit" name="add_product">Add</button>
-                </div>
-            </form>
-        </div>
+            </div>
+            <div class="add_button">
+                <button type="submit" name="add_product">Add</button>
+            </div>
+        </form>
     </div>
+</div>
 
     <script>
-        function editProduct(id, name, price, description, stock_S, stock_M, stock_L, stock_XL, category_id) {
+        function toggleSizeFields() {
+            var hasSizes = document.getElementById('has_sizes').checked;
+            document.getElementById('size_fields').style.display = hasSizes ? 'block' : 'none';
+            document.getElementById('no_size_field').style.display = hasSizes ? 'none' : 'block';
+        }
+
+        function editProduct(id, name, price, description, stock_S, stock_M, stock_L, stock_XL, category_id, hasNoSize, noSizeStock) {
             document.getElementById('product_id').value = id;
             document.getElementById('name').value = name;
             document.getElementById('price').value = price;
             document.getElementById('description').value = description;
-            document.getElementById('stock_S').value = stock_S;
-            document.getElementById('stock_M').value = stock_M;
-            document.getElementById('stock_L').value = stock_L;
-            document.getElementById('stock_XL').value = stock_XL;
             document.getElementById('category_id').value = category_id;
+            
+            if (hasNoSize) {
+                document.getElementById('has_sizes').checked = false;
+                document.getElementById('stock').value = noSizeStock;
+            } else {
+                document.getElementById('has_sizes').checked = true;
+                document.getElementById('stock_S').value = stock_S;
+                document.getElementById('stock_M').value = stock_M;
+                document.getElementById('stock_L').value = stock_L;
+                document.getElementById('stock_XL').value = stock_XL;
+            }
+            toggleSizeFields();
             document.getElementById('editModal').style.display = "block";
         }
 
@@ -492,7 +576,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
             document.getElementById('editModal').style.display = 'none';
         }
 
+        function toggleAddSizeFields() {
+            var hasSizes = document.getElementById('add_has_sizes').checked;
+            document.getElementById('add_size_fields').style.display = hasSizes ? 'block' : 'none';
+            document.getElementById('add_no_size_field').style.display = hasSizes ? 'none' : 'block';
+            
+            // Toggle required attributes
+            document.getElementById('add_stock').required = !hasSizes;
+            document.getElementById('add_stock_S').required = hasSizes;
+            document.getElementById('add_stock_M').required = hasSizes;
+            document.getElementById('add_stock_L').required = hasSizes;
+            document.getElementById('add_stock_XL').required = hasSizes;
+        }
+
         function openAddModal() {
+            // Reset the form when opening
+            document.getElementById('add_has_sizes').checked = false;
+            toggleAddSizeFields();
             document.getElementById('addModal').style.display = 'block';
         }
 
