@@ -111,6 +111,17 @@ if (isset($_POST['update_customer'])) {
     }
     $stmt->close();
 
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/\.com$/', $email)) {
+        echo "<script>alert('Invalid email format. Email must be valid and end with .com'); window.location.href='customer_view.php';</script>";
+        exit();
+    }
+    
+    // Validate phone
+    if (!preg_match('/^\d{3}-\d{3,4} \d{4}$/', $phone)) {
+        echo "<script>alert('Invalid phone number format. Use XXX-XXX XXXX or XXX-XXXX XXXX.'); window.location.href='customer_view.php';</script>";
+        exit();
+    }
+    
     $original_query = "SELECT * FROM customer WHERE CustID = ?";
     $stmt = $conn->prepare($original_query);
     $stmt->bind_param("i", $cust_id);
@@ -315,7 +326,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                         <label>City:</label>
                         <input type="text" name="city" id="city" required>
                         <label>State:</label>
-                        <input type="text" name="state" id="state" required>
+                        <select name="state" id="state" required>
+                            <option value="">-- Select City/State --</option>
+                            <option value="Johor">Johor</option>
+                            <option value="Kedah">Kedah</option>
+                            <option value="Kelantan">Kelantan</option>
+                            <option value="Melaka">Melaka</option>
+                            <option value="Negeri Sembilan">Negeri Sembilan</option>
+                            <option value="Pahang">Pahang</option>
+                            <option value="Pulau Pinang">Pulau Pinang</option>
+                            <option value="Perak">Perak</option>
+                            <option value="Perlis">Perlis</option>
+                            <option value="Selangor">Selangor</option>
+                            <option value="Terengganu">Terengganu</option>
+                            <option value="Sabah">Sabah</option>
+                            <option value="Sarawak">Sarawak</option>
+                        </select>
                         <label>Status:</label>
                         <select name="status" id="status" required>
                             <option value="active" <?php echo isset($customer['CustomerStatus']) && $customer['CustomerStatus'] == 'active' ? 'selected' : ''; ?>>Active</option>

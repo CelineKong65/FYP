@@ -56,6 +56,7 @@ if (isset($_POST['update_admin'])) {
     $stmt->bind_param("si", $email, $admin_id);
     $stmt->execute();
     $stmt->store_result();
+
     
     if ($stmt->num_rows > 0) {
         echo "<script>alert('Email already exists. Please use a different email.'); window.location.href='admin_view.php';</script>";
@@ -74,7 +75,16 @@ if (isset($_POST['update_admin'])) {
     }
     $stmt->close();
 
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/\.com$/', $email)) {
+        echo "<script>alert('Invalid email format (must end with .com)'); window.location.href='admin_view.php';</script>";
+        exit();
+    }
 
+    if (!preg_match('/^\d{3}-\d{3,4} \d{4}$/', $phone)) {
+        echo "<script>alert('Contact number must be in XXX-XXX XXXX or XXX-XXXX XXXX format'); window.location.href='admin_view.php';</script>";
+        exit();
+    }
+    
     $original_query = "SELECT * FROM admin WHERE AdminID = ?";
     $stmt = $conn->prepare($original_query);
     $stmt->bind_param("i", $admin_id);
@@ -148,6 +158,16 @@ if (isset($_POST['add_admin'])) {
         exit();
     }
     $stmt->close();
+
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/\.com$/', $email)) {
+        echo "<script>alert('Invalid email format (must end with .com)'); window.location.href='admin_view.php';</script>";
+        exit();
+    }
+
+    if (!preg_match('/^\d{3}-\d{3,4} \d{4}$/', $phone)) {
+        echo "<script>alert('Contact number must be in XXX-XXX XXXX or XXX-XXXX XXXX format'); window.location.href='admin_view.php';</script>";
+        exit();
+    }
 
     $insert_query = "INSERT INTO admin (AdminName, AdminEmail, AdminPassword, AdminPhoneNum, AdminPosition, AdminStatus) VALUES (?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($insert_query);
@@ -239,7 +259,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                         <th>Position</th>
                         <?php if ($loggedInPosition === 'superadmin'): ?>
                         <th style="text-align: center;">Status</th>
-                            <th></th>
+                            <th style="width: 180px;"></th>
                         <?php endif; ?>
                     </tr>
                 </thead>
@@ -265,6 +285,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                                                 <?php echo json_encode($admin["AdminPosition"]); ?>,
                                                 <?php echo json_encode($admin["AdminPassword"]); ?>)'>Edit
                                         </button>
+                                        <?php if ($admin['AdminPosition'] !== 'superadmin'): ?>
                                             <form method="post" action="" style="display: inline;">
                                                 <input type="hidden" name="toggle_status" value="1">
                                                 <input type="hidden" name="admin_id" value="<?php echo $admin['AdminID']; ?>">
@@ -273,6 +294,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                                                     <?php echo ($admin['AdminStatus'] == 'active') ? 'Deactivate' : 'Activate'; ?>
                                                 </button>
                                             </form>
+                                        <?php endif; ?>
                                     </td>
                                 <?php endif; ?>
                             </tr>
@@ -340,18 +362,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
             document.getElementById('email').value = email;
             document.getElementById('phone').value = phone;
             
-            // Get the position container
             const positionContainer = document.getElementById('position-container');
             
-            // Check if the admin being edited is a superadmin
             if (position === 'superadmin') {
-                // For superadmin, show read-only display
                 positionContainer.innerHTML = `
                     <div class="position-display">${position}</div>
                     <input type="hidden" name="position" value="superadmin">
                 `;
             } else {
-                // For regular admin, show select dropdown
                 positionContainer.innerHTML = `
                     <select name="position" id="position" required>
                         <option value="admin" ${position === 'admin' ? 'selected' : ''}>admin</option>
