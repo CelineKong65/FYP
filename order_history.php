@@ -76,7 +76,7 @@ $order_result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     ?>
                                 </td>
                                 <td><?php echo $orderpayment['OrderDate']; ?></td>
-                                <td class="<?php echo ($orderpayment['OrderStatus'] == 'Out for delivery') ? 'status-completed' : 'status-pending'; ?>">
+                                <td class="<?php echo ($orderpayment['OrderStatus'] == 'Out for delivery' || $orderpayment['OrderStatus'] == 'Delivered') ? 'status-completed' : 'status-pending'; ?>">
                                     <?php echo $orderpayment['OrderStatus']; ?>
                                 </td>                               
                                 <td>RM <?php echo number_format($orderpayment['TotalPrice'], 2); ?></td>
