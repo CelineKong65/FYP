@@ -4,6 +4,16 @@ ob_start();
 include 'config.php'; 
 include 'header.php';
 
+// Check for messages in session
+if (isset($_SESSION['wishlist_message'])) {
+    $wishlistMessage = $_SESSION['wishlist_message'];
+    unset($_SESSION['wishlist_message']);
+}
+if (isset($_SESSION['cart_message'])) {
+    $cartMessage = $_SESSION['cart_message'];
+    unset($_SESSION['cart_message']);
+}
+
 // Check if ProductID is set in the URL
 if (!isset($_GET['id']) || empty($_GET['id'])) {
     die("Product ID is missing.");
@@ -25,16 +35,123 @@ $stmt = $conn->prepare("SELECT Size, Stock FROM product_size WHERE ProductID = :
 $stmt->execute(['productID' => $productID]);
 $sizeStocks = $stmt->fetchAll();
 
-// Check if product has any stock at all
+// Check total stock
 $totalStock = 0;
 foreach ($sizeStocks as $sizeStock) {
     $totalStock += $sizeStock['Stock'];
 }
 
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
-    // Ensure the user is logged in before adding to cart
+// Handle Add to Wishlist Submission
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_to_wishlist"])) {
     if (!isset($_SESSION["user_id"])) {
         header("Location: login.php");
+        exit();
+    }
+
+    $userID = $_SESSION["user_id"];
+
+    try {
+        $checkQuery = $conn->prepare("SELECT * FROM wishlist WHERE CustID = ? AND ProductID = ?");
+        $checkQuery->execute([$userID, $productID]);
+
+        if ($checkQuery->rowCount() > 0) {
+            $_SESSION['wishlist_message'] = "This product is already in your wishlist.";
+        } else {
+            $insertQuery = $conn->prepare("INSERT INTO wishlist (CustID, ProductID) VALUES (?, ?)");
+            if ($insertQuery->execute([$userID, $productID])) {
+                $_SESSION['wishlist_message'] = "Product added to wishlist successfully!";
+            } else {
+                $_SESSION['wishlist_message'] = "Failed to add to wishlist.";
+            }
+        }
+        header("Location: product_details.php?id=" . $productID);
+        exit();
+    } catch (PDOException $e) {
+        $_SESSION['wishlist_message'] = "Database error: " . $e->getMessage();
+        header("Location: product_details.php?id=" . $productID);
+        exit();
+    }
+}
+
+// Handle Add to Cart
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_to_cart"])) {
+    if (!isset($_SESSION["user_id"])) {
+        header("Location: login.php");
+        exit();
+    }
+
+    if (!isset($_POST["size"]) || empty($_POST["size"])) {
+        $_SESSION['cart_message'] = "Please select a size.";
+        header("Location: product_details.php?id=" . $productID);
+        exit();
+    } elseif (!isset($_POST["qty"]) || $_POST["qty"] < 1) {
+        $_SESSION['cart_message'] = "Quantity must be at least 1.";
+        header("Location: product_details.php?id=" . $productID);
+        exit();
+    }
+
+    $userID = $_SESSION["user_id"];
+    $size = trim($_POST["size"]);
+    $quantity = (int)$_POST["qty"];
+
+    // Validate quantity
+    if ($quantity < 1) {
+        $_SESSION['cart_message'] = "Quantity must be at least 1.";
+        header("Location: product_details.php?id=" . $productID);
+        exit();
+    }
+
+    $stockAvailable = false;
+    $selectedStock = 0;
+    foreach ($sizeStocks as $sizeStock) {
+        $currentSize = $sizeStock['Size'] === null ? 'Standard Only' : $sizeStock['Size'];
+        if ($currentSize == $size) {
+            $selectedStock = $sizeStock['Stock'];
+            $stockAvailable = true;
+            break;
+        }
+    }
+
+    if (!$stockAvailable) {
+        $_SESSION['cart_message'] = "Selected size is not available.";
+        header("Location: product_details.php?id=" . $productID);
+        exit();
+    }
+
+    if ($quantity > $selectedStock) {
+        $_SESSION['cart_message'] = "Selected quantity exceeds available stock for this size.";
+        header("Location: product_details.php?id=" . $productID);
+        exit();
+    }
+
+    try {
+        $stmt = $conn->prepare("SELECT * FROM cart WHERE CustID = ? AND ProductID = ? AND Size = ?");
+        $stmt->execute([$userID, $productID, $size]);
+        $existingItem = $stmt->fetch();
+
+        if ($existingItem) {
+            $stmt = $conn->prepare("UPDATE cart SET Quantity = ? WHERE CustID = ? AND ProductID = ? AND Size = ?");
+            $stmt->execute([$quantity, $userID, $productID, $size]);
+            $_SESSION['cart_message'] = "Cart quantity updated successfully!";
+        } else {
+            $stmt = $conn->prepare("INSERT INTO cart (CustID, ProductID, Quantity, Size, ProductName, ProductPrice) 
+                                    VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->execute([
+                $userID, 
+                $productID, 
+                $quantity, 
+                $size, 
+                $product['ProductName'], 
+                $product['ProductPrice']
+            ]);
+            $_SESSION['cart_message'] = "Product added to cart successfully!";
+        }
+
+        header("Location: product_details.php?id=" . $productID);
+        exit();
+    } catch (PDOException $e) {
+        $_SESSION['cart_message'] = "Database error: " . $e->getMessage();
+        header("Location: product_details.php?id=" . $productID);
         exit();
     }
 }
@@ -44,124 +161,267 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($product['ProductName']) ?> - Product Details</title>
     <link rel="stylesheet" href="product_details.css">
     <style>
-        .container-product-details {
-            display: flex;
-            max-width: 1200px;
-            width: 100%;
-            padding: 20px;
-            gap: 20px;
-            justify-content: center;
-            align-items: stretch;
-            margin: auto; 
-            position: absolute;
-            top: 55%;
-            left: 50%;
-            transform: translate(-50%, -50%); 
-        }
 
-        .button {
-            display: flex;
-            align-items: center;
-            gap: 10px; 
-        }
+    body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    background-color: #f9f9f9;
+}
 
-        .wishlist-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 5px;
-            margin-left: 10px;
-            background: #0066cc;
-            color: white;
-            font-size: 16px;
-            margin-top: 30px;
-            border-radius: 5px;
-            transition: background 0.3s ease;
-        }
+.container-product-details {
+    display: flex;
+    max-width: 1200px;
+    width: 100%;
+    padding: 20px;
+    gap: 20px;
+    justify-content: center;
+    align-items: stretch;
+    margin: auto; 
+    position: absolute;
+    top: 55%;
+    left: 50%;
+    transform: translate(-50%, -50%); 
+}
 
-        .wishlist-btn:hover {
-            background: darkblue;
-        }
+.button {
+    display: flex;
+    align-items: center;
+    gap: 10px; 
+}
 
-        .heart-button {
-            width: 25px; 
-            height: 25px;
-        }
+.wishlist-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    margin-left: 10px;
+    background: #0066cc;
+    color: white;
+    font-size: 16px;
+    margin-top: 30px;
+    border-radius: 5px;
+    transition: background 0.3s ease;
+}
 
-        .quantity {
-            margin: 15px 0;
-        }
-        .quantity button {
-            padding: 5px 10px;
-            cursor: pointer;
-        }
-        .quantity input {
-            width: 40px;
-            text-align: center;
-        }
-        .sizes {
-            margin: 15px 0;
-            margin-top: 30px; 
-        }
-        .size {
-            padding: 5px 20px;
-            margin-right: 5px;
-            cursor: pointer;
-            background: #f0f0f0;
-            border: 1px solid #000;
-            position: relative;
-            transition: 0.3s;
-        }
-        .size.active {
-            background: #333;
-            color: white;
-            border-color: #333;
-        }
+.wishlist-btn:hover {
+    background: darkblue;
+}
 
-        .size.out-of-stock {
-            color: #999;
-            background: #f5f5f5;
-            border-color: #ddd;
-            cursor: not-allowed;
-        }
-        .size .stock-info {
-            position: absolute;
-            bottom: -30px;
-            left: 0;
-            font-size: 12px;
-            color: #666;
-            width: 100%;
-            text-align: center;
-        }
-        .out-of-stock-message {
-            color: #d9534f;
-            font-weight: bold;
-            margin: 15px 0;
-        }
-        .in-stock-message {
-            color: #5cb85c;
-            font-weight: bold;
-            margin: 15px 0;
-        }
-        .add-to-cart-btn {
-            background: #0066cc;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-top: 30px;
-            border-radius: 5px;
-            transition: background 0.3s ease;
-        }
+.heart-button {
+    width: 25px; 
+    height: 25px;
+}
 
-        .add-to-cart-btn:hover {
-            background: darkblue;
-        }
+.quantity {
+    margin: 15px 0;
+}
+.quantity button {
+    padding: 5px 10px;
+    cursor: pointer;
+}
+.quantity input {
+    width: 40px;
+    text-align: center;
+}
+.sizes {
+    margin: 15px 0;
+    margin-top: 30px; 
+}
+.size {
+    padding: 5px 17px;
+    margin-right: 5px;
+    cursor: pointer;
+    background: #f0f0f0;
+    border: 1px solid #000;
+    position: relative;
+    transition: 0.3s;
+}
+.size.active {
+    background: #333;
+    color: white;
+    border-color: #333;
+}
+
+.size.out-of-stock {
+    color: #999;
+    background: #f5f5f5;
+    border-color: #ddd;
+    cursor: not-allowed;
+}
+.size .stock-info {
+    position: absolute;
+    bottom: -30px;
+    left: 0;
+    font-size: 10px;
+    color: #666;
+    width: 100%;
+    text-align: center;
+}
+.out-of-stock-message {
+    color: #d9534f;
+    font-weight: bold;
+    margin: 15px 0;
+}
+.in-stock-message {
+    color: #5cb85c;
+    font-weight: bold;
+    margin: 15px 0;
+}
+.add-to-cart-btn {
+    background: #0066cc;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 30px;
+    border-radius: 5px;
+    transition: background 0.3s ease;
+}
+
+.add-to-cart-btn:hover {
+    background: darkblue;
+}
+
+
+.categories {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    width: 400px; 
+    min-height: 440px; 
+}
+
+.categories h2 {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    transform: translate(32%,8%);
+}
+
+.categories h2 {
+    font-size: 24px;
+    margin-bottom: 15px;
+}
+
+.categories ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    transform: translate(-50%,20%);
+}
+
+.categories ul li {
+    margin-bottom: 15px;
+    text-align: left; /* Align items to the left */
+}
+
+.categories ul li a {
+    text-decoration: none;
+    color: #333;
+    font-size: 18px;
+    display: block; /* Make the entire link clickable */
+    padding: 5px 0;
+}
+
+.categories ul li a:hover {
+    color: #007BFF;
+}
+
+.product-details {
+    display: flex;
+    gap: 20px;
+    background-color: #fff;
+    padding: 50px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    width: 700px; /* Adjust width as needed */
+}
+
+.product-images {
+    text-align: center;
+}
+
+.main-image {
+    position: relative;
+    width: 250px;
+}
+
+.main-image img {
+    width: 100%;
+    border-radius: 10px;
+}
+
+.thumbnails {
+    display: flex;
+    gap: 5px;
+    margin-top: 10px;
+    justify-content: center;
+}
+
+.thumbnails img {
+    width: 60px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.thumbnails img.active {
+    border: 2px solid red;
+}
+
+.info {
+    max-width: 300px;
+}
+
+.info h2 {
+    font-size: 24px;
+    margin-bottom: 20px; 
+}
+
+.info p {
+    margin-top: 20px; 
+}
+
+
+.price {
+    color: red;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.quantity {
+    display: flex;
+    align-items: center;
+    margin: 10px 0;
+    margin-top: 20px; 
+}
+
+.quantity button {
+    width: 30px;
+    height: 30px;
+    border: none;
+    background: #ddd;
+    cursor: pointer;
+}
+
+.quantity input {
+    width: 40px;
+    text-align: center;
+    border: none;
+    font-size: 16px;
+}
+
+.error-message { color: red; margin: 10px 0; }
+.success-message { color: green; margin: 10px 0; }
+
     </style>
 </head>
 <body>
@@ -198,59 +458,68 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
                 <h2><?= htmlspecialchars($product['ProductName']) ?></h2>
                 <p class="price">RM <?= number_format($product['ProductPrice'], 2) ?></p>
                 <p><?= nl2br(htmlspecialchars($product['ProductDesc'])) ?></p>
-                
+
                 <?php if ($totalStock > 0): ?>
                     <p class="in-stock-message">In Stock</p>
                 <?php else: ?>
                     <p class="out-of-stock-message">Out of Stock</p>
                 <?php endif; ?>
-                
-                <div class="quantity">
-                    <button type="button" onclick="decreaseQty()">-</button>
-                    <input type="text" id="qty" name="qty" value="1" min="1" <?= $totalStock == 0 ? 'disabled' : '' ?>>
-                    <button type="button" onclick="increaseQty()" <?= $totalStock == 0 ? 'disabled' : '' ?>>+</button>
+
+                <!-- Messages Container -->
+                <div class="message-container">
+                    <?php if (isset($wishlistMessage)): ?>
+                        <p class="<?= strpos($wishlistMessage, 'error') !== false ? 'error-message' : 'success-message' ?>">
+                            <?= htmlspecialchars($wishlistMessage) ?>
+                        </p>
+                    <?php endif; ?>
+                    
+                    <?php if (isset($cartMessage)): ?>
+                        <p class="<?= strpos($cartMessage, 'error') !== false ? 'error-message' : 'success-message' ?>">
+                            <?= htmlspecialchars($cartMessage) ?>
+                        </p>
+                    <?php endif; ?>
                 </div>
 
-                <!-- Display Sizes with Stock Information -->
-                <?php if (!empty($sizeStocks)): ?>
+                <!-- Main form -->
+                <form method="post" action="">
+                    <input type="hidden" name="productID" value="<?= $productID ?>">
+
+                    <div class="quantity">
+                        <button type="button" onclick="decreaseQty()">-</button>
+                        <input type="number" id="qty" name="qty" value="1" min="1" <?= $totalStock == 0 ? 'disabled' : '' ?>>
+                        <button type="button" onclick="increaseQty()" <?= $totalStock == 0 ? 'disabled' : '' ?>>+</button>
+                    </div>
+
                     <div class="sizes">
                         <?php foreach ($sizeStocks as $sizeStock): ?>
                             <?php 
-                            $size = $sizeStock['Size'] === null ? 'Standard Only' : $sizeStock['Size'];
-                            $stock = $sizeStock['Stock'];
-                            $isOutOfStock = $stock <= 0;
+                                $size = $sizeStock['Size'] === null ? 'Standard Only' : $sizeStock['Size'];
+                                $stock = $sizeStock['Stock'];
+                                $isOutOfStock = $stock <= 0;
                             ?>
-                            <button 
-                                class="size <?= $isOutOfStock ? 'out-of-stock' : '' ?>" 
-                                data-size="<?= htmlspecialchars($size) ?>"
-                                data-stock="<?= $stock ?>"
-                                <?= $isOutOfStock ? 'disabled' : '' ?>
-                            >
+                            <label class="size <?= $isOutOfStock ? 'out-of-stock' : '' ?>">
+                                <input 
+                                    type="radio" 
+                                    name="size" 
+                                    value="<?= htmlspecialchars($size) ?>" 
+                                    <?= $isOutOfStock ? 'disabled' : '' ?>
+                                    required
+                                >
                                 <?= htmlspecialchars($size) ?>
                                 <span class="stock-info"><?= $stock ?> available</span>
-                            </button>
+                            </label>
                         <?php endforeach; ?>
                     </div>
-                <?php endif; ?>
 
-                <!-- Add to Cart Button -->
-                <form action="" method="POST" onsubmit="return validateSelection()">
-                    <input type="hidden" name="productID" value="<?= $productID ?>">
-                    <input type="hidden" name="size" id="selectedSize" value="">
-                    <input type="hidden" id="hiddenQty" name="qty" value="1">
+                    <div class="button">
+                        <button type="submit" name="add_to_cart" class="add-to-cart-btn" <?= $totalStock == 0 ? 'disabled' : '' ?>>
+                            <?= $totalStock == 0 ? 'Out of Stock' : 'Add to Cart' ?>
+                        </button>
+                        <button type="submit" name="add_to_wishlist" class="wishlist-btn">
+                            <img src="image/circle-heart.png" alt="Wishlist" class="heart-button">
+                        </button>
+                    </div>
                 </form>
-
-                <!-- Add the hidden input field to check login status -->
-                <input type="hidden" id="isLoggedIn" value="<?= isset($_SESSION['user_id']) ? 'true' : 'false' ?>">
-
-                <div class="button">
-                    <button type="button" onclick="addToCart()" id="addToCartBtn" class="add-to-cart-btn" <?= $totalStock == 0 ? 'disabled' : '' ?>>
-                        <?= $totalStock == 0 ? 'Out of Stock' : 'Add to Cart' ?>
-                    </button>
-                    <button type="button" class="wishlist-btn" onclick="addToWishlist(<?= $productID ?>)">
-                        <img src="image/circle-heart.png" alt="Wishlist" class="heart-button">
-                    </button>
-                </div>
             </div>
         </div>
     </div>
@@ -258,130 +527,45 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["productID"])) {
     <script>
         function decreaseQty() {
             let qtyInput = document.getElementById('qty'); 
-            let hiddenQty = document.getElementById('hiddenQty'); 
             if (qtyInput.value > 1) {
                 qtyInput.value--;
-                hiddenQty.value = qtyInput.value; 
             }
         }
 
         function increaseQty() {
             let qtyInput = document.getElementById('qty');
-            let hiddenQty = document.getElementById('hiddenQty'); 
-            let selectedSize = document.querySelector('.size.active');
-            let maxStock = selectedSize ? parseInt(selectedSize.dataset.stock) : 999;
-            
-            if (parseInt(qtyInput.value) < maxStock) {
-                qtyInput.value++;
-                hiddenQty.value = qtyInput.value; 
+            let selectedSize = document.querySelector('input[name="size"]:checked');
+
+            if (selectedSize) {
+                let sizeLabel = selectedSize.closest('.size');
+                let stockText = sizeLabel.querySelector('.stock-info').textContent;
+                let maxStock = parseInt(stockText);
+                if (parseInt(qtyInput.value) < maxStock) {
+                    qtyInput.value++;
+                } else {
+                    alert(`Maximum available stock for this size is ${maxStock}`);
+                }
             } else {
-                alert(`Maximum available stock for this size is ${maxStock}`);
+                qtyInput.value++;
             }
         }
 
-        document.querySelectorAll('.size:not(.out-of-stock)').forEach(button => {
-            button.addEventListener('click', function () {
-                document.querySelectorAll('.size').forEach(btn => btn.classList.remove('active'));
-                this.classList.add('active');
-                document.getElementById('selectedSize').value = this.textContent.trim().split('\n')[0];
+        // Handle size selection
+        document.querySelectorAll('.size:not(.out-of-stock)').forEach(sizeElement => {
+            sizeElement.addEventListener('click', function() {
+                // Remove active class from all sizes
+                document.querySelectorAll('.size').forEach(el => {
+                    el.classList.remove('active');
+                });
                 
-                // Update max quantity based on selected size's stock
-                let maxStock = parseInt(this.dataset.stock);
-                let qtyInput = document.getElementById('qty');
-                if (parseInt(qtyInput.value) > maxStock) {
-                    qtyInput.value = maxStock;
-                    document.getElementById('hiddenQty').value = maxStock;
+                // Add active class to clicked size (if not out of stock)
+                if (!this.classList.contains('out-of-stock')) {
+                    this.classList.add('active');
+                    // Also check the radio button
+                    this.querySelector('input[type="radio"]').checked = true;
                 }
             });
         });
-        
-        function validateSelection() {
-            let selectedSize = document.getElementById('selectedSize').value;
-
-            if (selectedSize === "") {
-                alert("Please select a size before adding to cart.");
-                return false;
-            }
-            return true; 
-        }
-
-        function addToCart() {
-            let isLoggedIn = document.getElementById("isLoggedIn").value; 
-            if (isLoggedIn !== "true") {
-                window.location.href = "login.php"; 
-                return;
-            }
-
-            let productID = <?= $productID ?>;
-            let qty = document.getElementById("qty").value;
-            let sizeElement = document.querySelector('.size.active');
-            
-            if (!sizeElement) {
-                alert("Please select a size before adding to cart.");
-                return;
-            }
-
-            // Get the size from data-size attribute which already handles "Standard Only" case
-            let size = sizeElement.dataset.size;
-            let stock = parseInt(sizeElement.dataset.stock);
-
-            if (stock <= 0) {
-                alert("This size is out of stock.");
-                return;
-            }
-
-            if (parseInt(qty) > stock) {
-                alert(`Only ${stock} items available for this size.`);
-                return;
-            }
-
-            let formData = new FormData();
-            formData.append("productID", productID);
-            formData.append("qty", qty);
-            formData.append("size", size);
-
-            fetch("add_to_cart.php", {
-                method: "POST",
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById("cartCount").textContent = data.cartCount;
-                    alert("Item added to cart!");
-                } else {
-                    alert("Failed to add item to cart: " + (data.message || "Unknown error"));
-                }
-            })
-            .catch(error => console.error("Error:", error));
-        }
-        
-        function addToWishlist(productID) {
-            let isLoggedIn = document.getElementById("isLoggedIn").value; 
-            if (isLoggedIn !== "true") {
-                window.location.href = "login.php"; 
-                return;
-            }
-
-            let formData = new FormData();
-            formData.append("productID", productID);
-
-            fetch("add_to_wishlist.php", {
-                method: "POST",
-                body: formData
-            })
-            .then(response => {
-                if (!response.ok) throw new Error("Network error");
-                return response.text();
-            })
-            .then(message => {
-                alert(message); 
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                alert("Operation failed, please try again.");
-            });
-        }
     </script>
 </body>
 </html>

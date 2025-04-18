@@ -7,11 +7,20 @@ $isLoggedIn = isset($_SESSION['user_id']);
 
 // Fetch cart count if user is logged in
 $cartCount = 0;
+$wishlistCount = 0; // Initialize wishlist count
+
 if ($isLoggedIn) {  
+    // Cart count
     $stmt = $conn->prepare("SELECT COUNT(*) AS total FROM cart WHERE CustID = ?");  
     $stmt->execute([$_SESSION['user_id']]);
     $row = $stmt->fetch();
     $cartCount = $row['total'] ?? 0;
+    
+    // Wishlist count
+    $wishlistStmt = $conn->prepare("SELECT COUNT(*) AS total FROM wishlist WHERE CustID = ?");
+    $wishlistStmt->execute([$_SESSION['user_id']]);
+    $wishlistRow = $wishlistStmt->fetch();
+    $wishlistCount = $wishlistRow['total'] ?? 0;
 }
 ?>
 
@@ -148,6 +157,22 @@ if ($isLoggedIn) {
         .cart-container, .wishlist-container {
             position: relative;
         }
+
+        .wishlist-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: blue;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
@@ -172,6 +197,7 @@ if ($isLoggedIn) {
                 <div class="wishlist-container">
                     <a href="wishlist.php">
                         <img src="image/wishlist.png" alt="Wishlist" class="love-icon">
+                        <span id="wishlistCount" class="wishlist-count"><?= htmlspecialchars($wishlistCount) ?></span>
                     </a>
                 </div>
                 <div class="cart-container">
