@@ -14,15 +14,18 @@ $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 $sql = "SELECT o.OrderID, o.ReceiverName, o.ReceiverContact, o.StreetAddress, o.City, o.Postcode, o.State, 
         o.OrderDate, o.OrderStatus, o.TotalPrice 
-        FROM orderpayment o";
+        FROM orderpayment o 
+        WHERE o.CustID = :custid";
 
-$params = [];
 if (!empty($search_query)) {
-    $sql .= " WHERE o.ReceiverName LIKE :search OR o.ReceiverContact LIKE :search";
+    $sql .= " AND (o.ReceiverName LIKE :search OR o.ReceiverContact LIKE :search)";
 }
 
 $sql .= " ORDER BY o.OrderDate DESC";
 $stmt = $conn->prepare($sql);
+
+// Bind parameters
+$stmt->bindParam(':custid', $custID, PDO::PARAM_INT);
 
 if (!empty($search_query)) {
     $search_param = "%$search_query%";
