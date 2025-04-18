@@ -2,38 +2,37 @@
 session_start();
 include 'config.php';
 
-// Check if the user is logged in
-if (!isset($_SESSION['user_id'])) {
-    echo "<script>alert('Please log in to remove items from your wishlist.'); window.location.href='login.php';</script>";
+if (!isset($_SESSION["user_id"])) {
+    header("Location: login.php");
     exit();
 }
 
 $CustID = $_SESSION['user_id'];
 
-// Validate product ID
-if (!isset($_POST['product_id']) || empty($_POST['product_id'])) {
-    echo "<script>alert('Product ID is missing.'); window.location.href='wishlist.php';</script>";
+// Validate wishlist ID
+if (!isset($_POST['wish_id']) || empty($_POST['wish_id'])) {
+    echo "<script>alert('Wishlist ID is missing.'); window.location.href='wishlist.php';</script>";
     exit();
 }
 
-$productID = (int) $_POST['product_id'];
+$wishID = (int) $_POST['wish_id'];
 
 try {
-    // Check if the product exists in the wishlist
-    $stmt = $conn->prepare("SELECT * FROM wishlist WHERE CustID = :CustID AND ProductID = :productID");
-    $stmt->execute(['CustID' => $CustID, 'productID' => $productID]);
+    // Check if the wishlist item exists and belongs to the user
+    $stmt = $conn->prepare("SELECT * FROM wishlist WHERE WishID = :wishID AND CustID = :CustID");
+    $stmt->execute(['wishID' => $wishID, 'CustID' => $CustID]);
 
     if ($stmt->rowCount() == 0) {
-        echo "<script>alert('Product is not in your wishlist.'); window.location.href='wishlist.php';</script>";
+        echo "<script>alert('Wishlist item not found or does not belong to you.'); window.location.href='wishlist.php';</script>";
         exit();
     }
 
-    // Remove product from wishlist
-    $stmt = $conn->prepare("DELETE FROM wishlist WHERE CustID = :CustID AND ProductID = :productID");
-    if ($stmt->execute(['CustID' => $CustID, 'productID' => $productID])) {
-        echo "<script>alert('Removed from wishlist successfully!'); window.location.href='wishlist.php';</script>";
+    // Delete the wishlist item
+    $deleteStmt = $conn->prepare("DELETE FROM wishlist WHERE WishID = :wishID AND CustID = :CustID");
+    if ($deleteStmt->execute(['wishID' => $wishID, 'CustID' => $CustID])) {
+        echo "<script>alert('Item removed from wishlist successfully!'); window.location.href='wishlist.php';</script>";
     } else {
-        echo "<script>alert('Failed to remove from wishlist.'); window.location.href='wishlist.php';</script>";
+        echo "<script>alert('Failed to remove the item from wishlist.'); window.location.href='wishlist.php';</script>";
     }
 } catch (PDOException $e) {
     echo "<script>alert('Database error: " . $e->getMessage() . "'); window.location.href='wishlist.php';</script>";

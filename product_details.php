@@ -49,16 +49,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_to_wishlist"])) {
     }
 
     $userID = $_SESSION["user_id"];
+    
+    // Get selected size or default to 'Standard Only'
+    $size = isset($_POST["size"]) ? trim($_POST["size"]) : 'Standard Only';
 
     try {
-        $checkQuery = $conn->prepare("SELECT * FROM wishlist WHERE CustID = ? AND ProductID = ?");
-        $checkQuery->execute([$userID, $productID]);
+        $checkQuery = $conn->prepare("SELECT * FROM wishlist WHERE CustID = ? AND ProductID = ? AND Size = ?");
+        $checkQuery->execute([$userID, $productID, $size]);
 
         if ($checkQuery->rowCount() > 0) {
-            $_SESSION['wishlist_message'] = "This product is already in your wishlist.";
+            $_SESSION['wishlist_message'] = "This product with the selected size is already in your wishlist.";
         } else {
-            $insertQuery = $conn->prepare("INSERT INTO wishlist (CustID, ProductID) VALUES (?, ?)");
-            if ($insertQuery->execute([$userID, $productID])) {
+            $insertQuery = $conn->prepare("INSERT INTO wishlist (CustID, ProductID, Size) VALUES (?, ?, ?)");
+            if ($insertQuery->execute([$userID, $productID, $size])) {
                 $_SESSION['wishlist_message'] = "Product added to wishlist successfully!";
             } else {
                 $_SESSION['wishlist_message'] = "Failed to add to wishlist.";
@@ -164,264 +167,260 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_to_cart"])) {
     <title><?= htmlspecialchars($product['ProductName']) ?> - Product Details</title>
     <link rel="stylesheet" href="product_details.css">
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            background-color: #f9f9f9;
+        }
 
-    body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 20px;
-    display: flex;
-    justify-content: center;
-    background-color: #f9f9f9;
-}
+        .container-product-details {
+            display: flex;
+            max-width: 1200px;
+            width: 100%;
+            padding: 20px;
+            gap: 20px;
+            justify-content: center;
+            align-items: stretch;
+            margin: auto; 
+            position: absolute;
+            top: 55%;
+            left: 50%;
+            transform: translate(-50%, -50%); 
+        }
 
-.container-product-details {
-    display: flex;
-    max-width: 1200px;
-    width: 100%;
-    padding: 20px;
-    gap: 20px;
-    justify-content: center;
-    align-items: stretch;
-    margin: auto; 
-    position: absolute;
-    top: 55%;
-    left: 50%;
-    transform: translate(-50%, -50%); 
-}
+        .button {
+            display: flex;
+            align-items: center;
+            gap: 10px; 
+        }
 
-.button {
-    display: flex;
-    align-items: center;
-    gap: 10px; 
-}
+        .wishlist-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            margin-left: 10px;
+            background: #0066cc;
+            color: white;
+            font-size: 16px;
+            margin-top: 30px;
+            border-radius: 5px;
+            transition: background 0.3s ease;
+        }
 
-.wishlist-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 5px;
-    margin-left: 10px;
-    background: #0066cc;
-    color: white;
-    font-size: 16px;
-    margin-top: 30px;
-    border-radius: 5px;
-    transition: background 0.3s ease;
-}
+        .wishlist-btn:hover {
+            background: darkblue;
+        }
 
-.wishlist-btn:hover {
-    background: darkblue;
-}
+        .heart-button {
+            width: 25px; 
+            height: 25px;
+        }
 
-.heart-button {
-    width: 25px; 
-    height: 25px;
-}
+        .quantity {
+            margin: 15px 0;
+        }
+        .quantity button {
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .quantity input {
+            width: 40px;
+            text-align: center;
+        }
+        .sizes {
+            margin: 15px 0;
+            margin-top: 30px; 
+        }
+        .size {
+            padding: 5px 17px;
+            margin-right: 5px;
+            cursor: pointer;
+            background: #f0f0f0;
+            border: 1px solid #000;
+            position: relative;
+            transition: 0.3s;
+        }
+        .size.active {
+            background: #333;
+            color: white;
+            border-color: #333;
+        }
 
-.quantity {
-    margin: 15px 0;
-}
-.quantity button {
-    padding: 5px 10px;
-    cursor: pointer;
-}
-.quantity input {
-    width: 40px;
-    text-align: center;
-}
-.sizes {
-    margin: 15px 0;
-    margin-top: 30px; 
-}
-.size {
-    padding: 5px 17px;
-    margin-right: 5px;
-    cursor: pointer;
-    background: #f0f0f0;
-    border: 1px solid #000;
-    position: relative;
-    transition: 0.3s;
-}
-.size.active {
-    background: #333;
-    color: white;
-    border-color: #333;
-}
+        .size.out-of-stock {
+            color: #999;
+            background: #f5f5f5;
+            border-color: #ddd;
+            cursor: not-allowed;
+        }
+        .size .stock-info {
+            position: absolute;
+            bottom: -30px;
+            left: 0;
+            font-size: 10px;
+            color: #666;
+            width: 100%;
+            text-align: center;
+        }
+        .out-of-stock-message {
+            color: #d9534f;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .in-stock-message {
+            color: #5cb85c;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .add-to-cart-btn {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 30px;
+            border-radius: 5px;
+            transition: background 0.3s ease;
+        }
 
-.size.out-of-stock {
-    color: #999;
-    background: #f5f5f5;
-    border-color: #ddd;
-    cursor: not-allowed;
-}
-.size .stock-info {
-    position: absolute;
-    bottom: -30px;
-    left: 0;
-    font-size: 10px;
-    color: #666;
-    width: 100%;
-    text-align: center;
-}
-.out-of-stock-message {
-    color: #d9534f;
-    font-weight: bold;
-    margin: 15px 0;
-}
-.in-stock-message {
-    color: #5cb85c;
-    font-weight: bold;
-    margin: 15px 0;
-}
-.add-to-cart-btn {
-    background: #0066cc;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    cursor: pointer;
-    font-size: 16px;
-    margin-top: 30px;
-    border-radius: 5px;
-    transition: background 0.3s ease;
-}
+        .add-to-cart-btn:hover {
+            background: darkblue;
+        }
 
-.add-to-cart-btn:hover {
-    background: darkblue;
-}
+        .categories {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            width: 400px; 
+            min-height: 440px; 
+        }
 
+        .categories h2 {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            transform: translate(32%,8%);
+        }
 
-.categories {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    width: 400px; 
-    min-height: 440px; 
-}
+        .categories h2 {
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
 
-.categories h2 {
-    font-size: 20px;
-    font-weight: bold;
-    margin-bottom: 15px;
-    transform: translate(32%,8%);
-}
+        .categories ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            transform: translate(-50%,20%);
+        }
 
-.categories h2 {
-    font-size: 24px;
-    margin-bottom: 15px;
-}
+        .categories ul li {
+            margin-bottom: 15px;
+            text-align: left;
+        }
 
-.categories ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    transform: translate(-50%,20%);
-}
+        .categories ul li a {
+            text-decoration: none;
+            color: #333;
+            font-size: 18px;
+            display: block;
+            padding: 5px 0;
+        }
 
-.categories ul li {
-    margin-bottom: 15px;
-    text-align: left; /* Align items to the left */
-}
+        .categories ul li a:hover {
+            color: #007BFF;
+        }
 
-.categories ul li a {
-    text-decoration: none;
-    color: #333;
-    font-size: 18px;
-    display: block; /* Make the entire link clickable */
-    padding: 5px 0;
-}
+        .product-details {
+            display: flex;
+            gap: 20px;
+            background-color: #fff;
+            padding: 50px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            width: 700px;
+        }
 
-.categories ul li a:hover {
-    color: #007BFF;
-}
+        .product-images {
+            text-align: center;
+        }
 
-.product-details {
-    display: flex;
-    gap: 20px;
-    background-color: #fff;
-    padding: 50px;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    width: 700px; /* Adjust width as needed */
-}
+        .main-image {
+            position: relative;
+            width: 250px;
+        }
 
-.product-images {
-    text-align: center;
-}
+        .main-image img {
+            width: 100%;
+            border-radius: 10px;
+        }
 
-.main-image {
-    position: relative;
-    width: 250px;
-}
+        .thumbnails {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+            justify-content: center;
+        }
 
-.main-image img {
-    width: 100%;
-    border-radius: 10px;
-}
+        .thumbnails img {
+            width: 60px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            border-radius: 5px;
+        }
 
-.thumbnails {
-    display: flex;
-    gap: 5px;
-    margin-top: 10px;
-    justify-content: center;
-}
+        .thumbnails img.active {
+            border: 2px solid red;
+        }
 
-.thumbnails img {
-    width: 60px;
-    border: 2px solid transparent;
-    cursor: pointer;
-    border-radius: 5px;
-}
+        .info {
+            max-width: 300px;
+        }
 
-.thumbnails img.active {
-    border: 2px solid red;
-}
+        .info h2 {
+            font-size: 24px;
+            margin-bottom: 20px; 
+        }
 
-.info {
-    max-width: 300px;
-}
+        .info p {
+            margin-top: 20px; 
+        }
 
-.info h2 {
-    font-size: 24px;
-    margin-bottom: 20px; 
-}
+        .price {
+            color: red;
+            font-size: 22px;
+            font-weight: bold;
+        }
 
-.info p {
-    margin-top: 20px; 
-}
+        .quantity {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            margin-top: 20px; 
+        }
 
+        .quantity button {
+            width: 30px;
+            height: 30px;
+            border: none;
+            background: #ddd;
+            cursor: pointer;
+        }
 
-.price {
-    color: red;
-    font-size: 22px;
-    font-weight: bold;
-}
+        .quantity input {
+            width: 40px;
+            text-align: center;
+            border: none;
+            font-size: 16px;
+        }
 
-.quantity {
-    display: flex;
-    align-items: center;
-    margin: 10px 0;
-    margin-top: 20px; 
-}
-
-.quantity button {
-    width: 30px;
-    height: 30px;
-    border: none;
-    background: #ddd;
-    cursor: pointer;
-}
-
-.quantity input {
-    width: 40px;
-    text-align: center;
-    border: none;
-    font-size: 16px;
-}
-
-.error-message { color: red; margin: 10px 0; }
-.success-message { color: green; margin: 10px 0; }
-
+        .error-message { color: red; margin: 10px 0; }
+        .success-message { color: green; margin: 10px 0; }
     </style>
 </head>
 <body>
@@ -483,6 +482,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_to_cart"])) {
                 <!-- Main form -->
                 <form method="post" action="">
                     <input type="hidden" name="productID" value="<?= $productID ?>">
+                    <input type="hidden" name="size" id="selectedSize" value="">
 
                     <div class="quantity">
                         <button type="button" onclick="decreaseQty()">-</button>
@@ -504,6 +504,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_to_cart"])) {
                                     value="<?= htmlspecialchars($size) ?>" 
                                     <?= $isOutOfStock ? 'disabled' : '' ?>
                                     required
+                                    onchange="document.getElementById('selectedSize').value = this.value;"
                                 >
                                 <?= htmlspecialchars($size) ?>
                                 <span class="stock-info"><?= $stock ?> available</span>
@@ -563,6 +564,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_to_cart"])) {
                     this.classList.add('active');
                     // Also check the radio button
                     this.querySelector('input[type="radio"]').checked = true;
+                    // Update hidden size field
+                    document.getElementById('selectedSize').value = this.querySelector('input[type="radio"]').value;
                 }
             });
         });
