@@ -1,6 +1,4 @@
-<?php
-    include 'header.php'; 
-?>
+<?php include 'header.php'; ?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -10,6 +8,14 @@
     <title>Watersport Equipment Shop</title>
     <link rel="stylesheet" href="style.css">
     <style>
+        .advertisement-box{
+            background: rgba(0, 0, 0, 0.8);
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            color: white;
+            transform: translate(50%, 5%);
+        }
         .hero {
             background: url('image/image.png') no-repeat center center/cover;
             height: 100vh;
@@ -24,7 +30,8 @@
 
     <section class="hero">
         <div class="hero-text">
-            <h1>Watersport Equipment Shop</h1>
+            <h1>KPL Watersport</h1>
+            <h1>Equipment Shop</h1>
             <p>Find the best equipment for all your watersport needs!</p>
             <button class="join-btn">JOIN US</button>
         </div>
@@ -58,31 +65,33 @@
                 <span class="dot" onclick="currentSlide(4)"></span>
             </div>
             <br>
-            <button class="product-btn">Shop Now!</button>
+            <a href="product.php">
+                <button class="product-btn">Shop Now!</button>
+            </a>
         </div>
     </section>
 
     <section class="categories">
         <div class="category">
-            <a href="swimming.php">
+            <a href='category.php?id=1'>
                 <img src="image/swimming.jpg" alt="Swimming">
             </a>
             <span>Swimming</span>
         </div>
         <div class="category">
-            <a href="surfing.php">
+            <a href='category.php?id=2'>
                 <img src="image/surfing.png" alt="Surfing and beach sports">
             </a>
             <span>Surfing and beach sports</span>
         </div>
         <div class="category">
-            <a href="snorkeling.php">
+            <a href='category.php?id=3'>
                 <img src="image/scuba.png" alt="Snorkeling / Scuba diving">
             </a>
             <span>Snorkeling / Scuba diving</span>
         </div>
         <div class="category">
-            <a href="kayaking.php">
+            <a href='category.php?id=4'>
                 <img src="image/kayaking.png" alt="Kayaking">
             </a>
             <span>Kayaking</span>
@@ -142,7 +151,6 @@
             });
         });
 
-
         document.addEventListener("DOMContentLoaded", function () {
             const productList = document.querySelector(".product-carousel");
             const prevBtn = document.querySelector(".prev-btn");
@@ -174,14 +182,8 @@
                 });
             });
         });
-
-
-
-
     </script>
 </body>
 </html>
 
-<?php
-include 'footer.php';
-?>
+<?php include 'footer.php'; ?>

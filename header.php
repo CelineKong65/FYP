@@ -178,7 +178,9 @@ if ($isLoggedIn) {
 <body>
     <header>
         <div class="logo">
-            <img src="image/logo.png" alt="Watersport Equipment Shop Logo">
+            <a href="index.php">
+                <img src="image/logo.png" alt="Watersport Equipment Shop Logo">
+            </a>
         </div>
         <nav>
             <ul>

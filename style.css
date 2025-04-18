@@ -42,14 +42,9 @@
 }
 
 /* advertisement box */
-.advertisement-box{
-    background: rgba(0, 0, 0, 0.8);
-    padding: 30px;
-    border-radius: 10px;
-    text-align: center;
-    color: white;
-    transform: translate(25%, 15%);
-}
+ 
+
+
 
 .advertisement-box h2 {
     margin-bottom: 20px;
