@@ -24,7 +24,9 @@ h2 {
 .empty-message {
     text-align: center;
     padding: 20px;
-    color: #666;
+    font-size: 18px; 
+    color: black;
+    font-weight: bold;
 }
 
 table {

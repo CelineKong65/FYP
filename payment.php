@@ -248,7 +248,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $conn->commit();
                 
                 // Redirect to success page
-                header('Location: index.php');
+                header('Location: payment.php?payment=success');
                 exit();
             } else {
                 throw new Exception("Error saving order information");
@@ -282,6 +282,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <style>
+       /* Popup Styles */
+        .simple-popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .simple-popup {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .popup-icon {
+            color: #4CAF50;
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+
+        .simple-popup h2 {
+            color: #4CAF50;
+            margin-bottom: 15px;
+        }
+
+        .simple-popup p {
+            margin-bottom: 25px;
+            color: #555;
+        }
+
+        .simple-popup-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .simple-popup-btn:hover {
+            background: #45a049;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
 </head>
 <body>
     <div class="checkout-wrapper">
@@ -499,6 +561,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 alert('CVV must be exactly 3 digits');
                 e.preventDefault();
                 return;
+            }
+        });
+
+        // Success Popup
+        function showSuccessPopup() {
+            // Create the popup HTML
+            const popupHTML = `
+                <div class="simple-popup-overlay">
+                    <div class="simple-popup">
+                        <div class="popup-icon">✓</div>
+                        <h2>Payment Successful!</h2>
+                        <p>Thank you for your purchase. Your order has been placed successfully.</p>
+                        <button class="simple-popup-btn" onclick="closePopup()">OK</button>
+                    </div>
+                </div>
+            `;
+            
+            // Add it to the body
+            document.body.insertAdjacentHTML('beforeend', popupHTML);
+        }
+
+        function closePopup() {
+            // Remove the popup
+            const popup = document.querySelector('.simple-popup-overlay');
+            if (popup) {
+                popup.remove();
+            }
+            // Redirect to index.php
+            window.location.href = 'index.php';
+        }
+
+        // Check for success parameter in URL and show popup
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('payment') === 'success') {
+                showSuccessPopup();
             }
         });
     </script>

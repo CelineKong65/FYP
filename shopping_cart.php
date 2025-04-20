@@ -64,41 +64,6 @@ $cartCount = $row['total'] ?? 0;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shopping Cart</title>
     <link rel="stylesheet" href="shopping_cart.css">
-    <style>
-        .summary-details p {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 5px 0;
-            font-size: 16px;
-            letter-spacing: 0.5px;
-            word-spacing: 2px; 
-        }
-        select[name="Size"] option:disabled {
-            color: #ccc;
-        }
-        .size-option {
-            position: relative;
-        }
-        .stock-info {
-            font-size: 12px;
-            color: #666;
-            margin-left: 5px;
-        }
-        .out-of-stock {
-            color: #d9534f;
-        }
-        .error-message {
-            color: #d9534f;
-            text-align: center;
-            margin: 10px 0;
-        }
-        .success-message {
-            color: #5cb85c;
-            text-align: center;
-            margin: 10px 0;
-        }
-    </style>
 </head>
 <body>
     <div class="cart-container">
@@ -113,7 +78,7 @@ $cartCount = $row['total'] ?? 0;
         <?php endif; ?>
 
         <?php if (empty($result)): ?>
-            <p style="text-align: center; font-size: 18px; font-weight: bold;">No items in Cart</p>
+            <p class = "empty-message">No items in cart</p>
         <?php else: ?>
             <table>
                 <thead>
