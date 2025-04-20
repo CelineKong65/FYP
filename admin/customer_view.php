@@ -306,14 +306,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
 
                 <div class="edit-form">
                     <div class="left">
-                        <label>Profile Picture:</label>
+                        <label>Profile Picture:<span> (.jpp,.jpeg or .png only)</span></label>
                         <input class="img" type="file" name="profile_picture" id="profile_picture">
                         <label>Name:</label>
                         <input type="text" name="name" id="name" required>
+                        <div id="name-error" class="error"></div>
                         <label>Email:</label>
                         <input type="email" name="email" id="email" placeholder="example@gmail.com" required>
+                        <div id="email-error" class="error"></div>
                         <label>Phone:</label>
                         <input type="text" name="phone" id="phone" placeholder="XXX-XXX XXXX or XXX-XXXX XXXX format" required>
+                        <div id="phone-error" class="error"></div>
                         <label>Password:</label>
                         <input type="password" name="password">
                         <p>(Leave empty to keep the current password)</p>
@@ -321,10 +324,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                     <div class="right">
                         <label>Street Address:</label>
                         <input type="text" name="street" id="street" required>
+                        <div id="street-error" class="error"></div>
                         <label>Postcode:</label>
                         <input type="text" name="postcode" id="postcode" required>
+                        <div id="postcode-error" class="error"></div>
                         <label>City:</label>
                         <input type="text" name="city" id="city" required>
+                        <div id="city-error" class="error"></div>
                         <label>State:</label>
                         <select name="state" id="state" required>
                             <option value="">-- Select City/State --</option>
@@ -358,25 +364,255 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     </div>
 
     <script>
-        function editCustomer(id, name, email, phone, street, postcode, city, state, profile_picture, status) {
-            document.getElementById('cust_id').value = id;
-            document.getElementById('name').value = name;
-            document.getElementById('email').value = email;
-            document.getElementById('phone').value = phone;
-            document.getElementById('street').value = street;
-            document.getElementById('postcode').value = postcode;
-            document.getElementById('city').value = city;
-            document.getElementById('state').value = state;
-            
-            var statusDropdown = document.getElementById('status');
-            statusDropdown.value = status.toLowerCase();
-            
-            document.getElementById('editModal').style.display = 'block';
+    // Validation functions
+    function validateName(name) {
+        if (name.trim() === '') {
+            return 'Name is required';
         }
+        return '';
+    }
 
-        function closeModal() {
-            document.getElementById('editModal').style.display = 'none';
+    function validateEmail(email) {
+        if (email.trim() === '') {
+            return 'Email is required';
         }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !email.endsWith('.com')) {
+            return 'Invalid email format (must contain @ and end with .com)';
+        }
+        return '';
+    }
+
+    function validatePhone(phone) {
+        if (phone.trim() === '') {
+            return 'Phone is required';
+        }
+        if (!/^\d{3}-\d{3,4} \d{4}$/.test(phone)) {
+            return 'Phone must be in XXX-XXX XXXX or XXX-XXXX XXXX format';
+        }
+        return '';
+    }
+
+    function validateStreet(street) {
+        if (street.trim() === '') {
+            return 'Street address is required';
+        }
+        return '';
+    }
+
+    function validatePostcode(postcode) {
+        if (postcode.trim() === '') {
+            return 'Postcode is required';
+        }
+        if (!/^\d{5}$/.test(postcode)) {
+            return 'Postcode must be 5 digits';
+        }
+        return '';
+    }
+
+    function validateCity(city) {
+        if (city.trim() === '') {
+            return 'City is required';
+        }
+        return '';
+    }
+
+    function validateState(state) {
+        if (state.trim() === '') {
+            return 'State is required';
+        }
+        return '';
+    }
+
+    // Show/hide error functions
+    function showError(fieldId, errorId, message) {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.classList.add('error-field');
+        }
+        const errorElement = document.getElementById(errorId);
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+    }
+
+    function clearError(fieldId, errorId) {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.classList.remove('error-field');
+        }
+        const errorElement = document.getElementById(errorId);
+        if (errorElement) {
+            errorElement.style.display = 'none';
+        }
+    }
+
+    // Add event listeners when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Edit modal validation
+        const editName = document.getElementById('name');
+        const editEmail = document.getElementById('email');
+        const editPhone = document.getElementById('phone');
+        const editStreet = document.getElementById('street');
+        const editPostcode = document.getElementById('postcode');
+        const editCity = document.getElementById('city');
+        const editState = document.getElementById('state');
+
+        if (editName) editName.addEventListener('input', function() {
+            const error = validateName(this.value);
+            if (error) {
+                showError('name', 'name-error', error);
+            } else {
+                clearError('name', 'name-error');
+            }
+        });
+
+        if (editEmail) editEmail.addEventListener('input', function() {
+            const error = validateEmail(this.value);
+            if (error) {
+                showError('email', 'email-error', error);
+            } else {
+                clearError('email', 'email-error');
+            }
+        });
+
+        if (editPhone) editPhone.addEventListener('input', function() {
+            const error = validatePhone(this.value);
+            if (error) {
+                showError('phone', 'phone-error', error);
+            } else {
+                clearError('phone', 'phone-error');
+            }
+        });
+
+        if (editStreet) editStreet.addEventListener('input', function() {
+            const error = validateStreet(this.value);
+            if (error) {
+                showError('street', 'street-error', error);
+            } else {
+                clearError('street', 'street-error');
+            }
+        });
+
+        if (editPostcode) editPostcode.addEventListener('input', function() {
+            const error = validatePostcode(this.value);
+            if (error) {
+                showError('postcode', 'postcode-error', error);
+            } else {
+                clearError('postcode', 'postcode-error');
+            }
+        });
+
+        if (editCity) editCity.addEventListener('input', function() {
+            const error = validateCity(this.value);
+            if (error) {
+                showError('city', 'city-error', error);
+            } else {
+                clearError('city', 'city-error');
+            }
+        });
+
+        if (editState) editState.addEventListener('change', function() {
+            const error = validateState(this.value);
+            if (error) {
+                showError('state', 'state-error', error);
+            } else {
+                clearError('state', 'state-error');
+            }
+        });
+
+        // Form submission validation
+        document.querySelector('#editModal form').addEventListener('submit', function(e) {
+            let isValid = true;
+            
+            const name = document.getElementById('name').value;
+            const nameError = validateName(name);
+            if (nameError) {
+                showError('name', 'name-error', nameError);
+                isValid = false;
+            }
+            
+            const email = document.getElementById('email').value;
+            const emailError = validateEmail(email);
+            if (emailError) {
+                showError('email', 'email-error', emailError);
+                isValid = false;
+            }
+            
+            const phone = document.getElementById('phone').value;
+            const phoneError = validatePhone(phone);
+            if (phoneError) {
+                showError('phone', 'phone-error', phoneError);
+                isValid = false;
+            }
+            
+            const street = document.getElementById('street').value;
+            const streetError = validateStreet(street);
+            if (streetError) {
+                showError('street', 'street-error', streetError);
+                isValid = false;
+            }
+            
+            const postcode = document.getElementById('postcode').value;
+            const postcodeError = validatePostcode(postcode);
+            if (postcodeError) {
+                showError('postcode', 'postcode-error', postcodeError);
+                isValid = false;
+            }
+            
+            const city = document.getElementById('city').value;
+            const cityError = validateCity(city);
+            if (cityError) {
+                showError('city', 'city-error', cityError);
+                isValid = false;
+            }
+            
+            const state = document.getElementById('state').value;
+            const stateError = validateState(state);
+            if (stateError) {
+                showError('state', 'state-error', stateError);
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+            }
+        });
+    });
+
+    // Modal functions
+    function editCustomer(id, name, email, phone, street, postcode, city, state, profile_picture, status) {
+        // Clear any previous errors
+        closeModal();
+        
+        // Set values
+        document.getElementById('cust_id').value = id;
+        document.getElementById('name').value = name;
+        document.getElementById('email').value = email;
+        document.getElementById('phone').value = phone;
+        document.getElementById('street').value = street;
+        document.getElementById('postcode').value = postcode;
+        document.getElementById('city').value = city;
+        document.getElementById('state').value = state;
+        document.getElementById('status').value = status.toLowerCase();
+        
+        // Show modal
+        document.getElementById('editModal').style.display = 'block';
+    }
+
+    function closeModal() {
+        // Clear all errors
+        clearError('name', 'name-error');
+        clearError('email', 'email-error');
+        clearError('phone', 'phone-error');
+        clearError('street', 'street-error');
+        clearError('postcode', 'postcode-error');
+        clearError('city', 'city-error');
+        clearError('state', 'state-error');
+        
+        // Hide modal
+        document.getElementById('editModal').style.display = 'none';
+    }
     </script>
 </body>
 </html>
