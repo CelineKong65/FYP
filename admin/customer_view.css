@@ -261,3 +261,8 @@ img {
     margin: 0;
     color:gray;
 }
+
+input::placeholder{
+    font-size: 12px;
+    font-style: italic;
+}

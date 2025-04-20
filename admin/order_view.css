@@ -223,3 +223,8 @@ table tr:hover {
     justify-content: flex-end;
     padding-top: 15px;
 }
+
+input::placeholder{
+    font-size: 12px;
+    font-style: italic;
+}

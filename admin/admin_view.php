@@ -2,6 +2,13 @@
 
 session_start();
 
+require '../PHPMailer/src/Exception.php';
+require '../PHPMailer/src/PHPMailer.php';
+require '../PHPMailer/src/SMTP.php';
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
 if (!isset($_SESSION['AdminID'])) {
     header("Location: admin_login.php");
     exit();
@@ -17,6 +24,16 @@ $result = $stmt->get_result();
 $adminData = $result->fetch_assoc();
 $loggedInPosition = $adminData['AdminPosition'];
 $stmt->close();
+
+// Function to generate random password
+function generateRandomPassword($length = 8) {
+    $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()';
+    $password = '';
+    for ($i = 0; $i < $length; $i++) {
+        $password .= $chars[rand(0, strlen($chars) - 1)];
+    }
+    return $password;
+}
 
 $admin_query = "SELECT * FROM admin";
 $admin_result = $conn->query($admin_query);
@@ -121,10 +138,12 @@ if (isset($_POST['update_admin'])) {
 if (isset($_POST['add_admin'])) {
     $name = trim($_POST['name']);
     $email = strtolower(trim($_POST['email']));
-    $password = trim($_POST['password']);
     $phone = trim($_POST['phone']);
     $position = trim($_POST['position']);
     $status = 'active';
+    
+    // Generate random 8-character password
+    $password = generateRandomPassword(8);
 
     $check_name_query = "SELECT AdminID FROM admin WHERE AdminName = ?";
     $stmt = $conn->prepare($check_name_query);
@@ -141,9 +160,14 @@ if (isset($_POST['add_admin'])) {
     $check_email_query = "SELECT AdminID FROM admin WHERE AdminEmail = ?";
     $stmt = $conn->prepare($check_email_query);
     $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $stmt->store_result();
     
     if ($stmt->num_rows > 0) {
-        echo "<script>alert('Email already exists. Please use a different email.'); window.location.href='customer_view.php';</script>";
+        echo json_encode([
+            'error' => 'Email already exists. Please use a different email.',
+            'field' => 'email'
+        ]);
         exit();
     }
     $stmt->close();
@@ -154,7 +178,7 @@ if (isset($_POST['add_admin'])) {
     $stmt->execute();
     $stmt->store_result();
     if ($stmt->num_rows > 0) {
-        echo "<script>alert('Phone number already exists. Please use a different phone number.'); window.location.href='customer_view.php';</script>";
+        echo "<script>alert('Phone number already exists. Please use a different phone number.'); window.location.href='admin_view.php';</script>";
         exit();
     }
     $stmt->close();
@@ -174,41 +198,47 @@ if (isset($_POST['add_admin'])) {
     $stmt->bind_param("ssssss", $name, $email, $password, $phone, $position, $status);
 
     if ($stmt->execute()) {
-        echo "<script>alert('Admin added successfully!'); window.location.href='admin_view.php';</script>";
+        $new_admin_id = $conn->insert_id;
+        $mail = new PHPMailer(true);
+        
+        try {
+            $mail->isSMTP();
+            $mail->Host = 'smtp.gmail.com';
+            $mail->SMTPAuth = true;
+            $mail->Username = 'lawrencetan20050429@gmail.com'; //Your Gmail
+            $mail->Password = 'khzd gkui ieyv aadf'; //Gmail App Password
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port = 587;
+
+            $mail->setFrom('panzhixin99@gmail.com', 'WaterSport_Equipment'); // Your Gmail
+            $mail->addAddress($email);
+
+            $mail->isHTML(true);
+            $mail->Subject = 'Your New Admin Account Password';
+            $mail->Body = "
+                <h3>Your admin account has been created successfully!</h3>
+                <p>Here are your login details:</p><br>
+                <p><strong>Admin ID:</strong> {$new_admin_id}</p>
+                <p><strong>Name:</strong> {$name}</p>
+                <p><strong>Email:</strong> {$email}</p>
+                <p><strong>Password:</strong> {$password}</p>
+                <p>Please login and change your password immediately for security reasons.</p>
+                <p>This is an automated message. Please do not reply.</p>
+            ";
+
+            $mail->send();
+            echo "<script>alert('Admin added successfully! Password has been sent to the admin\'s email.); window.location.href='admin_view.php';</script>";
+        } catch (Exception $e) {
+            echo "<script>alert('Admin added successfully but failed to send password email. ); window.location.href='admin_view.php';</script>";
+        }
+        
+        header("Location: admin_view.php");
+        exit();
     } else {
         echo "<script>alert('Failed to add admin.'); window.location.href='admin_view.php';</script>";
     }
     $stmt->close();
     exit();
-}
-
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
-    if ($loggedInPosition !== 'superadmin') {
-        echo "<script>alert('Only Super Admin can change admin status.'); window.location.href='admin_view.php';</script>";
-        exit();
-    }
-
-    $admin_id = (int)$_POST['admin_id'];
-
-    if ($admin_id == $loggedInAdminID) {
-        echo "<script>alert('You cannot deactivate yourself!'); window.location.href='admin_view.php';</script>";
-        exit();
-    }
-    
-    $currentStatus = strtolower($_POST['current_status']);
-
-    $newStatus = ($currentStatus == 'active') ? 'inactive' : 'active';
-
-    $stmt = $conn->prepare("UPDATE admin SET AdminStatus = ? WHERE AdminID = ?");
-    $stmt->bind_param("si", $newStatus, $admin_id);
-
-    if ($stmt->execute()) {
-        header("Location: admin_view.php");
-        exit();
-    } else {
-        $error = "Status update failed: " . $conn->error;
-    }
-    $stmt->close();
 }
 
 ?>
@@ -318,9 +348,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                 <label>Name:</label>
                 <input type="text" name="name" id="name" required>
                 <label>Email:</label>
-                <input type="email" name="email" id="email" required>
+                <input type="email" name="email" id="email" placeholder="example@gmail.com" required>
                 <label>Phone:</label>
-                <input type="text" name="phone" id="phone" required>
+                <input type="text" name="phone" id="phone" placeholder="XXX-XXX XXXX or XXX-XXXX XXXX format"required>
                 <label>Position:</label>
                 <div id="position-container">
                     <!-- Position field will be inserted here dynamically -->
@@ -340,9 +370,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                 <label>Name:</label>
                 <input type="text" name="name" id="name" required>
                 <label>Email:</label>
-                <input type="email" name="email" id="email" required>
+                <input type="email" name="email" id="email" placeholder="example@gmail.com"required>
                 <label>Phone:</label>
-                <input type="text" name="phone" id="phone" required>
+                <input type="text" name="phone" id="phone" placeholder="XXX-XXX XXXX or XXX-XXXX XXXX format" required>
                 <label>Position:</label>
                 <select name="position" id="position" required>
                     <option value="admin">admin</option>

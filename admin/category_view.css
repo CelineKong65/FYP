@@ -257,3 +257,8 @@ button[name="edit_category"]:hover {
     display: flex;
     justify-content: flex-end;
 }
+
+input::placeholder{
+    font-size: 12px;
+    font-style: italic;
+}
