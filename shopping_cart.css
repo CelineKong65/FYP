@@ -87,3 +87,42 @@ select {
     padding: 5px;
     border: 1px solid #ddd;
 }
+
+.summary-details p {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    font-size: 16px;
+    letter-spacing: 0.5px;
+    word-spacing: 2px; 
+}
+select[name="Size"] option:disabled {
+    color: #ccc;
+}
+.size-option {
+    position: relative;
+}
+.stock-info {
+    font-size: 12px;
+    color: #666;
+    margin-left: 5px;
+}
+.out-of-stock {
+    color: #d9534f;
+}
+.error-message {
+    color: #d9534f;
+    text-align: center;
+    margin: 10px 0;
+}
+.success-message {
+    color: #5cb85c;
+    text-align: center;
+    margin: 10px 0;
+}
+.empty-message {
+    text-align: center; 
+    font-size: 18px; 
+    font-weight: bold;
+}
