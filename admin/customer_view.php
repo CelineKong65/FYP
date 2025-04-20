@@ -311,9 +311,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                         <label>Name:</label>
                         <input type="text" name="name" id="name" required>
                         <label>Email:</label>
-                        <input type="email" name="email" id="email" required>
+                        <input type="email" name="email" id="email" placeholder="example@gmail.com" required>
                         <label>Phone:</label>
-                        <input type="text" name="phone" id="phone" required>
+                        <input type="text" name="phone" id="phone" placeholder="XXX-XXX XXXX or XXX-XXXX XXXX format" required>
                         <label>Password:</label>
                         <input type="password" name="password">
                         <p>(Leave empty to keep the current password)</p>

@@ -348,9 +348,9 @@ if (isset($_POST['add_admin'])) {
                 <label>Name:</label>
                 <input type="text" name="name" id="name" required>
                 <label>Email:</label>
-                <input type="email" name="email" id="email" required>
+                <input type="email" name="email" id="email" placeholder="example@gmail.com" required>
                 <label>Phone:</label>
-                <input type="text" name="phone" id="phone" required>
+                <input type="text" name="phone" id="phone" placeholder="XXX-XXX XXXX or XXX-XXXX XXXX format"required>
                 <label>Position:</label>
                 <div id="position-container">
                     <!-- Position field will be inserted here dynamically -->
@@ -370,9 +370,9 @@ if (isset($_POST['add_admin'])) {
                 <label>Name:</label>
                 <input type="text" name="name" id="name" required>
                 <label>Email:</label>
-                <input type="email" name="email" id="email" required>
+                <input type="email" name="email" id="email" placeholder="example@gmail.com"required>
                 <label>Phone:</label>
-                <input type="text" name="phone" id="phone" required>
+                <input type="text" name="phone" id="phone" placeholder="XXX-XXX XXXX or XXX-XXXX XXXX format" required>
                 <label>Position:</label>
                 <select name="position" id="position" required>
                     <option value="admin">admin</option>
