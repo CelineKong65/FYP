@@ -51,14 +51,13 @@ $product_sales_query = "SELECT
     JOIN product p ON od.ProductName = p.ProductName
     GROUP BY p.ProductID, p.ProductName
     ORDER BY total_quantity_sold DESC
-    LIMIT 10";
+    LIMIT 5";
 
 $product_sales_result = $conn->query($product_sales_query);
 $product_sales_data = [];
 while ($row = $product_sales_result->fetch_assoc()) {
     $product_sales_data[] = $row;
 }
-
 
 ?>
 
@@ -68,116 +67,7 @@ while ($row = $product_sales_result->fetch_assoc()) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-
-        .header {
-            margin-bottom: 50px;
-        }
-
-        .container {
-            margin-top: 50px;
-            display: flex;
-            flex: 1;
-            margin-left: 250px;
-        }
-
-        .sidebar {
-            width: 220px;
-            background-color: #0077b6;
-            padding-top: 30px;
-            text-align: center;
-            border-radius: 20px;
-            margin: 30px;
-            height: 650px;
-            margin-top: 150px;
-            position: fixed;
-            left: 0;
-            top: 0;
-        }
-
-        .main-content {
-            flex-grow: 1;
-            padding: 20px;
-            margin: 10px;
-            background-color: #ffffff;
-            border-radius: 10px;
-            position: relative;
-        }
-
-        h2 {
-            color: #1e3a8a;
-            font-size: 40px;
-            text-align: center;
-            margin-bottom: 50px;
-        }
-
-        .dashboard-table {
-            width: 100%;
-            max-width: 900px;
-            margin: auto;
-            border-collapse: collapse;
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        td{
-            padding: 20px;
-        }
-
-        .card {
-            background: #e3f2fd;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.17);
-            text-align: center;
-            min-height: 100px;
-            width: 280px;
-        }
-
-        h3 {
-            font-size: 18px;
-            margin: 10px 0;
-            color: black;
-        }
-
-        p {
-            font-size: 16px;
-            color: #0077b6;
-            font-weight: bold;
-            font-size: 20px;
-        }
-        .chart-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            margin-top: 30px;
-        }
-
-        .chart-box {
-            width: 48%;
-            min-width: 400px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            margin-bottom: 30px;
-        }
-
-        .chart-title {
-            text-align: center;
-            color: #1e3a8a;
-            margin-bottom: 15px;
-        }
-    </style>
+    <link rel='stylesheet' href='dashboard.css'>
 </head>
 <body>
     <div class="header">
@@ -286,16 +176,11 @@ while ($row = $product_sales_result->fetch_assoc()) {
                 datasets: [{
                     data: [<?php echo implode(',', array_column($product_sales_data, 'total_quantity_sold')); ?>],
                     backgroundColor: [
-                        'rgba(255, 99, 132, 0.7)',
-                        'rgba(54, 162, 235, 0.7)',
-                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(90, 184, 247, 0.7)',
                         'rgba(75, 192, 192, 0.7)',
-                        'rgba(153, 102, 255, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
                         'rgba(255, 159, 64, 0.7)',
-                        'rgba(199, 199, 199, 0.7)',
-                        'rgba(83, 102, 255, 0.7)',
-                        'rgba(255, 102, 102, 0.7)',
-                        'rgba(102, 255, 102, 0.7)'
+                        'rgba(255, 102, 102, 0.7)',   
                     ],
                     borderWidth: 1
                 }]
@@ -315,10 +200,6 @@ while ($row = $product_sales_result->fetch_assoc()) {
                             return `${label}: ${value} units (RM ${salesValue.toFixed(2)})`;
                         }
                     }
-                },
-                title: {
-                    display: true,
-                    text: 'Top Selling Products by Quantity'
                 }
             }
         });
