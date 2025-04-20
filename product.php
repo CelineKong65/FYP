@@ -28,12 +28,168 @@ $products = $stmt->fetchAll();
     <title>Product Page</title>
     <link rel="stylesheet" href="product.css">
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .container-shop {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 150px 20px 20px;
+            gap: 20px;
+            align-items: stretch; /* Force equal height for children */
+            min-height: 80vh; /* Set a minimum height */
+        }
+
+        /* Categories Section */
+        .categories {
+            flex: 1;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .categories h2 {
+            margin-top: 10px;
+            font-size: 24px;
+            margin-bottom: 5px;
+            padding: 5px 25px;
+            transform: translateX(0%)
+        }
+
         .categories ul {
             list-style: none;
             padding: 0;
-            margin: 0; 
-            transform: translateY(-55%);
+            margin: 0;
+            overflow-y: auto; /* Scroll if content overflows */
+            flex-grow: 1; /* Take up remaining space */
         }
+
+        .categories ul li {
+            margin-bottom: 10px;
+        }
+
+        .categories ul li a {
+            text-decoration: none;
+            color: #333;
+            font-size: 18px;
+            display: block;
+            padding: 5px 25px;
+        }
+
+        .categories ul li a:hover {
+            color: #007BFF;
+        }
+
+        /* Products Section */
+        .products-wrapper {
+            flex: 3;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .products {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            align-content: start;
+            flex: 1;
+        }
+
+        .product {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 40px;
+            text-align: center;
+            height: auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .product h3 {
+            margin-top: 10px;
+            margin-bottom: 5px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .product p {
+            color: red;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .product-image {
+            position: relative;
+            overflow: hidden;
+            border-radius: 5px;
+        }
+
+        .product-image img {
+            width: 100%;
+            height: auto;
+            transition: transform 0.3s ease;
+        }
+
+        /* View Details Button */
+        .view-details {
+            position: absolute;
+            bottom: -50px;
+            left: 0;
+            right: 0;
+            background-color: rgba(0, 123, 255, 0.8);
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            transition: bottom 0.3s ease;
+            cursor: pointer;
+        }
+
+        /* Hover Effect */
+        .product:hover .view-details {
+            bottom: 0;
+        }
+
+        .product:hover img {
+            transform: scale(1.1);
+        }
+
+        /* Pagination Section */
+        .pagination {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+        }
+
+        .pagination .page {
+            display: inline-block;
+            padding: 8px 12px;
+            margin: 0 5px;
+            text-decoration: none;
+            color: #333;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .pagination .page:hover {
+            background-color: #007BFF;
+            color: #fff;
+        }
+
         .pagination .page.active {
             background-color: #333;
             color: #fff;
@@ -62,20 +218,22 @@ $products = $stmt->fetchAll();
             </ul>
         </div>
 
-        <div class="products">
-            <?php foreach ($products as $product): ?>
-                <div class="product">
-                    <div class="product-image">
-                        <?php
-                        $imageSrc = $product['ProductPicture'] ? 'image/' . $product['ProductPicture'] : 'image/default-image.png';
-                        ?>
-                        <img src="<?= $imageSrc ?>" alt="<?= $product['ProductName'] ?>">
-                        <a href="product_details.php?id=<?= $product['ProductID'] ?>"><button class="view-details">View Details</button></a>
+        <div class="products-wrapper">
+            <div class="products">
+                <?php foreach ($products as $product): ?>
+                    <div class="product">
+                        <div class="product-image">
+                            <?php
+                            $imageSrc = $product['ProductPicture'] ? 'image/' . $product['ProductPicture'] : 'image/default-image.png';
+                            ?>
+                            <img src="<?= $imageSrc ?>" alt="<?= $product['ProductName'] ?>">
+                            <a href="product_details.php?id=<?= $product['ProductID'] ?>"><button class="view-details">View Details</button></a>
+                        </div>
+                        <h3><?= $product['ProductName'] ?></h3>
+                        <p>RM <?= number_format($product['ProductPrice'], 2) ?></p>
                     </div>
-                    <h3><?= $product['ProductName'] ?></h3>
-                    <p>RM <?= number_format($product['ProductPrice'], 2) ?></p>
-                </div>
-            <?php endforeach; ?>
+                <?php endforeach; ?>
+            </div>
         </div>
     </div>
 

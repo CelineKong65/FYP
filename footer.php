@@ -9,9 +9,9 @@
     bottom: 0;
 }
 
-.footer-section .footer-container {
+.footer-section .fo-container {
     max-width: 1200px;
-    margin: 0 auto;
+    margin: -50px auto;
     padding: 0 15px;
 }
 
@@ -19,10 +19,12 @@
     display: flex;
     flex-wrap: wrap;
     margin: 0 -15px;
+    margin-top: 40px;
 }
 
 .footer-section .col-lg-3,
-.footer-section .col-lg-2 {
+.footer-section .col-lg-2,
+.footer-section .col-lg-1 {
     padding: 0 15px;
     flex: 1;
 }
@@ -62,35 +64,40 @@
     color: #3498db;
 }
 
-.footer-widget h5 {
+.footer-center h5,
+.footer-right h5 {
     font-size: 18px;
     font-weight: bold;
     margin-bottom: 20px;
     color: #ffffff;
 }
 
-.footer-widget ul {
+.footer-center ul,
+.footer-right ul {
     list-style: none;
     padding: 0;
     margin: 0;
 }
 
-.footer-widget ul li {
+.footer-center ul li,
+.footer-right ul li {
     margin-bottom: 10px;
 }
 
-.footer-widget ul li a {
+.footer-center ul li a,
+.footer-right ul li a {
     color: #bdc3c7;
     text-decoration: none;
     transition: color 0.3s;
 }
 
-.footer-widget ul li a:hover {
+.footer-center ul li a:hover,
+.footer-right ul li a:hover {
     color: #3498db;
 }
 
 .footer-copyright {
-    margin-top: 30px;
+    margin-bottom: 20px;
     color: rgba(255, 255, 255, 0.7);
     align-items: center;
     justify-content: center;
@@ -101,12 +108,10 @@ iframe {
     width: 500px;
     height: 200px;
 }
-
 </style>
 
-
 <footer class="footer-section">
-    <div class="footer-container">
+    <div class="fo-container">
         <div class="row" style="padding-bottom: 40px;">
           
             <div class="col-lg-3">
@@ -143,8 +148,8 @@ iframe {
                 </div>
             </div>
 
-            <div class="col-lg-2 offset-lg-1">
-                <div class="footer-widget">
+            <div class="col-lg-2">
+                <div class="footer-center">
                     <h5>Information</h5>
                     <ul>
                         <li><a href="about.php">About Us</a></li>
@@ -153,8 +158,8 @@ iframe {
                 </div>
             </div>
 
-            <div class="col-lg-2">
-                <div class="footer-widget">
+            <div class="col-lg-1">
+                <div class="footer-right">
                     <h5>Account</h5>
                     <ul>
                         <?php if (isset($_SESSION['user_id'])): ?>
