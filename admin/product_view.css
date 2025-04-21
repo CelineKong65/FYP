@@ -317,3 +317,8 @@ input::placeholder{
     font-size: 12px;
     font-style: italic;
 }
+
+span{
+    color:gray;
+    font-size: 12px;
+}
