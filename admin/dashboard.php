@@ -139,7 +139,7 @@ while ($row = $product_sales_result->fetch_assoc()) {
                 datasets: [{
                     label: 'Monthly Sales (RM)',
                     data: [<?php echo implode(',', array_column($monthly_sales_data, 'monthly_sales')); ?>],
-                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                    backgroundColor: 'rgba(162, 215, 250, 0.7)',
                     borderColor: 'rgba(54, 162, 235, 1)',
                     borderWidth: 1
                 }]

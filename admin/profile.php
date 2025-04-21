@@ -36,7 +36,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_profile'])) {
         exit();
     }
 
-    if (!empty($current_password)) {
+    // Check if either password field has content
+    if (!empty($current_password) || !empty($new_password)) {
+        if (empty($current_password)) {
+            echo "<script>alert('Current password is required to change password.'); window.location.href='profile.php';</script>";
+            exit();
+        }
+        
+        if (empty($new_password)) {
+            echo "<script>alert('New password is required when changing password.'); window.location.href='profile.php';</script>";
+            exit();
+        }
+        
         $password_query = "SELECT AdminPassword FROM admin WHERE AdminID = ?";
         $stmt = $conn->prepare($password_query);
         $stmt->bind_param("i", $admin_id);
@@ -49,11 +60,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_profile'])) {
             exit();
         }
         
-        if (empty($new_password)) {
-            echo "<script>alert('New password is required when changing password.'); window.location.href='profile.php';</script>";
-            exit();
-        }
-        
         if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/', $new_password)) {
             echo "<script>alert('New password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.'); window.location.href='profile.php';</script>";
             exit();
@@ -61,9 +67,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_profile'])) {
         
         $password_update = ", AdminPassword = ?";
         $params[] = $new_password;
-    } elseif (!empty($new_password)) {
-        echo "<script>alert('Current password is required to change password.'); window.location.href='profile.php';</script>";
-        exit();
     }
 
     $name_check_query = "SELECT AdminID FROM admin WHERE AdminName = ? AND AdminID != ?";
@@ -150,10 +153,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_profile'])) {
 
                 <div class="upd_profile_div">
                     <h3>Update Profile</h3>
-                    <form method="POST" action="">
+                    <form method="POST" action="" id="profileForm">
                         <div class="form-group">
                             <label for="name">Full Name</label>
                             <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($admin['AdminName']); ?>" required>
+                            <div id="name-error" class="error"></div>
                         </div>
                         
                         <div class="form-group">
@@ -165,23 +169,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_profile'])) {
                         <div class="form-group">
                             <label for="email">Email</label>
                             <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($admin['AdminEmail']); ?>" required>
+                            <div id="email-error" class="error"></div>
                         </div>
                         
                         <div class="form-group">
                             <label for="phone">Phone Number</label>
                             <input type="tel" id="phone" name="phone" value="<?php echo htmlspecialchars($admin['AdminPhoneNum']); ?>" required>
+                            <div id="phone-error" class="error"></div>
                         </div>
                         
                         <div class="form-group">
-                            <label for="current_password">Current Password (Leave empty to keep the current password)</label>
+                            <label for="current_password">Current Password (required if changing password)</label>
                             <input type="password" id="current_password" name="current_password">
+                            <div id="current-password-error" class="error"></div>
                         </div>
 
                         <div class="form-group">
-                            <label for="new_password">New Password</label>
+                            <label for="new_password">New Password (required if changing password)</label>
                             <div class="pass-field">
                                 <input type="password" id="new_password" name="new_password" placeholder="123$abcd">
                                 <i class="fa-solid fa-eye" id="show-password"></i>
+                                <div id="new-password-error" class="error"></div>
                             </div>
                             
                             <div class="content">
@@ -214,10 +222,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_profile'])) {
                                 </ul>
                             </div>
                         </div>
-                        </div>
-                            <div class="upd_div">
-                                <button type="submit" name="update_profile" class="btn">Update</button>
-                            </div>
+                        <div class="upd_div">
+                            <button type="submit" name="update_profile" class="btn">Update</button>
                         </div>
                     </form>
                 </div>  
@@ -225,82 +231,266 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_profile'])) {
         </div>
     </div>
     <script>
-document.addEventListener("DOMContentLoaded", function() {
-    const passwordInput = document.querySelector(".pass-field input");
-    const eyeIcon = document.querySelector(".pass-field i");
-    const requirementList = document.querySelectorAll(".password-req li");
+    // Validation functions
+    function validateName(name) {
+        if (name.trim() === '') {
+            return 'Name is required';
+        }
+        return '';
+    }
 
-    const requirements = [
-        {regex: /\S{8,}/, index: 0},       // Minimum 8 non-whitespace characters
-        {regex: /[A-Z]/, index: 1},        // At least one uppercase
-        {regex: /[a-z]/, index: 2},        // At least one lowercase
-        {regex: /\d/, index: 3},           // At least one digit
-        {regex: /[@$!%*#?&]/, index: 4},   // At least one special symbol
-        {regex: /^\S*$/, index: 5}         // No space
-    ];
+    function validateEmail(email) {
+        if (email.trim() === '') {
+            return 'Email is required';
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !email.endsWith('.com')) {
+            return 'Invalid email format (must contain @ and end with .com)';
+        }
+        return '';
+    }
 
-    passwordInput.addEventListener("keyup", (e) => {
+    function validatePhone(phone) {
+        if (phone.trim() === '') {
+            return 'Phone is required';
+        }
+        if (!/^\d{3}-\d{3,4} \d{4}$/.test(phone)) {
+            return 'Phone must be in XXX-XXX XXXX or XXX-XXXX XXXX format';
+        }
+        return '';
+    }
+
+    function validateNewPassword(password) {
+        if (password.trim() === '') {
+            return '';
+        }
+        if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/.test(password)) {
+            return 'Password must be at least 8 characters with uppercase, lowercase, number and special character';
+        }
+        return '';
+    }
+
+    function checkPasswordRequirements(password) {
+        const requirements = [
+            {regex: /.{8,}/},            // At least 8 characters
+            {regex: /[A-Z]/},             // At least one uppercase
+            {regex: /[a-z]/},             // At least one lowercase
+            {regex: /\d/},                // At least one digit
+            {regex: /[@$!%*#?&]/},        // At least one special symbol
+            {regex: /^\S*$/}              // No space
+        ];
+        
+        return requirements.every(req => req.regex.test(password));
+    }
+
+    // Show/hide error functions
+    function showError(fieldId, errorId, message) {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.classList.add('error-field');
+        }
+        const errorElement = document.getElementById(errorId);
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+    }
+
+    function clearError(fieldId, errorId) {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.classList.remove('error-field');
+        }
+        const errorElement = document.getElementById(errorId);
+        if (errorElement) {
+            errorElement.style.display = 'none';
+        }
+    }
+
+    // Update password requirements UI
+    function updatePasswordRequirements(password) {
+        const requirements = [
+            {regex: /.{8,}/, index: 0},
+            {regex: /[A-Z]/, index: 1},
+            {regex: /[a-z]/, index: 2},
+            {regex: /\d/, index: 3},
+            {regex: /[@$!%*#?&]/, index: 4},
+            {regex: /^\S*$/, index: 5}
+        ];
+
         requirements.forEach(item => {
-            const isValid = item.regex.test(e.target.value);
-            const requirementItem = requirementList[item.index];
+            const isValid = item.regex.test(password);
+            const requirementItem = document.querySelectorAll(".password-req li")[item.index];
+            
+            if (requirementItem) {
+                requirementItem.firstElementChild.className = isValid ? "fa-solid fa-circle-check" : "fa-solid fa-circle";
+                requirementItem.classList.toggle("valid", isValid);
+            }
+        });
+    }
 
-            if(isValid){
-                requirementItem.firstElementChild.className = "fa-solid fa-circle-check";
-                requirementItem.classList.add("valid");
-            }else{
-                requirementItem.firstElementChild.className = "fa-solid fa-circle";
-                requirementItem.classList.remove("valid");
+    // Form validation
+    function validateForm() {
+        let isValid = true;
+        
+        // Validate basic fields
+        const nameError = validateName(document.getElementById('name').value);
+        if (nameError) {
+            showError('name', 'name-error', nameError);
+            isValid = false;
+        } else {
+            clearError('name', 'name-error');
+        }
+
+        const emailError = validateEmail(document.getElementById('email').value);
+        if (emailError) {
+            showError('email', 'email-error', emailError);
+            isValid = false;
+        } else {
+            clearError('email', 'email-error');
+        }
+
+        const phoneError = validatePhone(document.getElementById('phone').value);
+        if (phoneError) {
+            showError('phone', 'phone-error', phoneError);
+            isValid = false;
+        } else {
+            clearError('phone', 'phone-error');
+        }
+
+        // Validate password fields
+        const currentPassword = document.getElementById('current_password').value.trim();
+        const newPassword = document.getElementById('new_password').value.trim();
+
+        // Only validate if at least one field has content
+        if (currentPassword || newPassword) {
+            if (!currentPassword) {
+                showError('current_password', 'current-password-error', 'Current password is required');
+                isValid = false;
+            } else {
+                clearError('current_password', 'current-password-error');
+            }
+
+            if (!newPassword) {
+                showError('new_password', 'new-password-error', 'New password is required');
+                isValid = false;
+            } else {
+                const newPasswordError = validateNewPassword(newPassword);
+                if (newPasswordError) {
+                    showError('new_password', 'new-password-error', newPasswordError);
+                    isValid = false;
+                } else if (!checkPasswordRequirements(newPassword)) {
+                    showError('new_password', 'new-password-error', 'Please meet all password requirements');
+                    isValid = false;
+                } else {
+                    clearError('new_password', 'new-password-error');
+                }
+            }
+        } else {
+            // Clear errors when both fields are empty
+            clearError('current_password', 'current-password-error');
+            clearError('new_password', 'new-password-error');
+        }
+
+        return isValid;
+    }
+
+    // Real-time validation and event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('profileForm');
+        const currentPasswordInput = document.getElementById('current_password');
+        const newPasswordInput = document.getElementById('new_password');
+        const eyeIcon = document.getElementById('show-password');
+
+        // Real-time validation for name, email, phone
+        document.getElementById('name').addEventListener('input', function() {
+            const error = validateName(this.value);
+            if (error) {
+                showError('name', 'name-error', error);
+            } else {
+                clearError('name', 'name-error');
+            }
+        });
+
+        document.getElementById('email').addEventListener('input', function() {
+            const error = validateEmail(this.value);
+            if (error) {
+                showError('email', 'email-error', error);
+            } else {
+                clearError('email', 'email-error');
+            }
+        });
+
+        document.getElementById('phone').addEventListener('input', function() {
+            const error = validatePhone(this.value);
+            if (error) {
+                showError('phone', 'phone-error', error);
+            } else {
+                clearError('phone', 'phone-error');
+            }
+        });
+
+        // Password fields validation
+        function validatePasswordFields() {
+            const currentPassword = currentPasswordInput.value.trim();
+            const newPassword = newPasswordInput.value.trim();
+
+            // Only validate if at least one field has content
+            if (currentPassword || newPassword) {
+                if (!currentPassword) {
+                    showError('current_password', 'current-password-error', 'Current password is required');
+                    return false;
+                } else {
+                    clearError('current_password', 'current-password-error');
+                }
+
+                if (!newPassword) {
+                    showError('new_password', 'new-password-error', 'New password is required');
+                    return false;
+                } else {
+                    const newPasswordError = validateNewPassword(newPassword);
+                    if (newPasswordError) {
+                        showError('new_password', 'new-password-error', newPasswordError);
+                        return false;
+                    } else if (!checkPasswordRequirements(newPassword)) {
+                        showError('new_password', 'new-password-error', 'Please meet all password requirements');
+                        return false;
+                    } else {
+                        clearError('new_password', 'new-password-error');
+                    }
+                }
+            } else {
+                // Clear errors when both fields are empty
+                clearError('current_password', 'current-password-error');
+                clearError('new_password', 'new-password-error');
+            }
+            return true;
+        }
+
+        currentPasswordInput.addEventListener('input', function() {
+            validatePasswordFields();
+        });
+
+        newPasswordInput.addEventListener('input', function() {
+            validatePasswordFields();
+            updatePasswordRequirements(this.value);
+        });
+
+        // Toggle password visibility
+        if (eyeIcon) {
+            eyeIcon.addEventListener('click', function() {
+                const type = newPasswordInput.type === 'password' ? 'text' : 'password';
+                newPasswordInput.type = type;
+                this.className = type === 'password' ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash';
+            });
+        }
+
+        // Form submission
+        form.addEventListener('submit', function(e) {
+            if (!validateForm()) {
+                e.preventDefault();
             }
         });
     });
-
-    eyeIcon.addEventListener("click", () => {
-        passwordInput.type = passwordInput.type === "password" ? "text" : "password";
-        eyeIcon.className = `fa-solid fa-eye${passwordInput.type === "password" ? "" : "-slash"}`;
-    });
-
-    const form = document.querySelector("form");
-    form.addEventListener("submit", function(event) {
-        const currentPassword = document.getElementById("current_password");
-        const newPassword = document.getElementById("new_password");
-        const requirementItems = document.querySelectorAll(".password-req li");
-        
-        // Check if new password is being set
-        if (newPassword.value.trim() !== "") {
-            // Check current password is provided
-            if (currentPassword.value.trim() === "") {
-                alert("Please enter your current password to change your password.");
-                currentPassword.focus();
-                event.preventDefault();
-                return;
-            }
-            
-            // Check all requirements are met
-            let allValid = true;
-            requirementItems.forEach(item => {
-                if (!item.classList.contains("valid")) {
-                    allValid = false;
-                }
-            });
-            
-            if (!allValid) {
-                alert("Please ensure your new password meets all requirements.");
-                newPassword.focus();
-                event.preventDefault();
-                return;
-            }
-            
-            // Additional regex validation
-            if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/.test(newPassword.value)) {
-                alert("New password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
-                newPassword.focus();
-                event.preventDefault();
-                return;
-            }
-        }
-    });
-});
-
     </script>
 </body>
 </html>
