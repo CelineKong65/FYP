@@ -117,21 +117,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = "Card number must be 13-16 digits";
     }
     
-    // Expiry Date validation (MM/YY format and not expired)
+    // Expiry Date validation (for month input YYYY-MM format)
     if (empty($cardExpDate)) {
         $errors[] = "Expiry date is required";
-    } elseif (!preg_match('/^(0[1-9]|1[0-2])\/?([0-9]{2})$/', $cardExpDate)) {
-        $errors[] = "Invalid expiry date format (MM/YY)";
     } else {
-        $currentYear = date('y');
-        $currentMonth = date('m');
-        $parts = explode('/', $cardExpDate);
+        $currentDate = new DateTime();
+        $currentYear = $currentDate->format('Y');
+        $currentMonth = $currentDate->format('m');
         
-        if (count($parts) !== 2) {
+        $expDateParts = explode('-', $cardExpDate);
+        if (count($expDateParts) !== 2) {
             $errors[] = "Invalid expiry date format";
         } else {
-            $expMonth = $parts[0];
-            $expYear = $parts[1];
+            $expYear = $expDateParts[0];
+            $expMonth = $expDateParts[1];
             
             if ($expYear < $currentYear || ($expYear == $currentYear && $expMonth < $currentMonth)) {
                 $errors[] = "Card has expired";
@@ -183,9 +182,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             // Insert payment information
             $insertQuery = "INSERT INTO orderpayment 
-                (CustID, ReceiverName, ReceiverContact, ReceiverEmail, StreetAddress, City, Postcode, State, OrderDate, TotalPrice, DeliveryFee, CardName, CardNum, CardCVV) 
+                (CustID, ReceiverName, ReceiverContact, ReceiverEmail, StreetAddress, City, Postcode, State, OrderDate, TotalPrice, DeliveryFee, CardName, CardNum, ExpDate, CardCVV) 
                 VALUES 
-                (:custID, :receiverName, :receiverContact, :receiverEmail, :streetAddress, :city, :postcode, :state, NOW(), :totalPrice, :deliveryFee, :cardName, :cardNum, :cardCVV)";
+                (:custID, :receiverName, :receiverContact, :receiverEmail, :streetAddress, :city, :postcode, :state, NOW(), :totalPrice, :deliveryFee, :cardName, :cardNum, :expDate, :cardCVV)";
             $insertStmt = $conn->prepare($insertQuery);
             $insertStmt->bindParam(':custID', $custID, PDO::PARAM_INT);
             $insertStmt->bindParam(':receiverName', $formFullName, PDO::PARAM_STR);
@@ -199,6 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $insertStmt->bindParam(':deliveryFee', $deliveryCharge, PDO::PARAM_STR);
             $insertStmt->bindParam(':cardName', $cardName, PDO::PARAM_STR);
             $insertStmt->bindParam(':cardNum', $cardNum, PDO::PARAM_STR);
+            $insertStmt->bindParam(':expDate', $cardExpDate, PDO::PARAM_STR);
             $insertStmt->bindParam(':cardCVV', $cardCVV, PDO::PARAM_STR);
             
             if ($insertStmt->execute()) {
@@ -279,9 +279,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Checkout Form</title>
     <link rel="stylesheet" href="payment.css">
     <!-- Add jQuery and jQuery UI for datepicker -->
-    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <style>
        /* Popup Styles */
         .simple-popup-overlay {
@@ -436,7 +433,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="text" id="ccnum" name="ccnum" placeholder="Enter card number" pattern="\d{13,16}" title="13-16 digit card number" required>
 
                         <label for="expdate"><b>Exp Date</b></label>
-                        <input type="text" id="expdate" name="expdate" placeholder="MM/YY" required>
+                        <input type="month" id="expdate" name="expdate" min="<?php echo date('Y-m'); ?>" required>
 
                         <label for="cvv"><b>CVV</b></label>
                         <input type="text" id="cvv" name="cvv" placeholder="Enter CVV" pattern="\d{3}" title="3-digit CVV" required>
@@ -448,6 +445,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
     <script>
+        // State change handler
         document.getElementById('state').addEventListener('change', function () {
             const selectedState = this.value;
             let deliveryCharge = 15.00;
@@ -460,31 +458,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             const subtotalText = document.getElementById('subtotal').textContent.replace('RM', '').trim();
             const subtotal = parseFloat(subtotalText);
-
             const total = subtotal + deliveryCharge;
 
             document.getElementById('delivery').textContent = 'RM ' + deliveryCharge.toFixed(2);
             document.getElementById('total').textContent = 'RM ' + total.toFixed(2);
             document.getElementById('price').value = 'RM ' + total.toFixed(2);
-        });
-
-        // Initialize datepicker for expiry date
-        $(function() {
-            $('#expdate').datepicker({
-                dateFormat: 'mm/y',
-                changeMonth: true,
-                changeYear: true,
-                showButtonPanel: true,
-                minDate: 0,
-                onClose: function(dateText, inst) {
-                    var month = $("#ui-datepicker-div .ui-datepicker-month :selected").val();
-                    var year = $("#ui-datepicker-div .ui-datepicker-year :selected").val();
-                    $(this).val($.datepicker.formatDate('mm/y', new Date(year, month, 1)));
-                }
-            }).focus(function() {
-                $(".ui-datepicker-calendar").hide();
-                $(".ui-datepicker-current").hide();
-            });
         });
 
         // Client-side validation
@@ -538,21 +516,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             // Expiry Date validation
-            const expDate = document.getElementById('expdate').value;
-            if (!/^(0[1-9]|1[0-2])\/?([0-9]{2})$/.test(expDate)) {
-                alert('Invalid expiry date format (MM/YY)');
+            const expDateInput = document.getElementById('expdate');
+            if (!expDateInput.value) {
+                alert('Please select an expiry date');
                 e.preventDefault();
                 return;
-            } else {
-                const currentYear = new Date().getFullYear() % 100;
-                const currentMonth = new Date().getMonth() + 1;
-                const [expMonth, expYear] = expDate.split('/').map(Number);
+            }
+
+            const selectedDate = new Date(expDateInput.value);
+            const currentDate = new Date();
                 
-                if (expYear < currentYear || (expYear == currentYear && expMonth < currentMonth)) {
-                    alert('Card has expired');
-                    e.preventDefault();
-                    return;
-                }
+            if (selectedDate.getFullYear() < currentDate.getFullYear() || 
+                (selectedDate.getFullYear() === currentDate.getFullYear() && 
+                selectedDate.getMonth() < currentDate.getMonth())) {
+                alert('Card has expired');
+                e.preventDefault();
+                return;
             }
             
             // CVV validation
@@ -564,7 +543,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         });
 
-        // Success Popup
+        // Success Popup Functions
         function showSuccessPopup() {
             // Create the popup HTML
             const popupHTML = `
@@ -593,7 +572,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Check for success parameter in URL and show popup
-        document.addEventListener('DOMContentLoaded', function() {
+        window.addEventListener('load', function() {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('payment') === 'success') {
                 showSuccessPopup();

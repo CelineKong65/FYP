@@ -22,6 +22,19 @@ if ($isLoggedIn) {
     $wishlistRow = $wishlistStmt->fetch();
     $wishlistCount = $wishlistRow['total'] ?? 0;
 }
+
+// Get search query
+$query = isset($_GET['query']) ? trim($_GET['query']) : '';
+
+// Prepare SQL statement to search products
+$stmt = $conn->prepare("
+    SELECT * FROM product 
+    WHERE ProductName LIKE ? 
+    AND ProductStatus = 'active'
+");
+$searchTerm = '%' . $query . '%';
+$stmt->execute([$searchTerm]);
+$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -173,6 +186,40 @@ if ($isLoggedIn) {
             align-items: center;
             justify-content: center;
         }
+        .search-form {
+            display: flex;
+            align-items: center;
+            margin-left: 20px;
+        }
+
+        .search-form input[type="text"] {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 20px 0 0 20px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .search-form button {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-left: none;
+            background-color: #007BFF;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 0 20px 20px 0;
+        }
+
+        .search-form button:hover {
+            background-color: #0056b3;
+        }
+
+        .search-icon {
+            width: 15px;
+        }
+
+        
     </style>
 </head>
 <body>
@@ -223,6 +270,11 @@ if ($isLoggedIn) {
                     <?php endif; ?>
                 </div>
             </div>
+            
+            <form action="search.php" method="get" class="search-form">
+                <input type="text" name="query" placeholder="Search products..." value="<?= htmlspecialchars($query ?? '') ?>" required>
+                <button type="submit"><img src="image/magnifying-glass.png" alt="Search" class="search-icon"></button>
+            </form>
         </div>
     </header>
 
