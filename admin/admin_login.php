@@ -74,7 +74,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     </div>
 
                     <div class="forget_password">
-                        <p><a href="forget_password.html">Forgot your password?</a></p>
+                        <p><a href="findback_admin.php">Forgot your password?</a></p>
                     </div>
 
                     <div class="button">
