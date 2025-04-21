@@ -239,3 +239,14 @@ input[type="text"],input[type="email"],input[type="tel"],input[type="password"] 
 .wrapper .fa-eye:hover{
     color: #505050;
 }
+
+.error {
+    color: red;
+    font-size: 12px;
+    display: block;
+    margin: 7px 0 0 0;
+}
+
+.error-field {
+    border: 1px solid red !important;
+}

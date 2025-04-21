@@ -149,32 +149,80 @@ if (isset($_POST['update_product'])) {
         $stmt->execute();
         $stmt->close();
 
-        $delete_sizes = $conn->prepare("DELETE FROM product_size WHERE ProductID = ?");
-        $delete_sizes->bind_param("i", $product_id);
-        $delete_sizes->execute();
-        $delete_sizes->close();
-
+        $check_size_stmt = $conn->prepare("SELECT COUNT(*) FROM product_size WHERE ProductID = ? AND Size IS NOT NULL");
+        $check_size_stmt->bind_param("i", $product_id);
+        $check_size_stmt->execute();
+        $check_size_stmt->bind_result($has_size_in_db);
+        $check_size_stmt->fetch();
+        $check_size_stmt->close();
+        
         if ($has_sizes) {
-            $sizes = [
-                'S' => $stock_S,
-                'M' => $stock_M,
-                'L' => $stock_L,
-                'XL' => $stock_XL
-            ];
-
-            foreach ($sizes as $size => $quantity) {
-                if ($quantity >= 0) {
+            if ($has_size_in_db) {
+                // Product already has sizes, just update each one
+                $sizes = ['S' => $stock_S, 'M' => $stock_M, 'L' => $stock_L, 'XL' => $stock_XL];
+                foreach ($sizes as $size => $quantity) {
+                    $check_existing = $conn->prepare("SELECT COUNT(*) FROM product_size WHERE ProductID = ? AND Size = ?");
+                    $check_existing->bind_param("is", $product_id, $size);
+                    $check_existing->execute();
+                    $check_existing->bind_result($exists);
+                    $check_existing->fetch();
+                    $check_existing->close();
+        
+                    if ($exists) {
+                        $update_size = $conn->prepare("UPDATE product_size SET Stock = ? WHERE ProductID = ? AND Size = ?");
+                        $update_size->bind_param("iis", $quantity, $product_id, $size);
+                        $update_size->execute();
+                        $update_size->close();
+                    } else {
+                        $insert_size = $conn->prepare("INSERT INTO product_size (ProductID, Size, Stock) VALUES (?, ?, ?)");
+                        $insert_size->bind_param("isi", $product_id, $size, $quantity);
+                        $insert_size->execute();
+                        $insert_size->close();
+                    }
+                }
+        
+                // Also remove any NULL size entry if exists
+                $delete_null_size = $conn->prepare("DELETE FROM product_size WHERE ProductID = ? AND Size IS NULL");
+                $delete_null_size->bind_param("i", $product_id);
+                $delete_null_size->execute();
+                $delete_null_size->close();
+        
+            } else {
+                // Previously had no size, delete NULL size row and insert new sizes
+                $delete_null_size = $conn->prepare("DELETE FROM product_size WHERE ProductID = ? AND Size IS NULL");
+                $delete_null_size->bind_param("i", $product_id);
+                $delete_null_size->execute();
+                $delete_null_size->close();
+        
+                $sizes = ['S' => $stock_S, 'M' => $stock_M, 'L' => $stock_L, 'XL' => $stock_XL];
+                foreach ($sizes as $size => $quantity) {
                     $insert_size = $conn->prepare("INSERT INTO product_size (ProductID, Size, Stock) VALUES (?, ?, ?)");
                     $insert_size->bind_param("isi", $product_id, $size, $quantity);
                     $insert_size->execute();
                     $insert_size->close();
                 }
             }
+        
         } else {
-            $insert_size = $conn->prepare("INSERT INTO product_size (ProductID, Size, Stock) VALUES (?, NULL, ?)");
-            $insert_size->bind_param("ii", $product_id, $stock);
-            $insert_size->execute();
-            $insert_size->close();
+            if ($has_size_in_db) {
+                // Switching from size to no-size: delete all sized entries
+                $delete_sizes = $conn->prepare("DELETE FROM product_size WHERE ProductID = ?");
+                $delete_sizes->bind_param("i", $product_id);
+                $delete_sizes->execute();
+                $delete_sizes->close();
+        
+                // Insert no-size stock
+                $insert_no_size = $conn->prepare("INSERT INTO product_size (ProductID, Size, Stock) VALUES (?, NULL, ?)");
+                $insert_no_size->bind_param("ii", $product_id, $stock);
+                $insert_no_size->execute();
+                $insert_no_size->close();
+            } else {
+                // Product already has no size, just update the stock
+                $update_no_size = $conn->prepare("UPDATE product_size SET Stock = ? WHERE ProductID = ? AND Size IS NULL");
+                $update_no_size->bind_param("ii", $stock, $product_id);
+                $update_no_size->execute();
+                $update_no_size->close();
+            }
         }
 
         $conn->commit();
@@ -440,7 +488,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                 <input type="hidden" name="existing_image" id="existing_image">
                 <div class="edit-form">
                     <div class="left">
-                        <label>Image:</label>
+                        <label>Image:<span> (.jpp,.jpeg or .png only)</span></label>
                         <input type="file" name="image">
                         <label>Name:</label>
                         <input type="text" name="name" id="name" required>
@@ -494,7 +542,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
             <input type="hidden" name="product_id" id="product_id">
             <div class="add-form">
                 <div class="left">
-                    <label>Image:</label>
+                    <label>Image:<span> (.jpp,.jpeg or .png only)</span></label>
                     <input type="file" name="image" required>
                     <label>Name:</label>
                     <input type="text" name="name" id="add_name" required>
