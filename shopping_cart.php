@@ -5,6 +5,12 @@ include 'header.php';
 
 $custID = $_SESSION["user_id"] ?? null;
 
+if (!$custID) {
+    $_SESSION['error'] = "Please login to view your cart.";
+    header("Location: login.php");
+    exit;
+}
+
 if ($custID) {
     $query = "SELECT cart.*, product.ProductName, product.ProductPicture, product.ProductID, product.ProductPrice
               FROM cart 

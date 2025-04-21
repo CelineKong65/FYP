@@ -62,8 +62,8 @@ $products = $stmt->fetchAll();
     margin: 0 auto;
     padding: 150px 20px 20px;
     gap: 20px;
-    align-items: stretch; /* 强制子元素高度一致 */
-    min-height: 80vh; /* 设定一个最小高度（可调整） */
+    align-items: stretch; 
+    min-height: 80vh; 
 }
 
 .categories {
@@ -87,8 +87,8 @@ $products = $stmt->fetchAll();
     list-style: none;
     padding: 0;
     margin: 0;
-    overflow-y: auto; /* 超出时滚动 */
-    flex-grow: 1; /* 占据剩余空间 */
+    overflow-y: auto; 
+    flex-grow: 1; 
 }
 
 .categories ul li {
