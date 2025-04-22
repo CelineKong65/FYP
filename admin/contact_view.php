@@ -8,10 +8,24 @@ if (!isset($_SESSION['AdminID'])) {
 
 include 'db_connection.php';
 
-$contact_query = "SELECT * FROM contact_record ORDER BY Submission_date DESC";
-$contact_result = $conn->query($contact_query);
+// Get subject filter from URL (if any)
+$subject_filter = isset($_GET['subject']) ? trim($_GET['subject']) : '';
 
+// Base query
+$contact_query = "SELECT * FROM contact_record";
+
+// Add WHERE clause if a subject is selected
+if (!empty($subject_filter)) {
+    $subject_filter = $conn->real_escape_string($subject_filter);
+    $contact_query .= " WHERE Subject = '$subject_filter'";
+}
+
+// Order by latest
+$contact_query .= " ORDER BY Submission_date DESC";
+
+$contact_result = $conn->query($contact_query);
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -33,7 +47,18 @@ $contact_result = $conn->query($contact_query);
 
         <div class="main-content">
             <h2>Contact Records</h2>
-            
+
+            <form method="GET" action="" class="search">
+                <label for="subject">Filter by subject :</label>
+                <select name="subject" id="subject" onchange="this.form.submit()">
+                    <option value="">All Subjects</option>
+                    <option value="Product Inquiry" <?php if (isset($_GET['subject']) && $_GET['subject'] == 'Product Inquiry') echo 'selected'; ?>>Product Inquiry</option>
+                    <option value="Order Status" <?php if (isset($_GET['subject']) && $_GET['subject'] == 'Order Status') echo 'selected'; ?>>Order Status</option>
+                    <option value="Returns & Refunds" <?php if (isset($_GET['subject']) && $_GET['subject'] == 'Returns & Refunds') echo 'selected'; ?>>Returns & Refunds</option>
+                    <option value="Other" <?php if (isset($_GET['subject']) && $_GET['subject'] == 'Other') echo 'selected'; ?>>Other</option>
+                </select>
+            </form>
+
             <table>
                 <thead>
                     <tr>

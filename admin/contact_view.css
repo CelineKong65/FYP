@@ -55,20 +55,29 @@ h2 {
     margin-bottom: 20px;
 }
 
-button[name="delete_contact"]{
-    padding: 10px 16px;
-    background-color: red;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-right: 5px;
-    margin-bottom: 10px;
-    font-size: 13px;
+form.search {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
 }
 
-button[name="delete_contact"]:hover{
-    background-color: #c82333;
+.search label{
+    color: #0A2F4F;
+    transform: translateY(8px);
+    font-size: 14px;
+    font-weight: bold;
+}
+
+select, input{
+    padding: 8px;
+    font-size: 12px;
+    margin-bottom: 10px;
+    border: 1px solid #0A2F4F;
+    border-radius: 4px;
+}
+
+.search input {
+    width: 300px;
 }
 
 table {
