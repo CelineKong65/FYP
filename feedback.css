@@ -56,7 +56,9 @@
 /* Changed from .rating-container to .feedback-rating-container */
 .feedback-rating-container {
     display: flex;
+    flex-direction: row-reverse;
     justify-content: center;
+    gap: 5px;
     margin: 20px 0;
 }
 

@@ -5,47 +5,59 @@ include 'config.php';
 $errors = [];
 $step = isset($_GET['step']) ? (int)$_GET['step'] : 1;
 
-if ($_SERVER["REQUEST_METHOD"] == "POST" && $step == 1) {
-    // Sanitize inputs
-    $custName = $_POST['custName'];
-    $custEmail = $_POST['custEmail'];
-    $custPassword = $_POST['custPassword'];
-    $custPhoneNum = $_POST['custPhoneNum'];
+// Handle AJAX request for real-time checking
+if (isset($_POST['check_availability'])) {
+    $type = $_POST['type'];
+    $value = trim($_POST['value']);
+    $exists = false;
+    $is_valid_format = true;
+    $error_message = '';
 
-    // Validate gmail format
-    if (!preg_match("/^[a-zA-Z0-9._%+-]+@gmail\.com$/i", $custEmail)) {
-        $errors['custEmail'] = "Please use a valid gmail address (e.g. example@gmail.com)";
+    if ($type === 'username') {
+        $sql = "SELECT CustName FROM customer WHERE CustName = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([$value]);
+        $exists = $stmt->rowCount() > 0;
+    } elseif ($type === 'email') {
+        if (!preg_match("/^[a-zA-Z0-9._%+-]+@gmail\.com$/i", $value)) {
+            $is_valid_format = false;
+            $error_message = "Invalid gmail format";
+        } else {
+            $sql = "SELECT CustEmail FROM customer WHERE CustEmail = ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute([$value]);
+            $exists = $stmt->rowCount() > 0;
+        }
+    } elseif ($type === 'phone') {
+        if (!preg_match("/^(\+?6?01)[0-46-9]-*[0-9]{7,8}$/", $value)) {
+            $is_valid_format = false;
+            $error_message = "Invalid Malaysian phone number (e.g., 012-3456789)";
+        } else {
+            $sql = "SELECT CustPhoneNum FROM customer WHERE CustPhoneNum = ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute([$value]);
+            $exists = $stmt->rowCount() > 0;
+        }
     }
 
-    // Validate password format
+    echo json_encode(['exists' => $exists, 'valid_format' => $is_valid_format, 'message' => $error_message]);
+    exit();
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && $step == 1) {
+    // Sanitize other inputs (excluding those checked in real-time)
+    $custPassword = $_POST['custPassword'];
+    $custName = $_POST['custName'];
+    $custEmail = $_POST['custEmail'];
+    $custPhoneNum = $_POST['custPhoneNum'];
+
+    // Validate password format (still needs server-side check)
     if (!preg_match("/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])\S{8,}$/", $custPassword)) {
         $errors['custPassword'] = "Password must follow requirements";
     }
 
-    // Check if gmail or phone number already exists
-    $sql_check = "SELECT CustEmail, CustPhoneNum FROM customer WHERE CustEmail = ? OR CustPhoneNum = ?";
-    $stmt_check = $conn->prepare($sql_check);
-    $stmt_check->execute([$custEmail, $custPhoneNum]);
-    $result = $stmt_check->fetchAll(PDO::FETCH_ASSOC);
-
-    if (count($result) > 0) {
-        foreach ($result as $row) {
-            if ($row["CustName"] == $custName){
-                $errors['custName'] == "Username already exists";
-            }
-
-            if ($row["CustEmail"] == $custEmail) {
-                $errors['custEmail'] = "Email already exists";
-            }
-
-            if ($row["CustPhoneNum"] == $custPhoneNum) {
-                $errors['custPhoneNum'] = "Phone Number already exists";
-            }
-        }
-    }
-
-    // If no errors, store in session and proceed to step 2
-    if (empty($errors)) {
+    // If no immediate errors, store in session and proceed to step 2
+    if (empty($errors) && !isset($_SESSION['register_errors'])) {
         $_SESSION['register_data'] = [
             'custName' => $custName,
             'custEmail' => $custEmail,
@@ -54,6 +66,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $step == 1) {
         ];
         header("Location: register.php?step=2");
         exit();
+    } elseif (isset($_SESSION['register_errors'])) {
+        $errors = array_merge($errors, $_SESSION['register_errors']);
+        unset($_SESSION['register_errors']); // Clear session errors
     }
 }
 ?>
@@ -82,22 +97,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $step == 1) {
             <div class="right-side-inner">
                 <div class="frame">
                     <h2>Register - Step <?php echo $step; ?></h2>
-                    
+
                     <?php if ($step == 1): ?>
                         <form method="POST" action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>?step=1" id="register-form">
-                            <!-- Basic Info Fields -->
-                            <label>Name:</label>
-                            <input type="text" placeholder="Username" name="custName" value="<?php echo isset($_POST['custName']) ? htmlspecialchars($_POST['custName']) : ''; ?>" required>
-                            <?php if (isset($errors['custName'])): ?>
-                                <div class="error-message"><?php echo $errors['custName']; ?></div>
-                            <?php endif; ?>
+                            <label for="custName">Name:</label>
+                            <input type="text" id="custName" placeholder="Username" name="custName" value="<?php echo isset($_POST['custName']) ? htmlspecialchars($_POST['custName']) : ''; ?>" required>
+                            <div class="error-message" id="custName-error">
+                                <?php if (isset($errors['custName'])): ?>
+                                    <?php echo $errors['custName']; ?>
+                                <?php endif; ?>
+                            </div>
                             <br>
 
-                            <label>Email:</label>
-                            <input type="email" placeholder="123abc@gmail.com" name="custEmail" value="<?php echo isset($_POST['custEmail']) ? htmlspecialchars($_POST['custEmail']) : ''; ?>" required>
-                            <?php if (isset($errors['custEmail'])): ?>
-                                <div class="error-message"><?php echo $errors['custEmail']; ?></div>
-                            <?php endif; ?>
+                            <label for="custEmail">Email:</label>
+                            <input type="email" id="custEmail" placeholder="123abc@gmail.com" name="custEmail" value="<?php echo isset($_POST['custEmail']) ? htmlspecialchars($_POST['custEmail']) : ''; ?>" required>
+                            <div class="error-message" id="custEmail-error">
+                                <?php if (isset($errors['custEmail'])): ?>
+                                    <?php echo $errors['custEmail']; ?>
+                                <?php endif; ?>
+                            </div>
                             <br>
 
                             <label>Password:</label>
@@ -123,11 +141,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $step == 1) {
                                 </div>
                             </div>
 
-                            <label>Phone Number:</label>
-                            <input type="text" placeholder="012-345 6789" name="custPhoneNum" value="<?php echo isset($_POST['custPhoneNum']) ? htmlspecialchars($_POST['custPhoneNum']) : ''; ?>" required>
-                            <?php if (isset($errors['custPhoneNum'])): ?>
-                                <div class="error-message"><?php echo $errors['custPhoneNum']; ?></div>
-                            <?php endif; ?>
+                            <label for="custPhoneNum">Phone Number:</label>
+                            <input type="text" id="custPhoneNum" placeholder="012-345 6789" name="custPhoneNum" value="<?php echo isset($_POST['custPhoneNum']) ? htmlspecialchars($_POST['custPhoneNum']) : ''; ?>" required>
+                            <div class="error-message" id="custPhoneNum-error">
+                                <?php if (isset($errors['custPhoneNum'])): ?>
+                                    <?php echo $errors['custPhoneNum']; ?>
+                                <?php endif; ?>
+                            </div>
                             <br>
 
                             <button type="submit" class="reg">Continue with Address</button>

@@ -3,9 +3,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const passwordInput = document.querySelector(".pass-field input");
     const eyeIcon = document.querySelector(".pass-field i");
     const requirementList = document.querySelectorAll(".password-req li");
-    const emailInput = document.querySelector("input[name='custEmail']");
-    const phoneInput = document.querySelector("input[name='custPhoneNum']");
     const forms = document.querySelectorAll("form");
+    const nameInput = document.getElementById('custName');
+    const emailInput = document.getElementById('custEmail');
+    const phoneInput = document.getElementById('custPhoneNum');
 
     const requirements = [
         {regex: /\S{8,}/, index: 0},
@@ -30,14 +31,25 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Email validation
-    if (emailInput) {
-        emailInput.addEventListener("blur", validateEmail);
+   // Real-time check for username
+    if (nameInput) {
+        nameInput.addEventListener('blur', function() {
+            checkAvailability('username', this.value, 'custName-error');
+        });
     }
 
-    // Phone validation
+    // Real-time check for email
+    if (emailInput) {
+        emailInput.addEventListener('blur', function() {
+            checkAvailability('email', this.value, 'custEmail-error');
+        });
+    }
+
+    // Real-time check for phone number
     if (phoneInput) {
-        phoneInput.addEventListener("blur", validatePhone);
+        phoneInput.addEventListener('blur', function() {
+            checkAvailability('phone', this.value, 'custPhoneNum-error');
+        });
     }
 
     // Toggle password visibility
@@ -49,62 +61,96 @@ document.addEventListener('DOMContentLoaded', function() {
     forms.forEach(form => {
         form.addEventListener("submit", function(e) {
             let isValid = true;
-            
+
             if (form.id === "register-form") {
-                // Validate step 1 form
-                if (emailInput && !validateEmail()) isValid = false;
-                if (phoneInput && !validatePhone()) isValid = false;
-                
-                // Check password requirements
+                // Check real-time validation
+                const nameError = document.getElementById('custName-error');
+                const emailError = document.getElementById('custEmail-error');
+                const phoneError = document.getElementById('custPhoneNum-error');
+
+                if (nameError && nameError.textContent !== '') isValid = false;
+                if (emailError && emailError.textContent !== '') isValid = false;
+                if (phoneError && phoneError.textContent !== '') isValid = false;
+
+                // Check password requirements on submit
                 if (passwordInput) {
                     requirements.forEach(item => {
                         if (!item.regex.test(passwordInput.value)) {
                             isValid = false;
                         }
                     });
-                    
-                    if (!isValid) {
-                        showError(passwordInput, "Password does not meet all requirements");
-                    }
                 }
-            } 
-            else if (form.id === "address-form") {
-                // Validate step 2 form
+            } else if (form.id === "address-form") {
+                // Validate step 2 form (as before)
                 const botCheck = document.getElementById("not-bot");
                 if (!botCheck.checked) {
                     showError(botCheck, "Please confirm you are not a robot");
                     isValid = false;
                 }
             }
-            
+
             if (!isValid) e.preventDefault();
         });
     });
 
-    function validateEmail() {
-        const email = emailInput.value;
-        const emailReq = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
-        
-        if (email && !emailReq.test(email)) {
-            showError(emailInput, "Please enter a valid gmail address");
-            return false;
-        } else {
-            hideError(emailInput);
-            return true;
+    function checkAvailability(type, value, errorId) {
+        if (!value.trim()) {
+            document.getElementById(errorId).textContent = '';
+            return;
         }
-    }
 
-    function validatePhone() {
-        const phone = phoneInput.value;
-        const phoneReq = /^(\+?6?01)[0-46-9]-*[0-9]{7,8}$/;
-        
-        if (phone && !phoneReq.test(phone)) {
-            showError(phoneInput, "Please enter a "-" in phone number");
-            return false;
-        } else {
-            hideError(phoneInput);
-            return true;
+        let isValidFormat = true;
+        let errorMessage = '';
+
+        if (type === 'email') {
+            const emailReq = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+            if (!emailReq.test(value)) {
+                isValidFormat = false;
+                errorMessage = "Please enter a valid gmail address";
+            }
+        } else if (type === 'phone') {
+            const phoneReq = /^(\+?6?01)[0-46-9]-*[0-9]{7,8}$/;
+            if (!phoneReq.test(value)) {
+                isValidFormat = false;
+                errorMessage = "Please enter a valid Malaysian phone number (e.g., 012-3456789)";
+            }
         }
+
+        if (!isValidFormat) {
+            document.getElementById(errorId).textContent = errorMessage;
+            document.getElementById(errorId).style.display = 'block';
+            document.getElementById(errorId.replace('-error', '')).classList.add('error');
+            return;
+        } else {
+            document.getElementById(errorId).textContent = '';
+            document.getElementById(errorId).style.display = 'none';
+            document.getElementById(errorId.replace('-error', '')).classList.remove('error');
+        }
+
+        const formData = new FormData();
+        formData.append('check_availability', 'true');
+        formData.append('type', type);
+        formData.append('value', value);
+
+        fetch(window.location.href, { // Send request to the same register.php file
+            method: 'POST',
+            body: formData,
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.exists) {
+                document.getElementById(errorId).textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} already exists`;
+                document.getElementById(errorId).style.display = 'block';
+                document.getElementById(errorId.replace('-error', '')).classList.add('error');
+            } else {
+                document.getElementById(errorId).textContent = '';
+                document.getElementById(errorId).style.display = 'none';
+                document.getElementById(errorId.replace('-error', '')).classList.remove('error');
+            }
+        })
+        .catch(error => {
+            console.error('Error checking availability:', error);
+        });
     }
 
     function togglePasswordVisibility() {
@@ -117,13 +163,13 @@ document.addEventListener('DOMContentLoaded', function() {
         while (errorElement && !errorElement.classList.contains('error-message')) {
             errorElement = errorElement.nextElementSibling;
         }
-        
+
         if (!errorElement) {
             errorElement = document.createElement('div');
             errorElement.className = 'error-message';
             inputElement.parentNode.insertBefore(errorElement, inputElement.nextSibling);
         }
-        
+
         errorElement.textContent = message;
         errorElement.style.display = 'block';
         inputElement.classList.add('error');
@@ -134,7 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
         while (errorElement && !errorElement.classList.contains('error-message')) {
             errorElement = errorElement.nextElementSibling;
         }
-        
+
         if (errorElement) {
             errorElement.style.display = 'none';
             inputElement.classList.remove('error');

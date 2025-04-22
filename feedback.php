@@ -66,8 +66,8 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                 <div class="feedback-form-group">
                     <label class="feedback-label">How would you rate your experience?</label>
                     <div class="feedback-rating-container">
-                        <?php for ($i = 1; $i <= 5; $i++): ?>
-                            <input type="radio" id="star<?= $i ?>" name="rating" value="<?= $i ?>" class="feedback-rating-input" <?= ($i == 5) ? 'checked' : '' ?>>
+                        <?php for ($i = 5; $i >= 1; $i--): ?>
+                            <input type="radio" id="star<?= $i ?>" name="rating" value="<?= $i ?>" class="feedback-rating-input" <?= ($i == 0) ? 'checked' : '' ?>>
                             <label for="star<?= $i ?>" class="feedback-rating-star"><i class="fas fa-star"></i></label>
                         <?php endfor; ?>
                     </div>
@@ -101,6 +101,35 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                         s.style.color = '#ddd';
                     }
                 });
+            });
+        });
+
+        document.querySelector('.feedback-rating-container').addEventListener('mouseleave', () => {
+            const checkedRadio = document.querySelector('.feedback-rating-input:checked');
+            if (checkedRadio){
+                const rating = parseInt(checkedRadio.value);
+                const stars = document,querySelectorAll('.feedback-rating-start');
+
+                stars.forEach((s, index) => {
+                    if (index < rating)
+                        star.style.color = '#ff6600';
+                    else
+                        star.style.color = '#ddd';
+                });
+            }
+        });
+
+        document.querySelectorAll('.feedback-rating-input').forEach(input => {
+            input.addEventListener('change', () => {
+                const stars = document.querySelectorAll('.feedback-rating-star');
+                stars.forEach(star => star.style.color = '#ddd');
+                
+                if (input.checked) {
+                    const rating = parseInt(input.value);
+                    for (let i = 1; i <= rating; i++) {
+                        document.querySelector(`.feedback-rating-star[for="star${i}"]`).style.color = '#ff6600';
+                    }
+                }
             });
         });
     </script>
