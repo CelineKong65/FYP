@@ -51,11 +51,11 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         body {
             margin: 0;
-            padding-top: 80px; /* Match your header height */
+            padding-top: 80px; 
         }
 
         header {
-            height: 120px; /* Fixed height */
+            height: 120px; 
             box-sizing: border-box;
             background-color: white;
             display: flex;

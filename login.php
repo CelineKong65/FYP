@@ -10,7 +10,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $password = trim($_POST["password"]);
 
     if (empty($email) || empty($password)) {
-        echo "Both email and password are required.";
+        $error = "Both email and password are required.";
     } else {
         try {
             $sql = "SELECT CustID, CustName, CustPassword FROM customer WHERE CustEmail = :email";
@@ -24,15 +24,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 if ($password === $user["CustPassword"]) {
                     $_SESSION["user_id"] = $user["CustID"];
                     $_SESSION["username"] = $user["CustName"];
-
-                    echo "Login successful. Redirecting...";
-                    header("refresh:2; url=index.php"); 
+                    
+                    // Store in session that we're redirecting
+                    $_SESSION['show_loading'] = true;
+                    header("Location: redirect.php");
                     exit();
                 } else {
-                    echo "Invalid password.";
+                    $error = "Invalid password.";
                 }
             } else {
-                echo "No account found with this email.";
+                $error = "No account found with this email.";
             }
         } catch (PDOException $e) {
             $error = "System error. Please try again later.";
@@ -54,7 +55,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <img src="image/logo.png" alt="Watersport Equipment Shop Logo">
         </div>
         <div class="home">
-        <a href="index.php"><i class="fa-solid fa-house"><h2>HOME</h2></i></a>
+            <a href="index.php"><i class="fa-solid fa-house"><h2>HOME</h2></i></a>
         </div>
     </header>
 
@@ -66,18 +67,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div class="right-side-inner">
                 <div class="frame">
                     <h2>Log in</h2>
+                    <?php if (!empty($error)): ?>
+                        <div class="error-message"><?php echo htmlspecialchars($error); ?></div>
+                    <?php endif; ?>
                     <form method="post" action="">
                         <label>Email:</label>
-                        <input type="email" placeholder="example: 123@gmail.com" name="email" value="<?=htmlspecialchars($email) ?>" required><br>
+                        <input type="email" placeholder="example: 123@gmail.com" name="email" value="<?php echo htmlspecialchars($email); ?>" required><br>
     
                         <label>Password:</label>
                         <div class="wrapper">
                             <div class="pass-field">
                                 <input type="password" placeholder="example: 123%abc" name="password" required><br>
                                 <i class="fa-solid fa-eye" id="show-password"></i>
-                                <?php if (!empty($error) && isset($user)): ?>
-                                    <div class="error-message"><?= htmlspecialchars($error) ?></div>
-                                <?php endif; ?>
                             </div>
                         </div>
 
