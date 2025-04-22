@@ -38,7 +38,7 @@ h3{
     width: 500px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     border-radius: 30px;
-    height: 610px;
+    height: auto;
     background-color: white;
 }
 
@@ -108,9 +108,9 @@ p{
     background-color: white;
     color: black;
     padding: 10px 20px;
-    border: 2px black solid;
     border-radius: 10px;
     font-size: 15px;
+    border: transparent;
 }
 
 .back:hover {
@@ -118,4 +118,15 @@ p{
     color: white;
     cursor: pointer;
     transition: 0.3s ease;
+}
+
+.error-message {
+    color: red;
+    font-size: 0.9em;
+    margin-top: 5px;
+    text-align: center;
+    font-weight: bold;
+}
+.error-field {
+    border: 1px solid red !important;
 }

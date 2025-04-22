@@ -9,6 +9,16 @@ if (!isset($_SESSION['AdminID'])) {
 
 include 'db_connection.php';
 
+$loggedInAdminID = $_SESSION['AdminID'];
+$position_check_query = "SELECT AdminPosition FROM admin WHERE AdminID = ?";
+$stmt = $conn->prepare($position_check_query);
+$stmt->bind_param("i", $loggedInAdminID);
+$stmt->execute();
+$result = $stmt->get_result();
+$adminData = $result->fetch_assoc();
+$loggedInPosition = $adminData['AdminPosition'];
+$stmt->close();
+
 $customer_query = "SELECT * FROM customer";
 $customer_result = $conn->query($customer_query);
 
@@ -221,9 +231,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                         <th>Profile Picture</th>
                         <th>Name</th>
                         <th>Email</th>
-                        <th>Phone</th>
-                        <th>Address</th>
-                        <th>Password</th> 
+                        <th style="width: 120px;">Phone</th>
+                        <th style="width: 400px;">Address</th>
+                        <?php if ($loggedInPosition === 'superadmin'): ?>
+                            <th>Password</th>
+                        <?php endif; ?>
                         <th>Status</th> 
                         <th></th>
                     </tr>
@@ -259,7 +271,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                                     echo htmlspecialchars($full_address);
                                     ?>
                                 </td>
-                                <td><?php echo $customer['CustPassword']; ?></td>
+                                <?php if ($loggedInPosition === 'superadmin'): ?>
+                                    <td><?php echo $customer['CustPassword']; ?></td>
+                                <?php endif; ?>
                                 <td class="<?php echo ($customer['CustomerStatus'] === 'active') ? 'status-active' : 'status-inactive'; ?>">
                                     <?php echo $customer['CustomerStatus']; ?>
                                 </td>

@@ -30,10 +30,16 @@ if (!$product) {
     die("Product not found.");
 }
 
-// Fetch available sizes with stock information
-$stmt = $conn->prepare("SELECT Size, Stock FROM product_size WHERE ProductID = :productID ORDER BY Size");
+// Fetch available sizes with stock information and sort them (S → M → L → XL)
+$stmt = $conn->prepare("SELECT Size, Stock FROM product_size WHERE ProductID = :productID");
 $stmt->execute(['productID' => $productID]);
 $sizeStocks = $stmt->fetchAll();
+
+// Custom sort function for sizes
+usort($sizeStocks, function($a, $b) {
+    $sizeOrder = ['S' => 1, 'M' => 2, 'L' => 3, 'XL' => 4];
+    return $sizeOrder[$a['Size']] <=> $sizeOrder[$b['Size']];
+});
 
 // Check total stock
 $totalStock = 0;
@@ -316,4 +322,3 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_to_cart"])) {
     </script>
 </body>
 </html>
-

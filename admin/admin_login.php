@@ -1,38 +1,64 @@
 <?php
+
+$host = "localhost"; 
+$dbname = "fyp";  
+$username = "root";  
+$password = ""; 
+
+try {
+    $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Connection failed: " . $e->getMessage());
+}
+
 session_start();
-include 'db_connection.php';
+
+$errors = [];
+$admin_id = '';
+$username = '';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $admin_id = trim($_POST['admin_id']);
     $username = trim($_POST['username']);
     $password = trim($_POST['admin_pass']);
 
-    if (!empty($admin_id) && !empty($username) && !empty($password)) {
-        $sql = "SELECT AdminID, AdminName, AdminPassword FROM admin WHERE AdminID = ? AND AdminName = ? LIMIT 1";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("is", $admin_id, $username);
-        $stmt->execute();
-        $result = $stmt->get_result();
+    // Validate each field
+    if (empty($admin_id)) {
+        $errors['admin_id'] = "Admin ID is required";
+    }
+    if (empty($username)) {
+        $errors['username'] = "Username is required";
+    }
+    if (empty($password)) {
+        $errors['password'] = "Password is required";
+    }
 
-        if ($result->num_rows == 1) {
-            $admin = $result->fetch_assoc();
+    if (empty($errors)) {
+        try {
+            $sql = "SELECT AdminID, AdminName, AdminPassword FROM admin WHERE AdminID = :admin_id AND AdminName = :username LIMIT 1";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindParam(":admin_id", $admin_id, PDO::PARAM_INT);
+            $stmt->bindParam(":username", $username, PDO::PARAM_STR);
+            $stmt->execute();
 
-            if ($password === $admin['AdminPassword']) {
-                $_SESSION['AdminID'] = $admin['AdminID'];
-                $_SESSION['admin_username'] = $admin['AdminName'];
-                header("Location: dashboard.php");
-                exit();
+            $admin = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($admin) {
+                if ($password === $admin["AdminPassword"]) {
+                    $_SESSION["AdminID"] = $admin["AdminID"];
+                    $_SESSION["admin_username"] = $admin["AdminName"];
+                    header("Location: dashboard.php");
+                    exit();
+                } else {
+                    $errors['password'] = "Incorrect password";
+                }
             } else {
-                echo "<script>alert('Incorrect password.'); window.location.href='admin_login.php';</script>";
-                exit();
+                $errors['general'] = "Invalid Admin ID or username";
             }
-        } else {
-            echo "<script>alert('Invalid ID or username.'); window.location.href='admin_login.php';</script>";
-            exit();
+        } catch (PDOException $e) {
+            $errors['general'] = "System error. Please try again later.";
         }
-    } else {
-        echo "<script>alert('Please fill in all fields.'); window.location.href='admin_login.php';</script>";
-        exit();
     }
 }
 ?>
@@ -60,18 +86,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     
                     <div class="input-box">
                         <label><b>Admin ID</b></label>
-                        <input type="text" name="admin_id" placeholder="Enter your ID" required>
+                        <input type="text" name="admin_id" value="<?php echo htmlspecialchars($admin_id); ?>" placeholder="Enter your ID" required
+                               class="<?php echo isset($errors['admin_id']) ? 'error-field' : ''; ?>">
+                        <?php if (isset($errors['admin_id'])): ?>
+                            <div class="error-message"><?php echo $errors['admin_id']; ?></div>
+                        <?php endif; ?>
                     </div>
 
                     <div class="input-box">
                         <label><b>Username</b></label>
-                        <input type="text" name="username" placeholder="Enter your username" required>
+                        <input type="text" name="username" value="<?php echo htmlspecialchars($username); ?>" placeholder="Enter your username" required
+                               class="<?php echo isset($errors['username']) ? 'error-field' : ''; ?>">
+                        <?php if (isset($errors['username'])): ?>
+                            <div class="error-message"><?php echo $errors['username']; ?></div>
+                        <?php endif; ?>
                     </div>
 
                     <div class="input-box">
                         <label><b>Password</b></label>
-                        <input type="password" name="admin_pass" placeholder="Enter your password" required>
+                        <input type="password" name="admin_pass" placeholder="Enter your password" required
+                               class="<?php echo isset($errors['password']) ? 'error-field' : ''; ?>">
+                        <?php if (isset($errors['password'])): ?>
+                            <div class="error-message"><?php echo $errors['password']; ?></div>
+                        <?php endif; ?>
                     </div>
+                    <?php if (isset($errors['general'])): ?>
+                        <p style="color: red; text-align: center; font-weight: bold;"><?php echo $errors['general']; ?></p>
+                    <?php endif; ?>
 
                     <div class="forget_password">
                         <p><a href="findback_admin.php">Forgot your password?</a></p>
@@ -81,9 +122,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <input type="submit" name="loginbtn" class="Submit-btn" value="LOGIN" />
                     </div>
 
-                    <?php if (isset($error)) { ?>
-                        <p style="color: red; text-align: center;"><?php echo $error; ?></p>
-                    <?php } ?>
                 </form>
             </div>
         </div>
