@@ -43,7 +43,6 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Watersport Equipment Shop</title>
-    <link rel="stylesheet" href="style.css">
     <style>
         html {
             scroll-padding-top: 80px;
