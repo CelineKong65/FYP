@@ -37,7 +37,6 @@
         </div>
         <div class="advertisement-box">
             <h2>Advertisement</h2>
-            <!-- Slideshow Advertisement -->
             <div class="slideshow-container">
                 <div class="mySlides fade">
                     <img src="image/Goggles.png" alt="Goggles" style="width:55%;">
@@ -84,7 +83,7 @@
                 foreach ($categories as $row) {
                     $categoryId = $row['CategoryID'];
                     $categoryName = $row['CategoryName'];
-                    $categoryImage = $row['CategoryPicture'] ? 'image/' . $row['CategoryPicture'] : 'image/default-category.jpg';
+                    $categoryImage = $row['CategoryPicture'] ? 'image/categories/' . $row['CategoryPicture'] : 'image/categories/default-category.jpg';
                     
                     echo '<div class="category">';
                     echo '<a href="category.php?id=' . $categoryId . '">';
