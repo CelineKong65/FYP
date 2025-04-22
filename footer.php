@@ -23,7 +23,7 @@ if (isset($_SESSION['user_id'])) {
         }
 
         .footer-section .fo-container {
-            max-width: 1200px;
+            max-width: 930px;
             margin: -50px auto;
             padding: 0 15px;
         }
@@ -41,6 +41,12 @@ if (isset($_SESSION['user_id'])) {
             padding: 0 15px;
             flex: 1;
         }
+
+        .footer-section .col-lg-2,
+        .footer-section .col-lg-1 {
+            max-width: 270px; /* or whatever fits your design */
+        }
+
 
         .footer-left .footer-logo span {
             font-size: 24px;
