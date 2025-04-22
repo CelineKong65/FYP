@@ -278,7 +278,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkout Form</title>
     <link rel="stylesheet" href="payment.css">
-    <!-- Add jQuery and jQuery UI for datepicker -->
     <style>
        /* Popup Styles */
         .simple-popup-overlay {

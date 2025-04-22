@@ -223,7 +223,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_to_cart"])) {
                     <?php endif; ?>
                     
                     <?php if (isset($cartMessage)): ?>
-                        <p class="<?= strpos($cartMessage, 'error') !== false ? 'error-message' : 'success-message' ?>">
+                        <p class="<?= strpos(strtolower($cartMessage), 'exceeds available stock') !== false || strpos(strtolower($cartMessage), 'error') !== false ? 'error-message' : 'success-message' ?>">
                             <?= htmlspecialchars($cartMessage) ?>
                         </p>
                     <?php endif; ?>
