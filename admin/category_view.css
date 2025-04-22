@@ -48,7 +48,22 @@ h2 {
     margin-bottom: 50px;
 }
 
-.add-category-form, .search-bar{
+form.search {
+    display: flex;
+    justify-content: flex-end;
+    gap:10px
+}
+
+.search input {
+    width: 200px;
+    padding: 8px;
+    font-size: 12px;
+    margin-bottom: 10px;
+    border: 1px solid #0A2F4F;
+    border-radius: 4px;
+}
+
+.add-category-form{
     display: flex;
     justify-content: flex-end;
 }

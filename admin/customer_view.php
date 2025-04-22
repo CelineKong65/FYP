@@ -24,18 +24,23 @@ $customer_result = $conn->query($customer_query);
 
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-// Always show all products when search is empty
 if (!empty($search_query)) {
-    $search_param = "%$search_query%";
-    $customer_query = "SELECT * FROM customer WHERE CustName LIKE ? OR CustEmail LIKE ?";
-    $stmt = $conn->prepare($customer_query);
-    $stmt->bind_param("ss", $search_param, $search_param);
+    $stmt = $conn->prepare("
+        SELECT * FROM customer 
+        WHERE (CustName LIKE ? OR CustEmail LIKE ?)
+        AND CustomerStatus = 'active'
+    ");
+    $searchTerm = '%' . $search_query . '%';
+    $stmt->bind_param("ss", $searchTerm, $searchTerm);
     $stmt->execute();
     $customer_result = $stmt->get_result();
 } else {
-    // This will run when search is empty
-    $customer_query = "SELECT * FROM customer";
-    $customer_result = $conn->query($customer_query);
+    $stmt = $conn->prepare("
+        SELECT * FROM customer 
+        WHERE CustomerStatus = 'active'
+    ");
+    $stmt->execute();
+    $customer_result = $stmt->get_result();
 }
 
 if (isset($_POST['update_customer'])) {
@@ -309,7 +314,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                         <?php endwhile; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="8" style="text-align: center;color:red;"><b>No customers found.</b></td>
+                            <td colspan="9" style="text-align: center;color:red;"><b>No customers found.</b></td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
@@ -635,18 +640,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.querySelector('input[name="search"]');
-    const searchForm = document.querySelector('.search');
-    
-    if (searchInput && searchForm) {
-        searchInput.addEventListener('input', function() {
-            // If search input is empty, submit the form to show all results
-            if (this.value.trim() === '') {
-                searchForm.submit();
-            }
-        });
+        const searchInput = document.querySelector('input[name="search"]');
+        const searchForm = document.querySelector('.search');
+        
+        if (searchInput && searchForm) {
+            searchInput.addEventListener('input', function() {
+                // If search input is empty, submit the form to show all results
+                if (this.value.trim() === '') {
+                    searchForm.submit();
+                }
+            });
+        }
+    });
+    window.onclick = function(event) {
+        if (event.target == document.getElementById("editModal")) {
+            closeModal();
+        }
     }
-});
     </script>
 </body>
 </html>

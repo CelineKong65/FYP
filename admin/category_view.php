@@ -229,16 +229,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         <div class="main-content">
         <h2>Product Categories</h2>
 
-        <div class="search-bar">
-            <form method="GET" action="">
-                <input type="text" name="search" placeholder="Search category" value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>" />
-                <button type="submit" name="search_category" class="search">Search</button>
-            </form>
-        </div>
+        <form method="GET" action="" class="search">
+            <input type="text" name="search" placeholder="Search category" value="<?php echo htmlspecialchars($search_query); ?>">
+            <button type="submit" class="search">Search</button>
+        </form>
 
         <div class="add-category-form">
-    <button type="button" onclick="openAddModal()" class="add_btn">Add Category</button>
-</div>
+            <button type="button" onclick="openAddModal()" class="add_btn">Add Category</button>
+        </div>
 
         <table>
             <thead>
@@ -344,6 +342,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         function closeEdit() {
             document.getElementById("editModal").style.display = "none";
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.querySelector('input[name="search"]');
+            const searchForm = document.querySelector('.search');
+            
+            if (searchInput && searchForm) {
+                searchInput.addEventListener('input', function() {
+                    // If search input is empty, submit the form to show all results
+                    if (this.value.trim() === '') {
+                        searchForm.submit();
+                    }
+                });
+            }
+        });
 
         // Close modals when clicking outside
         window.onclick = function(event) {

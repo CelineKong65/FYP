@@ -11,20 +11,27 @@ include 'db_connection.php';
 
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-$order_query = "SELECT o.OrderID, o.ReceiverName, o.ReceiverContact, o.StreetAddress, o.City, o.Postcode, o.State, 
-                o.OrderDate, o.OrderStatus, o.TotalPrice 
-                FROM orderpayment o 
-                ORDER BY o.OrderDate DESC";
-
 if (!empty($search_query)) {
-    $order_query .= " WHERE o.ReceiverName LIKE ? OR o.ReceiverContact LIKE ? ORDER BY o.OrderDate DESC";
-    $search_param = "%$search_query%";
-    $stmt = $conn->prepare($order_query);
-    $stmt->bind_param("ss", $search_param, $search_param);
+    $stmt = $conn->prepare("
+        SELECT o.OrderID, o.ReceiverName, o.ReceiverContact, o.StreetAddress, o.City, o.Postcode, o.State, 
+               o.OrderDate, o.OrderStatus, o.TotalPrice 
+        FROM orderpayment o 
+        WHERE (o.ReceiverName LIKE ? OR o.ReceiverContact LIKE ? OR o.OrderID LIKE ?)
+        ORDER BY o.OrderDate DESC
+    ");
+    $searchTerm = '%' . $search_query . '%';
+    $stmt->bind_param("sss", $searchTerm, $searchTerm, $searchTerm);
     $stmt->execute();
     $order_result = $stmt->get_result();
 } else {
-    $order_result = $conn->query($order_query);
+    $stmt = $conn->prepare("
+        SELECT o.OrderID, o.ReceiverName, o.ReceiverContact, o.StreetAddress, o.City, o.Postcode, o.State, 
+               o.OrderDate, o.OrderStatus, o.TotalPrice 
+        FROM orderpayment o 
+        ORDER BY o.OrderDate DESC
+    ");
+    $stmt->execute();
+    $order_result = $stmt->get_result();
 }
 
 if (isset($_POST['edit_status'])) {
@@ -57,233 +64,6 @@ if (isset($_POST['edit_status'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order List</title>
     <link rel='stylesheet' href='order_view.css'>
-    <style>
-        body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-}
-
-.header {
-    margin-bottom: 50px;
-}
-
-.container {
-    margin-top: 50px;
-    display: flex;
-    flex: 1;
-    margin-left: 250px;
-}
-
-.sidebar {
-    width: 220px;
-    background-color: #0077b6;
-    padding-top: 30px;
-    text-align: center;
-    border-radius: 20px;
-    margin: 30px;
-    height: 650px;
-    margin-top: 150px;
-    position: fixed;
-    left: 0;
-    top: 0; 
-}
-
-.main-content {
-    flex-grow: 1;
-    padding: 20px;
-    margin: 10px;
-    background-color: #ffffff;
-    border-radius: 10px;
-    position: relative;
-}
-
-h2 {
-    color: #1e3a8a;
-    font-size: 40px;
-    text-align: center;
-    margin-bottom: 50px;
-}
-
-.message {
-    padding: 10px;
-    color: #1e3a8a;
-    border-radius: 4px;
-    margin-bottom: 20px;
-}
-
-form.search {
-    display: flex;
-    justify-content: flex-end;
-    gap:10px
-}
-
-form.editForm,.addForm{
-    margin-bottom: 20px;
-}
-
-.editForm input,.addForm input{
-    margin-right: 50px;
-}
-
-.search input {
-    width: 200px;
-    padding: 8px;
-    font-size: 12px;
-    margin-bottom: 10px;
-    border: 1px solid #0A2F4F;
-    border-radius: 4px;
-}
-
-button {
-    padding: 10px 16px;
-    background-color: #1e3a8a;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-right: 5px;
-    margin-bottom: 10px;
-    font-size: 13px;
-}
-
-button.search{
-    width: 95px;
-}
-
-button:hover {
-    background-color: #1d4ed8;
-}
-
-.status-completed {
-    color: #05ac2c;
-}
-
-.status-pending {
-    color: red;
-}
-
-button[name="change_status"]{
-    color: black;
-    background-color: #ffc107;
-    width: 104px;
-}
-
-button[name="change_status"]:hover{
-    background-color: #e0a800d1;
-}
-
-button[name="view_details"]{
-    background-color: #05ac2c;
-}
-
-button[name="view_details"]:hover{
-    background-color: #218838;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 15px;
-    margin-top: 10px;
-}
-
-table, th, td {
-    font-size: 15px;
-    border: 1px solid #1e3a8a;
-}
-
-th, td {
-    padding: 12px;
-    text-align: left;
-}
-
-th {
-    background-color: #1e3a8a;
-    color: white;
-}
-
-tr:nth-child(even) {
-    background-color: #e3f2fd;
-}
-
-table tr:hover {
-    background-color:rgb(237, 236, 236);
-}
-
-.close {
-    float: right;
-    font-size: 24px;
-    cursor: pointer;
-}
-
-.close:hover{
-    color: red;
-}
-
-#editModal {
-    display: none;
-    position: fixed;
-    z-index: 1;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.5);
-    justify-content: center;
-    align-items: center;
-}
-
-.edit-content{
-    background-color: white;
-    padding: 20px;
-    border-radius: 10px;
-    width: 350px;
-    margin: auto;
-    margin-top: 250px;
-}
-
-#editModal h3{
-    margin-top: 0;
-    color: #1e3a8a;
-    font-size: 25px;
-    text-align: center;
-}
-
-#editModal label{
-    display: block;
-    margin-bottom: 5px;
-    color: #1e3a8a;
-    font-weight: bold;
-    font-size: 15px;
-}
-
-#editModal select{
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 13px;
-    border: 1px solid #93c5fd;
-    border-radius: 4px;
-    font-size: 13px;
-}
-
-#editModal button[type="submit"]{
-    background-color: #1e3a8a;
-}
-
-#editModal button[type="submit"]:hover{
-    background-color: #1d4ed8;
-}
-
-.submit_btn {
-    display: flex;
-    justify-content: flex-end;
-    padding-top: 15px;
-}
-    </style>
 </head>
 <body>
     <div class="header">
@@ -299,8 +79,8 @@ table tr:hover {
             <h2>Order List</h2>
 
             <form method="GET" action="" class="search">
-                <input type="text" name="search" placeholder="Search by name or email" value="<?php echo htmlspecialchars($search_query); ?>">
-                <button type="submit">Search</button>
+                <input type="text" name="search" class="search" placeholder="Search by receiver name" value="<?php echo htmlspecialchars($search_query); ?>">
+                <button type="submit" class="search">Search</button>
             </form>
             
             <table>
@@ -340,7 +120,7 @@ table tr:hover {
                         <?php endwhile; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="7" style="text-align: center; color: red;"><b>No orders found.</b></td>
+                            <td colspan="8" style="text-align: center; color: red;"><b>No orders found.</b></td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
@@ -379,6 +159,19 @@ table tr:hover {
         function closeEdit() {
             document.getElementById("editModal").style.display = "none";
         }
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.querySelector('input[name="search"]');
+            const searchForm = document.querySelector('.search');
+            
+            if (searchInput && searchForm) {
+                searchInput.addEventListener('input', function() {
+                    // If search input is empty, submit the form to show all results
+                    if (this.value.trim() === '') {
+                        searchForm.submit();
+                    }
+                });
+            }
+        });
     </script>
 
 </body>
