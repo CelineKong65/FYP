@@ -32,6 +32,12 @@ $stmt = $conn->prepare("
 $searchTerm = '%' . $query . '%';
 $stmt->execute([$searchTerm]);
 $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Redirect if query is empty
+if (empty($query)) {
+    header("Location: product.php");
+    exit();
+}
 ?>
 
 <!DOCTYPE html>

@@ -271,8 +271,8 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
             
-            <form action="search.php" method="get" class="search-form">
-                <input type="text" name="query" placeholder="Search products..." value="<?= htmlspecialchars($query ?? '') ?>" required>
+            <form action="search.php" method="get" class="search-form" onsubmit="return handleSearch()">
+                <input type="text" name="query" id="searchQuery" placeholder="Search products..." value="<?= htmlspecialchars($query ?? '') ?>">
                 <button type="submit"><img src="image/magnifying-glass.png" alt="Search" class="search-icon"></button>
             </form>
         </div>
@@ -293,6 +293,15 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 }
             });
         });
+
+        function handleSearch() {
+            const query = document.getElementById('searchQuery').value.trim();
+            if (!query) {
+                window.location.href = 'product.php';
+                return false; // Prevent form submission
+            }
+            return true; // Allow form submission
+        }
     </script>
 </body>
 </html>

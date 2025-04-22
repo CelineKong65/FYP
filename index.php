@@ -72,30 +72,34 @@
     </section>
 
     <section class="categories">
-        <div class="category">
-            <a href='category.php?id=1'>
-                <img src="image/swimming.jpg" alt="Swimming">
-            </a>
-            <span>Swimming</span>
-        </div>
-        <div class="category">
-            <a href='category.php?id=2'>
-                <img src="image/surfing.png" alt="Surfing and beach sports">
-            </a>
-            <span>Surfing and beach sports</span>
-        </div>
-        <div class="category">
-            <a href='category.php?id=3'>
-                <img src="image/scuba.png" alt="Snorkeling / Scuba diving">
-            </a>
-            <span>Snorkeling / Scuba diving</span>
-        </div>
-        <div class="category">
-            <a href='category.php?id=4'>
-                <img src="image/kayaking.png" alt="Kayaking">
-            </a>
-            <span>Kayaking</span>
-        </div>
+        <?php
+        try {
+            // Fetch active categories from the database
+            $stmt = $conn->prepare("SELECT * FROM category WHERE CategoryStatus = 'active'");
+            $stmt->execute();
+            
+            $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            if (count($categories) > 0) {
+                foreach ($categories as $row) {
+                    $categoryId = $row['CategoryID'];
+                    $categoryName = $row['CategoryName'];
+                    $categoryImage = $row['CategoryPicture'] ? 'image/' . $row['CategoryPicture'] : 'image/default-category.jpg';
+                    
+                    echo '<div class="category">';
+                    echo '<a href="category.php?id=' . $categoryId . '">';
+                    echo '<img src="' . $categoryImage . '" alt="' . htmlspecialchars($categoryName) . '">';
+                    echo '</a>';
+                    echo '<span>' . htmlspecialchars($categoryName) . '</span>';
+                    echo '</div>';
+                }
+            } else {
+                echo '<p>No categories found</p>';
+            }
+        } catch (PDOException $e) {
+            echo '<p>Error loading categories: ' . $e->getMessage() . '</p>';
+        }
+        ?>
     </section>
     
     <script>
