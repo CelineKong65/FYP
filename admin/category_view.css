@@ -259,6 +259,17 @@ input::placeholder{
     font-style: italic;
 }
 
+.error {
+    color: red;
+    font-size: 12px;
+    margin-top: 5px;
+    display: none;
+}
+
+.error-field {
+    border: 1px solid red !important;
+}
+
 span{
     color:gray;
     font-size: 12px;
