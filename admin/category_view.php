@@ -22,6 +22,7 @@ if (!empty($search_query)) {
     $category_query = "SELECT * FROM category";
     $category_result = $conn->query($category_query);
 }
+
 if (isset($_POST['add_category'])) {
     $category_name = trim($_POST['category_name']);
     $admin_id = $_SESSION['AdminID'];
@@ -82,33 +83,100 @@ if (isset($_POST['add_category'])) {
     exit();
 }
 
-
 if (isset($_POST['edit_category'])) {
     $category_id = intval($_POST['category_id']);
     $new_name = trim($_POST['new_category_name']);
 
-    $check_query = "SELECT CategoryID FROM category WHERE CategoryName = ? AND CategoryID != ?";
-    $stmt = $conn->prepare($check_query);
+    if (empty($new_name)) {
+        echo "<script>alert('Category name cannot be empty.'); window.location.href='category_view.php';</script>";
+        exit();
+    }
+
+    // Check for duplicate category names
+    $stmt = $conn->prepare("SELECT CategoryID FROM category WHERE CategoryName = ? AND CategoryID != ?");
     $stmt->bind_param("si", $new_name, $category_id);
     $stmt->execute();
     $stmt->store_result();
-    
     if ($stmt->num_rows > 0) {
         echo "<script>alert('Category name already exists.'); window.location.href='category_view.php';</script>";
         exit();
     }
     $stmt->close();
 
-    $update_query = "UPDATE category SET CategoryName = ? WHERE CategoryID = ?";
-    $stmt = $conn->prepare($update_query);
-    $stmt->bind_param("si", $new_name, $category_id);
+    // Get current image name
+    $stmt = $conn->prepare("SELECT CategoryPicture FROM category WHERE CategoryID = ?");
+    $stmt->bind_param("i", $category_id);
+    $stmt->execute();
+    $stmt->bind_result($old_image);
+    $stmt->fetch();
+    $stmt->close();
+
+    $target_dir = "../image/categories/";
+    
+    // Generate new filename based on new category name
+    $name_parts = preg_split("/[\s\/]+/", $new_name);
+    $base_name = preg_replace("/[^a-zA-Z0-9_-]/", "", $name_parts[0]);
+    $clean_name = strtolower($base_name);
+
+    // Determine file extension (use from new upload if exists, otherwise from old image)
+    $new_image_uploaded = !empty($_FILES['profile_picture']['name']);
+    $ext = '';
+    
+    if ($new_image_uploaded) {
+        $ext = strtolower(pathinfo($_FILES['profile_picture']['name'], PATHINFO_EXTENSION));
+    } elseif (!empty($old_image)) {
+        $ext = pathinfo($old_image, PATHINFO_EXTENSION);
+    } else {
+        $ext = 'png'; // default extension if no image exists
+    }
+
+    $image_name_to_store = $clean_name . '.' . $ext;
+    $new_path = $target_dir . $image_name_to_store;
+
+    // Handle file operations
+    if ($new_image_uploaded) {
+        // Delete old image if it exists and isn't default
+        if (!empty($old_image) && $old_image !== 'default.png' && file_exists($target_dir . $old_image)) {
+            unlink($target_dir . $old_image);
+        }
+
+        // Move new uploaded file
+        if (!move_uploaded_file($_FILES['profile_picture']['tmp_name'], $new_path)) {
+            echo "<script>alert('Failed to upload new image.'); window.location.href='category_view.php';</script>";
+            exit();
+        }
+    } else {
+        // No new image uploaded - just rename existing file
+        if (!empty($old_image) && $old_image !== 'default.png' && file_exists($target_dir . $old_image)) {
+            // Rename the existing file
+            if (!rename($target_dir . $old_image, $new_path)) {
+                echo "<script>alert('Failed to rename image file.'); window.location.href='category_view.php';</script>";
+                exit();
+            }
+        } elseif (empty($old_image) || $old_image === 'default.png') {
+            // If no image or default image, copy default to new name
+            if (!copy($target_dir . 'default.png', $new_path)) {
+                echo "<script>alert('Failed to create new image file.'); window.location.href='category_view.php';</script>";
+                exit();
+            }
+        }
+    }
+
+    // Update database
+    $stmt = $conn->prepare("UPDATE category SET CategoryName = ?, CategoryPicture = ? WHERE CategoryID = ?");
+    $stmt->bind_param("ssi", $new_name, $image_name_to_store, $category_id);
     if ($stmt->execute()) {
         echo "<script>alert('Category updated successfully!'); window.location.href='category_view.php';</script>";
+    } else {
+        // If update failed, try to revert file changes
+        if (file_exists($new_path)) {
+            unlink($new_path);
+        }
+        echo "<script>alert('Failed to update category.'); window.location.href='category_view.php';</script>";
     }
     $stmt->close();
     exit();
 }
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     $category_id = (int)$_POST['category_id'];
     $currentStatus = strtolower($_POST['current_status']);
@@ -146,258 +214,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Categories</title>
-    <style>
-        body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-}
-
-.header {
-    margin-bottom: 50px;
-}
-
-.container {
-    margin-top: 50px;
-    display: flex;
-    flex: 1;
-    margin-left: 250px;
-}
-
-.sidebar {
-    width: 220px;
-    background-color: #0077b6;
-    padding-top: 30px;
-    text-align: center;
-    border-radius: 20px;
-    margin: 30px;
-    height: 650px;
-    margin-top: 150px;
-    position: fixed;
-    left: 0;
-    top: 0; 
-}
-
-.main-content {
-    flex-grow: 1;
-    padding: 20px;
-    margin: 10px;
-    background-color: #ffffff;
-    border-radius: 10px;
-    position: relative;
-}
-
-h2 {
-    color: #1e3a8a;
-    font-size: 40px;
-    text-align: center;
-    margin-bottom: 50px;
-}
-
-.add-category-form, .search-bar{
-    display: flex;
-    justify-content: flex-end;
-}
-
-.add_btn{
-    margin-top: 12px;
-    background-color: #28a745;
-}
-
-.add_btn:hover {
-    background-color: #218838;
-}
-
-input{
-    width: 200px;
-    padding: 8px;
-    font-size: 12px;
-    margin-bottom: 10px;
-    border: 1px solid #0A2F4F;
-    border-radius: 4px;
-    margin-right: 10px;
-}
-
-table {
-    width: 60%;
-    border-collapse: collapse;
-    margin: 0 auto;
-    margin-top: 10px;
-}
-
-table, th, td {
-    font-size: 15px;
-    border: 1px solid #1e3a8a;
-}
-
-th, td {
-    padding: 12px;
-    text-align: left;
-}
-
-th {
-    background-color: #1e3a8a;
-    color: white;
-}
-
-tr:nth-child(even) {
-    background-color: #e3f2fd;
-}
-
-table tr:hover {
-    background-color:rgb(237, 236, 236);
-}
-
-th.action{
-    width: 180px;
-}
-
-button {
-    padding: 10px 16px;
-    background-color: #1e3a8a;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-right: 5px;
-    margin-bottom: 10px;
-    font-size: 13px;
-}
-
-button.search {
-    width: 112px;
-}
-
-button:hover {
-    background-color: #1d4ed8;
-}
-
-button[name="edit_category"] {
-    color: black;
-    background-color: #ffc107;
-}
-
-button[name="edit_category"]:hover {
-    background-color: #e0a800d1;
-}
-
-.status-inactive{
-    color: red;
-}
-
-.status-active{
-    color: #05ac2c;
-}
-
-.btn-inactive{
-    background-color:red;
-}
-
-.btn-inactive:hover{
-    background-color: #c82333;
-}
-
-.btn-active{
-    background-color: #05ac2c;
-}
-
-.btn-active:hover {
-    background-color: #218838;
-}
-
-.actions {
-    display: flex;
-    gap: 10px;
-}
-
-.close {
-    float: right;
-    font-size: 24px;
-    cursor: pointer;
-}
-.close:hover{
-    color: red;
-}
-
-#editModal, #addModal{
-    display: none;
-    position: fixed;
-    z-index: 1;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.5);
-    justify-content: center;
-    align-items: center;
-}
-
-.edit-content, .add-content{
-    background-color: white;
-    padding: 20px;
-    border-radius: 10px;
-    width: 350px;
-    margin: auto;
-    margin-top: 300px;
-}
-
-.add-content{
-    margin-top: 250px;
-}
-
-#editModal h2, #addModal h2{
-    margin-top: 0;
-    color: #1e3a8a;
-    font-size: 25px;
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-#editModal label, #addModal label{
-    font-weight: bold;
-    display: block;
-    margin-bottom: 5px;
-    color: #1e3a8a;
-    text-align: left;
-    font-size: 15px;
-}
-
-#editModal input, #addModal input{
-    width: 95%;
-    padding: 8px;
-    margin-bottom: 15px;
-    border: 1px solid #93c5fd;
-    border-radius: 4px;
-    font-size: 13px;
-}
-
-#editModal button[type="submit"], #addModal button[type="submit"]{
-    background-color: #1e3a8a;
-    color: white;
-}
-
-#editModal button[type="submit"]:hover, #addModal button[type="submit"]:hover{
-    background-color: #1d4ed8;
-}
-
-.submit_btn{
-    display: flex;
-    justify-content: flex-end;
-}
-
-input::placeholder{
-    font-size: 12px;
-    font-style: italic;
-}
-
-span{
-    color:gray;
-    font-size: 12px;
-}
-    </style>
+    <link rel='stylesheet' href='category_view.css'>
 </head>
 <body>
     <div class="header">
@@ -481,13 +298,10 @@ span{
             <h2>Add Categories</h2>
             <form method="POST" action="" enctype="multipart/form-data">
                 <input type="hidden" name="add_category" value="1">
-                
                 <label>Category Image:<span> (.jpg, .jpeg or .png only)</span></label>
                 <input class="img" type="file" name="profile_picture" id="profile_picture" accept=".jpg,.jpeg,.png" required>
-                
                 <label>Category Name:</label>
                 <input type="text" name="category_name" id="add-name" required>
-                
                 <div class="add_div">
                     <button type="submit">Add</button>
                 </div>
@@ -499,7 +313,9 @@ span{
         <div class="edit-content">
             <span class="close" onclick="closeEdit()">&times;</span>
             <h2>Edit Category</h2>
-            <form method="POST" action="" onsubmit="return validateEditForm()">
+            <form method="POST" action="" onsubmit="return validateEditForm()" enctype="multipart/form-data">
+                <label>Category Image:<span> (.jpg, .jpeg or .png only)</span></label>
+                <input class="img" type="file" name="profile_picture" id="profile_picture" accept=".jpg,.jpeg,.png">
                 <label>New name:</label>
                 <input type="hidden" name="category_id" id="editCategoryID">
                 <input type="text" name="new_category_name" id="editCategoryName" required>
