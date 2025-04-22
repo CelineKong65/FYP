@@ -42,11 +42,12 @@ $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 if (!empty($search_query)) {
     $search_param = "%$search_query%";
-    $admin_query = "SELECT * FROM admin WHERE AdminName LIKE ? OR AdminEmail LIKE ?";
-    $stmt = $conn->prepare($admin_query);
+    $stmt = $conn->prepare("SELECT * FROM admin WHERE AdminName LIKE ? OR AdminEmail LIKE ?");
     $stmt->bind_param("ss", $search_param, $search_param);
     $stmt->execute();
     $admin_result = $stmt->get_result();
+} else {
+    $admin_result = $conn->query("SELECT * FROM admin");
 }
 
 if (isset($_POST['update_admin'])) {
@@ -602,6 +603,20 @@ if (isset($_POST['add_admin'])) {
             // Hide the modal
             document.getElementById('addModal').style.display = 'none';
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.querySelector('input[name="search"]');
+        const searchForm = document.querySelector('.search');
+        
+        if (searchInput && searchForm) {
+            searchInput.addEventListener('input', function() {
+                // If search input is empty, submit the form to show all results
+                if (this.value.trim() === '') {
+                    searchForm.submit();
+                }
+            });
+        }
+    });
     </script>
 </body>
 </html>

@@ -24,6 +24,7 @@ $customer_result = $conn->query($customer_query);
 
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 
+// Always show all products when search is empty
 if (!empty($search_query)) {
     $search_param = "%$search_query%";
     $customer_query = "SELECT * FROM customer WHERE CustName LIKE ? OR CustEmail LIKE ?";
@@ -31,6 +32,10 @@ if (!empty($search_query)) {
     $stmt->bind_param("ss", $search_param, $search_param);
     $stmt->execute();
     $customer_result = $stmt->get_result();
+} else {
+    // This will run when search is empty
+    $customer_query = "SELECT * FROM customer";
+    $customer_result = $conn->query($customer_query);
 }
 
 if (isset($_POST['update_customer'])) {
@@ -220,7 +225,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
             <h2>Customer List</h2>
 
             <form method="GET" action="" class="search">
-                <input type="text" name="search" placeholder="Search by name or email" value="<?php echo htmlspecialchars($search_query); ?>">
+                <input type="text" name="search" placeholder="Search by name or email" 
+                    value="<?php echo htmlspecialchars($search_query); ?>">
                 <button type="submit" class="search">Search</button>
             </form>
 
@@ -627,6 +633,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         // Hide modal
         document.getElementById('editModal').style.display = 'none';
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.querySelector('input[name="search"]');
+    const searchForm = document.querySelector('.search');
+    
+    if (searchInput && searchForm) {
+        searchInput.addEventListener('input', function() {
+            // If search input is empty, submit the form to show all results
+            if (this.value.trim() === '') {
+                searchForm.submit();
+            }
+        });
+    }
+});
     </script>
 </body>
 </html>
