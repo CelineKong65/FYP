@@ -22,46 +22,38 @@ if (!empty($search_query)) {
     $category_query = "SELECT * FROM category";
     $category_result = $conn->query($category_query);
 }
-
 if (isset($_POST['add_category'])) {
     $category_name = trim($_POST['category_name']);
     $admin_id = $_SESSION['AdminID'];
 
     if (!empty($category_name)) {
-        // Check if category name already exists
         $check_query = "SELECT CategoryID FROM category WHERE CategoryName = ?";
         $stmt = $conn->prepare($check_query);
         $stmt->bind_param("s", $category_name);
         $stmt->execute();
         $stmt->store_result();
-        
+
         if ($stmt->num_rows > 0) {
             echo "<script>alert('Category name already exists.'); window.location.href='category_view.php';</script>";
             exit();
         }
         $stmt->close();
 
-        $profile_picture = isset($_FILES['profile_picture']['name']) ? $_FILES['profile_picture']['name'] : null;
-        $profile_picture_tmp = isset($_FILES['profile_picture']['tmp_name']) ? $_FILES['profile_picture']['tmp_name'] : null;
-        $image_name = "default.png"; // Default image
+        $profile_picture = $_FILES['profile_picture']['name'] ?? null;
+        $profile_picture_tmp = $_FILES['profile_picture']['tmp_name'] ?? null;
 
         if (!empty($profile_picture)) {
             $image_extension = strtolower(pathinfo($profile_picture, PATHINFO_EXTENSION));
             $allowed_types = ['jpg', 'jpeg', 'png'];
-            
+
             if (!in_array($image_extension, $allowed_types)) {
                 echo "<script>alert('Invalid file format. Only JPG, JPEG, and PNG allowed.'); window.location.href='category_view.php';</script>";
                 exit();
             }
 
-            $last_id_query = "SELECT MAX(CategoryID) + 1 AS new_id FROM category";
-            $result = $conn->query($last_id_query);
-            $row = $result->fetch_assoc();
-            
             $base_name = preg_split("/[\s\/]+/", $category_name)[0];
-            $base_name = preg_replace("/[^a-zA-Z0-9_-]/", "", $base_name);
-            
-            $image_name = strtolower($base_name . $image_extension);
+            $base_name = preg_replace("/[^a-zA-Z0-9_-]/", "", $base_name); // remove special characters
+            $image_name = strtolower($base_name) . '.' . $image_extension;
             $target_dir = "../image/categories/";
             $target_file = $target_dir . $image_name;
 
@@ -71,20 +63,25 @@ if (isset($_POST['add_category'])) {
             }
         }
 
-        // Insert category with image
         $insert_query = "INSERT INTO category (CategoryName, CategoryPicture, AdminID) VALUES (?, ?, ?)";
         $stmt = $conn->prepare($insert_query);
         $stmt->bind_param("ssi", $category_name, $image_name, $admin_id);
-        
+
         if ($stmt->execute()) {
             echo "<script>alert('Category added successfully!'); window.location.href='category_view.php';</script>";
         } else {
+            if ($image_name !== "default.png" && file_exists($target_file)) {
+                unlink($target_file);
+            }
             echo "<script>alert('Error adding category.'); window.location.href='category_view.php';</script>";
         }
         $stmt->close();
+    } else {
+        echo "<script>alert('Category name is required.'); window.location.href='category_view.php';</script>";
     }
     exit();
 }
+
 
 if (isset($_POST['edit_category'])) {
     $category_id = intval($_POST['category_id']);
@@ -486,7 +483,7 @@ span{
                 <input type="hidden" name="add_category" value="1">
                 
                 <label>Category Image:<span> (.jpg, .jpeg or .png only)</span></label>
-                <input class="img" type="file" name="profile_picture" id="profile_picture" accept=".jpg,.jpeg,.png">
+                <input class="img" type="file" name="profile_picture" id="profile_picture" accept=".jpg,.jpeg,.png" required>
                 
                 <label>Category Name:</label>
                 <input type="text" name="category_name" id="add-name" required>
