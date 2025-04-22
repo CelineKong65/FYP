@@ -28,13 +28,13 @@ header {
     background-color: white;
     color: black;
     padding: 10px 20px;
-    border: 2px black solid;
+    border: transparent;
     border-radius: 10px;
     font-size: 15px;
 }
 
 .back:hover {
-    background-color: black;
+    background-color: rgb(255, 70, 70);
     color: white;
     cursor: pointer;
     transition: 0.3s ease;
