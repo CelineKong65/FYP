@@ -24,14 +24,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $errors['postcode'] = "Please enter a valid 5-digit postcode";
     }
 
-    // Check if address already exists
-    $sql_check_address = "SELECT StreetAddress FROM customer WHERE StreetAddress = ?";
-    $stmt_check_address = $conn->prepare($sql_check_address);
-    $stmt_check_address->execute([$custAddress]);
+    // // Check if address already exists
+    // $sql_check_address = "SELECT StreetAddress FROM customer WHERE StreetAddress = ?";
+    // $stmt_check_address = $conn->prepare($sql_check_address);
+    // $stmt_check_address->execute([$custAddress]);
     
-    if ($stmt_check_address->rowCount() > 0) {
-        $errors['custAddress'] = "Address already exists";
-    }
+    // if ($stmt_check_address->rowCount() > 0) {
+    //     $errors['custAddress'] = "Address already exists";
+    // }
 
     if (empty($errors)) {
         // Complete registration
