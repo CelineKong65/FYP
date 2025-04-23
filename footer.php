@@ -1,11 +1,3 @@
-<?php
-$checkoutLink = 'login.php';
-if (isset($_SESSION['user_id'])) {
-    $cartCount = isset($_SESSION['cart']) ? count($_SESSION['cart']) : 0;
-    $checkoutLink = $cartCount > 0 ? 'payment.php' : 'shopping_cart.php';
-}
-?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -195,7 +187,6 @@ if (isset($_SESSION['user_id'])) {
                             <?php endif; ?>
                             <li><a href="<?php echo isset($_SESSION['user_id']) ? 'wishlist.php' : 'login.php'; ?>">My Wishlist</a></li>
                             <li><a href="<?php echo isset($_SESSION['user_id']) ? 'shopping_cart.php' : 'login.php'; ?>">Shopping Cart</a></li>
-                            <li><a href="<?php echo $checkoutLink; ?>">Check Out</a></li>
                         </ul>
                     </div>
                 </div>
