@@ -19,28 +19,25 @@ $adminData = $result->fetch_assoc();
 $loggedInPosition = $adminData['AdminPosition'];
 $stmt->close();
 
-$customer_query = "SELECT * FROM customer";
+$customer_query = "SELECT * FROM customer ORDER BY 
+                  CASE WHEN CustomerStatus = 'active' THEN 0 ELSE 1 END, 
+                  CustName ASC";
 $customer_result = $conn->query($customer_query);
 
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 if (!empty($search_query)) {
-    $stmt = $conn->prepare("
-        SELECT * FROM customer 
-        WHERE (CustName LIKE ? OR CustEmail LIKE ?)
-        AND CustomerStatus = 'active'
-    ");
-    $searchTerm = '%' . $search_query . '%';
-    $stmt->bind_param("ss", $searchTerm, $searchTerm);
+    $search_param = "%$search_query%";
+    $customer_query = "SELECT * FROM customer WHERE CustName LIKE ? OR CustEmail LIKE ?";
+    $stmt = $conn->prepare($customer_query);
+    $stmt->bind_param("ss", $search_param, $search_param);
     $stmt->execute();
     $customer_result = $stmt->get_result();
 } else {
-    $stmt = $conn->prepare("
-        SELECT * FROM customer 
-        WHERE CustomerStatus = 'active'
-    ");
-    $stmt->execute();
-    $customer_result = $stmt->get_result();
+    $customer_query = "SELECT * FROM customer ORDER BY 
+    CASE WHEN CustomerStatus = 'active' THEN 0 ELSE 1 END, 
+    CustName ASC";
+    $customer_result = $conn->query($customer_query);
 }
 
 if (isset($_POST['update_customer'])) {
@@ -52,52 +49,64 @@ if (isset($_POST['update_customer'])) {
     $postcode = trim($_POST['postcode']);
     $city = trim($_POST['city']);
     $state = trim($_POST['state']); 
-    $status = trim($_POST['status']);
-    $password = trim($_POST['password']);
-    $profile_picture = isset($_FILES['profile_picture']['name']) ? $_FILES['profile_picture']['name'] : null;
-    $profile_picture_tmp = isset($_FILES['profile_picture']['tmp_name']) ? $_FILES['profile_picture']['tmp_name'] : null;
 
-    if (!empty($profile_picture)) {
-        $image_extension = strtolower(pathinfo($profile_picture, PATHINFO_EXTENSION));
+    if (empty($name) || empty($email) || empty($phone) || empty($street) || empty($postcode) || empty($city) || empty($state)) {
+        echo "<script>alert('All fields are required.'); window.location.href='customer_view.php';</script>";
+        exit();
+    }
+
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/\.com$/', $email)) {
+        echo "<script>alert('Invalid email format. Email must be valid and end with .com'); window.location.href='customer_view.php';</script>";
+        exit();
+    }
+    
+    if (!preg_match('/^\d{3}-\d{3,4} \d{4}$/', $phone)) {
+        echo "<script>alert('Invalid phone number format. Use XXX-XXX XXXX or XXX-XXXX XXXX.'); window.location.href='customer_view.php';</script>";
+        exit();
+    }
+
+    $image_name = null;
+    if (!empty($_FILES['profile_picture']['name'])) {
+        $profile_picture = $_FILES['profile_picture'];
+        $image_extension = strtolower(pathinfo($profile_picture['name'], PATHINFO_EXTENSION));
         $allowed_types = ['jpg', 'jpeg', 'png'];
+
         if (!in_array($image_extension, $allowed_types)) {
             echo "<script>alert('Invalid file format. Only JPG, JPEG, and PNG allowed.'); window.location.href='customer_view.php';</script>";
             exit();
         }
 
-        $image_name = $cust_id . "." . $image_extension;
-        $target_dir = "../image/user/";
-        $target_file = $target_dir . $image_name;
-
-        if (!move_uploaded_file($profile_picture_tmp, $target_file)) {
-            echo "<script>alert('Failed to upload image.'); window.location.href='customer_view.php';</script>";
-            exit();
-        }
-
-        $existing_picture_query = "SELECT CustProfilePicture FROM customer WHERE CustID = ?";
-        $stmt = $conn->prepare($existing_picture_query);
+        $stmt = $conn->prepare("SELECT CustProfilePicture FROM customer WHERE CustID = ?");
         $stmt->bind_param("i", $cust_id);
         $stmt->execute();
         $stmt->bind_result($existing_picture);
         $stmt->fetch();
         $stmt->close();
 
+        $target_dir = "../image/user/";
         if (!empty($existing_picture) && file_exists($target_dir . $existing_picture)) {
             unlink($target_dir . $existing_picture);
         }
+
+        // Generate new filename
+        $image_name = $cust_id . "." . $image_extension;
+        $target_file = $target_dir . $image_name;
+
+        if (!move_uploaded_file($profile_picture['tmp_name'], $target_file)) {
+            echo "<script>alert('Failed to upload image.'); window.location.href='customer_view.php';</script>";
+            exit();
+        }
     } else {
-        $existing_picture_query = "SELECT CustProfilePicture FROM customer WHERE CustID = ?";
-        $stmt = $conn->prepare($existing_picture_query);
+        $stmt = $conn->prepare("SELECT CustProfilePicture FROM customer WHERE CustID = ?");
         $stmt->bind_param("i", $cust_id);
         $stmt->execute();
-        $stmt->bind_result($existing_picture);
+        $stmt->bind_result($image_name);
         $stmt->fetch();
         $stmt->close();
-        $image_name = $existing_picture;
     }
 
-    $check_email_query = "SELECT CustID FROM customer WHERE CustEmail = ? AND CustID != ?";
-    $stmt = $conn->prepare($check_email_query);
+    // Check for duplicate email
+    $stmt = $conn->prepare("SELECT CustID FROM customer WHERE CustEmail = ? AND CustID != ?");
     $stmt->bind_param("si", $email, $cust_id);
     $stmt->execute();
     $stmt->store_result();
@@ -108,8 +117,8 @@ if (isset($_POST['update_customer'])) {
     }
     $stmt->close();
 
-    $check_name_query = "SELECT CustID FROM customer WHERE CustName = ? AND CustID != ?";
-    $stmt = $conn->prepare($check_name_query);
+    // Check for duplicate name
+    $stmt = $conn->prepare("SELECT CustID FROM customer WHERE CustName = ? AND CustID != ?");
     $stmt->bind_param("si", $name, $cust_id);
     $stmt->execute();
     $stmt->store_result();
@@ -120,8 +129,8 @@ if (isset($_POST['update_customer'])) {
     }
     $stmt->close();
 
-    $check_phone_query = "SELECT CustID FROM customer WHERE CustPhoneNum = ? AND CustID != ?";
-    $stmt = $conn->prepare($check_phone_query);
+    // Check for duplicate phone
+    $stmt = $conn->prepare("SELECT CustID FROM customer WHERE CustPhoneNum = ? AND CustID != ?");
     $stmt->bind_param("si", $phone, $cust_id);
     $stmt->execute();
     $stmt->store_result();
@@ -131,23 +140,11 @@ if (isset($_POST['update_customer'])) {
     }
     $stmt->close();
 
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/\.com$/', $email)) {
-        echo "<script>alert('Invalid email format. Email must be valid and end with .com'); window.location.href='customer_view.php';</script>";
-        exit();
-    }
-    
-    // Validate phone
-    if (!preg_match('/^\d{3}-\d{3,4} \d{4}$/', $phone)) {
-        echo "<script>alert('Invalid phone number format. Use XXX-XXX XXXX or XXX-XXXX XXXX.'); window.location.href='customer_view.php';</script>";
-        exit();
-    }
-    
-    $original_query = "SELECT * FROM customer WHERE CustID = ?";
-    $stmt = $conn->prepare($original_query);
+    $stmt = $conn->prepare("SELECT * FROM customer WHERE CustID = ?");
     $stmt->bind_param("i", $cust_id);
     $stmt->execute();
-    $original_result = $stmt->get_result();
-    $original_data = $original_result->fetch_assoc();
+    $result = $stmt->get_result();
+    $original_data = $result->fetch_assoc();
     $stmt->close();
 
     $has_changes = (
@@ -158,34 +155,36 @@ if (isset($_POST['update_customer'])) {
         $postcode !== $original_data['Postcode'] ||
         $city !== $original_data['City'] ||
         $state !== $original_data['State'] ||
-        $status !== $original_data['CustomerStatus'] ||
-        (!empty($password)) ||
-        ($image_name !== $original_data['CustProfilePicture'])
+        (isset($image_name) && $image_name !== $original_data['CustProfilePicture'])
     );
 
     if (!$has_changes) {
         echo "<script>alert('No changes detected.'); window.location.href='customer_view.php';</script>";
         exit();
-    } else {
-        if (!empty($password)) {
-            $update_query = "UPDATE customer SET CustName = ?, CustEmail = ?, CustPassword = ?, CustPhoneNum = ?, StreetAddress = ?, Postcode = ?, City = ?, State = ?, CustomerStatus  = ?, CustProfilePicture = ? WHERE CustID = ?";
-            $stmt = $conn->prepare($update_query);
-            $stmt->bind_param("ssssssssssi", $name, $email, $password, $phone, $street, $postcode, $city, $state, $status, $image_name, $cust_id);        
-        } else {
-            $update_query = "UPDATE customer SET CustName = ?, CustEmail = ?, CustPhoneNum = ?, StreetAddress = ?, Postcode = ?, City = ?, State = ?, CustomerStatus  = ?, CustProfilePicture = ? WHERE CustID = ?";
-            $stmt = $conn->prepare($update_query);
-            $stmt->bind_param("sssssssssi", $name, $email, $phone, $street, $postcode, $city, $state, $status, $image_name, $cust_id);        
-        }        
+    }
+
+    $update_query = "UPDATE customer SET 
+                    CustName = ?, 
+                    CustEmail = ?, 
+                    CustPhoneNum = ?, 
+                    StreetAddress = ?, 
+                    Postcode = ?, 
+                    City = ?, 
+                    State = ?, 
+                    CustProfilePicture = ? 
+                    WHERE CustID = ?";
     
-        if ($stmt->execute()) {
-            echo "<script>alert('Customer updated successfully!'); window.location.href='customer_view.php';</script>";
-        } else {
-            echo "<script>alert('Failed to update customer.'); window.location.href='customer_view.php';</script>";
-        }
-        $stmt->close();
-        exit();
+    $stmt = $conn->prepare($update_query);
+    $stmt->bind_param("ssssssssi", $name, $email, $phone, $street, $postcode, $city, $state, $image_name, $cust_id);
+
+    if ($stmt->execute()) {
+        echo "<script>alert('Customer updated successfully!'); window.location.href='customer_view.php';</script>";
+    } else {
+        echo "<script>alert('Failed to update customer: " . addslashes($conn->error) . "'); window.location.href='customer_view.php';</script>";
     }
     
+    $stmt->close();
+    exit();
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
@@ -230,8 +229,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
             <h2>Customer List</h2>
 
             <form method="GET" action="" class="search">
-                <input type="text" name="search" placeholder="Search by name or email" 
-                    value="<?php echo htmlspecialchars($search_query); ?>">
+                <input type="text" name="search" placeholder="Search by name or email" value="<?php echo htmlspecialchars($search_query); ?>">
                 <button type="submit" class="search">Search</button>
             </form>
 
@@ -244,9 +242,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                         <th>Email</th>
                         <th style="width: 120px;">Phone</th>
                         <th style="width: 400px;">Address</th>
-                        <?php if ($loggedInPosition === 'superadmin'): ?>
-                            <th>Password</th>
-                        <?php endif; ?>
                         <th>Status</th> 
                         <th></th>
                     </tr>
@@ -282,25 +277,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                                     echo htmlspecialchars($full_address);
                                     ?>
                                 </td>
-                                <?php if ($loggedInPosition === 'superadmin'): ?>
-                                    <td><?php echo $customer['CustPassword']; ?></td>
-                                <?php endif; ?>
                                 <td class="<?php echo ($customer['CustomerStatus'] === 'active') ? 'status-active' : 'status-inactive'; ?>">
                                     <?php echo $customer['CustomerStatus']; ?>
                                 </td>
                                 <td>
-                                    <button name="edit_customer" onclick='editCustomer(
-                                        <?php echo json_encode($customer["CustID"]); ?>,
-                                        <?php echo json_encode($customer["CustName"]); ?>,
-                                        <?php echo json_encode($customer["CustEmail"]); ?>,
-                                        <?php echo json_encode($customer["CustPhoneNum"]); ?>,
-                                        <?php echo json_encode($customer["StreetAddress"]); ?>,
-                                        <?php echo json_encode($customer["Postcode"]); ?>,
-                                        <?php echo json_encode($customer["City"]); ?>,
-                                        <?php echo json_encode($customer["State"]); ?>,
-                                        <?php echo json_encode($customer["CustProfilePicture"]); ?>,
-                                        <?php echo json_encode($customer["CustomerStatus"]); ?>)'>Edit
-                                    </button>
+                                <button name="edit_customer" onclick='editCustomer(
+                                    <?php echo json_encode($customer["CustID"]); ?>,
+                                    <?php echo json_encode($customer["CustName"]); ?>,
+                                    <?php echo json_encode($customer["CustEmail"]); ?>,
+                                    <?php echo json_encode($customer["CustPhoneNum"]); ?>,
+                                    <?php echo json_encode($customer["StreetAddress"]); ?>,
+                                    <?php echo json_encode($customer["Postcode"]); ?>,
+                                    <?php echo json_encode($customer["City"]); ?>,
+                                    <?php echo json_encode($customer["State"]); ?>,
+                                    <?php echo json_encode($customer["CustProfilePicture"]); ?>
+                                )'>Edit
+                                </button>
                                     <form method="post" action="">
                                         <input type="hidden" name="toggle_status" value="1">
                                         <input type="hidden" name="cust_id" value="<?php echo $customer['CustID']; ?>">
@@ -314,7 +306,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                         <?php endwhile; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="9" style="text-align: center;color:red;"><b>No customers found.</b></td>
+                            <td colspan="8" style="text-align: center;color:red;"><b>No customers found.</b></td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
@@ -342,9 +334,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                         <label>Phone:</label>
                         <input type="text" name="phone" id="phone" placeholder="XXX-XXX XXXX or XXX-XXXX XXXX format" required>
                         <div id="phone-error" class="error"></div>
-                        <label>Password:</label>
-                        <input type="password" name="password">
-                        <p>(Leave empty to keep the current password)</p>
                     </div>
                     <div class="right">
                         <label>Street Address:</label>
@@ -373,11 +362,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                             <option value="Sabah">Sabah</option>
                             <option value="Sarawak">Sarawak</option>
                         </select>
-                        <label>Status:</label>
-                        <select name="status" id="status" required>
-                            <option value="active" <?php echo isset($customer['CustomerStatus']) && $customer['CustomerStatus'] == 'active' ? 'selected' : ''; ?>>Active</option>
-                            <option value="inactive" <?php echo isset($customer['CustomerStatus']) && $customer['CustomerStatus'] == 'inactive' ? 'selected' : ''; ?>>Inactive</option>
-                        </select>
                     </div>
                 </div>            
 
@@ -389,274 +373,272 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     </div>
 
     <script>
-    // Validation functions
-    function validateName(name) {
-        if (name.trim() === '') {
-            return 'Name is required';
+        function validateName(name) {
+            if (name.trim() === '') {
+                return 'Name is required';
+            }
+            return '';
         }
-        return '';
-    }
 
-    function validateEmail(email) {
-        if (email.trim() === '') {
-            return 'Email is required';
+        function validateEmail(email) {
+            if (email.trim() === '') {
+                return 'Email is required';
+            }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !email.endsWith('.com')) {
+                return 'Invalid email format (must contain @ and end with .com)';
+            }
+            return '';
         }
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !email.endsWith('.com')) {
-            return 'Invalid email format (must contain @ and end with .com)';
+
+        function validatePhone(phone) {
+            if (phone.trim() === '') {
+                return 'Phone is required';
+            }
+            if (!/^\d{3}-\d{3,4} \d{4}$/.test(phone)) {
+                return 'Phone must be in XXX-XXX XXXX or XXX-XXXX XXXX format';
+            }
+            return '';
         }
-        return '';
-    }
 
-    function validatePhone(phone) {
-        if (phone.trim() === '') {
-            return 'Phone is required';
+        function validateStreet(street) {
+            if (street.trim() === '') {
+                return 'Street address is required';
+            }
+            return '';
         }
-        if (!/^\d{3}-\d{3,4} \d{4}$/.test(phone)) {
-            return 'Phone must be in XXX-XXX XXXX or XXX-XXXX XXXX format';
+
+        function validatePostcode(postcode) {
+            if (postcode.trim() === '') {
+                return 'Postcode is required';
+            }
+            if (!/^\d{5}$/.test(postcode)) {
+                return 'Postcode must be 5 digits';
+            }
+            return '';
         }
-        return '';
-    }
 
-    function validateStreet(street) {
-        if (street.trim() === '') {
-            return 'Street address is required';
+        function validateCity(city) {
+            if (city.trim() === '') {
+                return 'City is required';
+            }
+            return '';
         }
-        return '';
-    }
 
-    function validatePostcode(postcode) {
-        if (postcode.trim() === '') {
-            return 'Postcode is required';
+        function validateState(state) {
+            if (state.trim() === '') {
+                return 'State is required';
+            }
+            return '';
         }
-        if (!/^\d{5}$/.test(postcode)) {
-            return 'Postcode must be 5 digits';
+
+        // Show/hide error functions
+        function showError(fieldId, errorId, message) {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.classList.add('error-field');
+            }
+            const errorElement = document.getElementById(errorId);
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
         }
-        return '';
-    }
 
-    function validateCity(city) {
-        if (city.trim() === '') {
-            return 'City is required';
+        function clearError(fieldId, errorId) {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.classList.remove('error-field');
+            }
+            const errorElement = document.getElementById(errorId);
+            if (errorElement) {
+                errorElement.style.display = 'none';
+            }
         }
-        return '';
-    }
 
-    function validateState(state) {
-        if (state.trim() === '') {
-            return 'State is required';
-        }
-        return '';
-    }
+        // Add event listeners when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Edit modal validation
+            const editName = document.getElementById('name');
+            const editEmail = document.getElementById('email');
+            const editPhone = document.getElementById('phone');
+            const editStreet = document.getElementById('street');
+            const editPostcode = document.getElementById('postcode');
+            const editCity = document.getElementById('city');
+            const editState = document.getElementById('state');
 
-    // Show/hide error functions
-    function showError(fieldId, errorId, message) {
-        const field = document.getElementById(fieldId);
-        if (field) {
-            field.classList.add('error-field');
-        }
-        const errorElement = document.getElementById(errorId);
-        if (errorElement) {
-            errorElement.textContent = message;
-            errorElement.style.display = 'block';
-        }
-    }
-
-    function clearError(fieldId, errorId) {
-        const field = document.getElementById(fieldId);
-        if (field) {
-            field.classList.remove('error-field');
-        }
-        const errorElement = document.getElementById(errorId);
-        if (errorElement) {
-            errorElement.style.display = 'none';
-        }
-    }
-
-    // Add event listeners when DOM is loaded
-    document.addEventListener('DOMContentLoaded', function() {
-        // Edit modal validation
-        const editName = document.getElementById('name');
-        const editEmail = document.getElementById('email');
-        const editPhone = document.getElementById('phone');
-        const editStreet = document.getElementById('street');
-        const editPostcode = document.getElementById('postcode');
-        const editCity = document.getElementById('city');
-        const editState = document.getElementById('state');
-
-        if (editName) editName.addEventListener('input', function() {
-            const error = validateName(this.value);
-            if (error) {
-                showError('name', 'name-error', error);
-            } else {
-                clearError('name', 'name-error');
-            }
-        });
-
-        if (editEmail) editEmail.addEventListener('input', function() {
-            const error = validateEmail(this.value);
-            if (error) {
-                showError('email', 'email-error', error);
-            } else {
-                clearError('email', 'email-error');
-            }
-        });
-
-        if (editPhone) editPhone.addEventListener('input', function() {
-            const error = validatePhone(this.value);
-            if (error) {
-                showError('phone', 'phone-error', error);
-            } else {
-                clearError('phone', 'phone-error');
-            }
-        });
-
-        if (editStreet) editStreet.addEventListener('input', function() {
-            const error = validateStreet(this.value);
-            if (error) {
-                showError('street', 'street-error', error);
-            } else {
-                clearError('street', 'street-error');
-            }
-        });
-
-        if (editPostcode) editPostcode.addEventListener('input', function() {
-            const error = validatePostcode(this.value);
-            if (error) {
-                showError('postcode', 'postcode-error', error);
-            } else {
-                clearError('postcode', 'postcode-error');
-            }
-        });
-
-        if (editCity) editCity.addEventListener('input', function() {
-            const error = validateCity(this.value);
-            if (error) {
-                showError('city', 'city-error', error);
-            } else {
-                clearError('city', 'city-error');
-            }
-        });
-
-        if (editState) editState.addEventListener('change', function() {
-            const error = validateState(this.value);
-            if (error) {
-                showError('state', 'state-error', error);
-            } else {
-                clearError('state', 'state-error');
-            }
-        });
-
-        // Form submission validation
-        document.querySelector('#editModal form').addEventListener('submit', function(e) {
-            let isValid = true;
-            
-            const name = document.getElementById('name').value;
-            const nameError = validateName(name);
-            if (nameError) {
-                showError('name', 'name-error', nameError);
-                isValid = false;
-            }
-            
-            const email = document.getElementById('email').value;
-            const emailError = validateEmail(email);
-            if (emailError) {
-                showError('email', 'email-error', emailError);
-                isValid = false;
-            }
-            
-            const phone = document.getElementById('phone').value;
-            const phoneError = validatePhone(phone);
-            if (phoneError) {
-                showError('phone', 'phone-error', phoneError);
-                isValid = false;
-            }
-            
-            const street = document.getElementById('street').value;
-            const streetError = validateStreet(street);
-            if (streetError) {
-                showError('street', 'street-error', streetError);
-                isValid = false;
-            }
-            
-            const postcode = document.getElementById('postcode').value;
-            const postcodeError = validatePostcode(postcode);
-            if (postcodeError) {
-                showError('postcode', 'postcode-error', postcodeError);
-                isValid = false;
-            }
-            
-            const city = document.getElementById('city').value;
-            const cityError = validateCity(city);
-            if (cityError) {
-                showError('city', 'city-error', cityError);
-                isValid = false;
-            }
-            
-            const state = document.getElementById('state').value;
-            const stateError = validateState(state);
-            if (stateError) {
-                showError('state', 'state-error', stateError);
-                isValid = false;
-            }
-            
-            if (!isValid) {
-                e.preventDefault();
-            }
-        });
-    });
-
-    // Modal functions
-    function editCustomer(id, name, email, phone, street, postcode, city, state, profile_picture, status) {
-        // Clear any previous errors
-        closeModal();
-        
-        // Set values
-        document.getElementById('cust_id').value = id;
-        document.getElementById('name').value = name;
-        document.getElementById('email').value = email;
-        document.getElementById('phone').value = phone;
-        document.getElementById('street').value = street;
-        document.getElementById('postcode').value = postcode;
-        document.getElementById('city').value = city;
-        document.getElementById('state').value = state;
-        document.getElementById('status').value = status.toLowerCase();
-        
-        // Show modal
-        document.getElementById('editModal').style.display = 'block';
-    }
-
-    function closeModal() {
-        // Clear all errors
-        clearError('name', 'name-error');
-        clearError('email', 'email-error');
-        clearError('phone', 'phone-error');
-        clearError('street', 'street-error');
-        clearError('postcode', 'postcode-error');
-        clearError('city', 'city-error');
-        clearError('state', 'state-error');
-        
-        // Hide modal
-        document.getElementById('editModal').style.display = 'none';
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        const searchInput = document.querySelector('input[name="search"]');
-        const searchForm = document.querySelector('.search');
-        
-        if (searchInput && searchForm) {
-            searchInput.addEventListener('input', function() {
-                // If search input is empty, submit the form to show all results
-                if (this.value.trim() === '') {
-                    searchForm.submit();
+            if (editName) editName.addEventListener('input', function() {
+                const error = validateName(this.value);
+                if (error) {
+                    showError('name', 'name-error', error);
+                } else {
+                    clearError('name', 'name-error');
                 }
             });
-        }
-    });
-    window.onclick = function(event) {
-        if (event.target == document.getElementById("editModal")) {
+
+            if (editEmail) editEmail.addEventListener('input', function() {
+                const error = validateEmail(this.value);
+                if (error) {
+                    showError('email', 'email-error', error);
+                } else {
+                    clearError('email', 'email-error');
+                }
+            });
+
+            if (editPhone) editPhone.addEventListener('input', function() {
+                const error = validatePhone(this.value);
+                if (error) {
+                    showError('phone', 'phone-error', error);
+                } else {
+                    clearError('phone', 'phone-error');
+                }
+            });
+
+            if (editStreet) editStreet.addEventListener('input', function() {
+                const error = validateStreet(this.value);
+                if (error) {
+                    showError('street', 'street-error', error);
+                } else {
+                    clearError('street', 'street-error');
+                }
+            });
+
+            if (editPostcode) editPostcode.addEventListener('input', function() {
+                const error = validatePostcode(this.value);
+                if (error) {
+                    showError('postcode', 'postcode-error', error);
+                } else {
+                    clearError('postcode', 'postcode-error');
+                }
+            });
+
+            if (editCity) editCity.addEventListener('input', function() {
+                const error = validateCity(this.value);
+                if (error) {
+                    showError('city', 'city-error', error);
+                } else {
+                    clearError('city', 'city-error');
+                }
+            });
+
+            if (editState) editState.addEventListener('change', function() {
+                const error = validateState(this.value);
+                if (error) {
+                    showError('state', 'state-error', error);
+                } else {
+                    clearError('state', 'state-error');
+                }
+            });
+
+            // Form submission validation
+            document.querySelector('#editModal form').addEventListener('submit', function(e) {
+                let isValid = true;
+                
+                const name = document.getElementById('name').value;
+                const nameError = validateName(name);
+                if (nameError) {
+                    showError('name', 'name-error', nameError);
+                    isValid = false;
+                }
+                
+                const email = document.getElementById('email').value;
+                const emailError = validateEmail(email);
+                if (emailError) {
+                    showError('email', 'email-error', emailError);
+                    isValid = false;
+                }
+                
+                const phone = document.getElementById('phone').value;
+                const phoneError = validatePhone(phone);
+                if (phoneError) {
+                    showError('phone', 'phone-error', phoneError);
+                    isValid = false;
+                }
+                
+                const street = document.getElementById('street').value;
+                const streetError = validateStreet(street);
+                if (streetError) {
+                    showError('street', 'street-error', streetError);
+                    isValid = false;
+                }
+                
+                const postcode = document.getElementById('postcode').value;
+                const postcodeError = validatePostcode(postcode);
+                if (postcodeError) {
+                    showError('postcode', 'postcode-error', postcodeError);
+                    isValid = false;
+                }
+                
+                const city = document.getElementById('city').value;
+                const cityError = validateCity(city);
+                if (cityError) {
+                    showError('city', 'city-error', cityError);
+                    isValid = false;
+                }
+                
+                const state = document.getElementById('state').value;
+                const stateError = validateState(state);
+                if (stateError) {
+                    showError('state', 'state-error', stateError);
+                    isValid = false;
+                }
+                
+                if (!isValid) {
+                    e.preventDefault();
+                }
+            });
+        });
+
+        // Modal functions
+        function editCustomer(id, name, email, phone, street, postcode, city, state, profile_picture, status) {
+            // Clear any previous errors
             closeModal();
+            
+            // Set values
+            document.getElementById('cust_id').value = id;
+            document.getElementById('name').value = name;
+            document.getElementById('email').value = email;
+            document.getElementById('phone').value = phone;
+            document.getElementById('street').value = street;
+            document.getElementById('postcode').value = postcode;
+            document.getElementById('city').value = city;
+            document.getElementById('state').value = state;
+            
+            // Show modal
+            document.getElementById('editModal').style.display = 'block';
         }
-    }
+
+        function closeModal() {
+            // Clear all errors
+            clearError('name', 'name-error');
+            clearError('email', 'email-error');
+            clearError('phone', 'phone-error');
+            clearError('street', 'street-error');
+            clearError('postcode', 'postcode-error');
+            clearError('city', 'city-error');
+            clearError('state', 'state-error');
+            
+            // Hide modal
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+                const searchInput = document.querySelector('input[name="search"]');
+                const searchForm = document.querySelector('.search');
+                
+                if (searchInput && searchForm) {
+                    searchInput.addEventListener('input', function() {
+                        // If search input is empty, submit the form to show all results
+                        if (this.value.trim() === '') {
+                            searchForm.submit();
+                        }
+                    });
+                }
+            });
+        window.onclick = function(event) {
+            if (event.target == document.getElementById("editModal")) {
+                closeModal();
+            }
+        }    
     </script>
 </body>
 </html>
