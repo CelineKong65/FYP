@@ -33,7 +33,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
     $custName = trim($_POST['custName']);
     $custEmail = trim($_POST['custEmail']);
     $custPhoneNum = trim($_POST['custPhoneNum']);
-    $custAddress = trim($_POST['custAddress']);
+    $streetAddress = trim($_POST['streetAddress']);
     $city = trim($_POST['city']);
     $postcode = trim($_POST['postcode']);
     $state = trim($_POST['state']);
@@ -53,12 +53,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
         try {
             $sql = "UPDATE customer SET 
                     CustName = ?, CustEmail = ?, CustPhoneNum = ?, 
-                    CustAddress = ?, City = ?, Postcode = ?, State = ?
+                    StreetAddress = ?, City = ?, Postcode = ?, State = ?
                     WHERE CustID = ?";
             $stmt = $conn->prepare($sql);
             $stmt->execute([
                 $custName, $custEmail, $custPhoneNum,
-                $custAddress, $city, $postcode, $state,
+                $streetAddress, $city, $postcode, $state,
                 $user_id
             ]);
             
@@ -111,19 +111,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Account</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="account.css">
+    <link rel="stylesheet" type="text/css" href="account.css">
 </head>
 <body>
     <div class="sidebar">
         <div class="sidebar-header">
-            <h2>webiance</h2>
         </div>
         <ul class="sidebar-menu">
-            <li>My job Feed</li>
             <li class="active"><a href="#"><i class="fas fa-user"></i> Profile</a></li>
-            <li><a href="#"><i class="fas fa-comment"></i> Desiricord</a></li>
-            <li><a href="#"><i class="fas fa-bookmark"></i> Saved jobs</a></li>
-            <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
             <li><a href="order_history.php"><i class="fas fa-history"></i> Order History</a></li>
         </ul>
         <div class="sidebar-footer">
@@ -138,7 +133,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
                  class="profile-picture"
                  onerror="this.src='images/default-profile.jpg'">
             <h1 class="profile-title">Welcome, <?= htmlspecialchars($customer['CustName']) ?></h1>
-            <div class="account-number">Account Number: <?= htmlspecialchars($customer['CustID']) ?></div>
+            <div class="account-number">Account ID: <?= htmlspecialchars($customer['CustID']) ?></div>
             
             <form class="upload-form" method="post" enctype="multipart/form-data">
                 <input type="file" name="profile_picture" id="profile_picture" accept="image/*" required>
@@ -171,8 +166,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
                     
                     <div class="form-row">
                         <div class="form-group">
-                            <label class="required">Address</label>
-                            <input type="text" name="custAddress" value="<?= htmlspecialchars($customer['CustAddress'] ?? 'Not provided') ?>" required>
+                            <label class="required">Street Address</label>
+                            <input type="text" name="streetAddress" value="<?= htmlspecialchars($customer['StreetAddress'] ?? 'Not provided') ?>" required>
                         </div>
                     </div>
                     
@@ -221,7 +216,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
                     <div class="form-group">
                         <label class="required">Current Password</label>
                         <div class="pass-field">
-                            <input type="password" name="currentPassword" required>
+                            <input type="password" name="currentPassword" value="<?= htmlspecialchars($customer['CustPassword'] ?? 'Not provided') ?>" required>
                             <i class="fas fa-eye" id="show-current-password"></i>
                         </div>
                     </div>
@@ -232,7 +227,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
                             <input type="password" name="newPassword" id="newPassword" required>
                             <i class="fas fa-eye" id="show-new-password"></i>
                         </div>
-                        <ul class="password-req">
+                        <ul class="password-req" id="passwordRequirements">
                             <li><i class="fas fa-circle"></i><span>At least 8 characters</span></li>
                             <li><i class="fas fa-circle"></i><span>At least 1 uppercase letter</span></li>
                             <li><i class="fas fa-circle"></i><span>At least 1 lowercase letter</span></li>
@@ -295,20 +290,41 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
             this.className = input.type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
         });
         
-        // Password requirement validation
+        // Show/hide password requirements
         const passwordInput = document.getElementById('newPassword');
-        const requirementList = document.querySelectorAll('.password-req li');
-        
-        const requirements = [
-            {regex: /\S{8,}/, index: 0},
-            {regex: /[A-Z]/, index: 1},
-            {regex: /[a-z]/, index: 2},
-            {regex: /\d/, index: 3},
-            {regex: /[@$!%*#?&]/, index: 4},
-            {regex: /^\S*$/, index: 5}
-        ];
+        const passwordRequirements = document.getElementById('passwordRequirements');
         
         if (passwordInput) {
+            passwordInput.addEventListener('focus', () => {
+                passwordRequirements.style.display = 'block';
+            });
+            
+            passwordInput.addEventListener('blur', () => {
+                // Only hide if not focused on password requirements
+                if (!passwordRequirements.contains(document.activeElement)) {
+                    passwordRequirements.style.display = 'none';
+                }
+            });
+            
+            // Also hide when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!passwordInput.contains(e.target) && !passwordRequirements.contains(e.target)) {
+                    passwordRequirements.style.display = 'none';
+                }
+            });
+            
+            // Password requirement validation
+            const requirementList = document.querySelectorAll('.password-req li');
+            
+            const requirements = [
+                {regex: /\S{8,}/, index: 0},
+                {regex: /[A-Z]/, index: 1},
+                {regex: /[a-z]/, index: 2},
+                {regex: /\d/, index: 3},
+                {regex: /[@$!%*#?&]/, index: 4},
+                {regex: /^\S*$/, index: 5}
+            ];
+            
             passwordInput.addEventListener('keyup', (e) => {
                 requirements.forEach(item => {
                     const isValid = item.regex.test(e.target.value);
