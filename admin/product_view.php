@@ -13,6 +13,7 @@ $category_query = "SELECT * FROM category";
 $category_result = $conn->query($category_query);
 
 $selected_category = isset($_GET['category']) ? $_GET['category'] : '';
+$selected_category = isset($_GET['category']) ? $_GET['category'] : '';
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 $product_query = "
@@ -38,14 +39,16 @@ $where_clauses = [];
 $params = [];
 $types = '';
 
+// Category filter
 if (!empty($selected_category)) {
-    $where_clauses[] = "CategoryID = ?";
+    $where_clauses[] = "p.CategoryID = ?";
     $params[] = $selected_category;
     $types .= 'i';
 }
 
+// Search filter
 if (!empty($search_query)) {
-    $where_clauses[] = "ProductName LIKE ?";
+    $where_clauses[] = "p.ProductName LIKE ?";
     $params[] = "%$search_query%";
     $types .= 's';
 }
@@ -55,6 +58,18 @@ if (!empty($where_clauses)) {
 }
 
 $product_query .= " GROUP BY p.ProductID";
+
+$stmt = $conn->prepare($product_query);
+
+if (!empty($params)) {
+    $stmt->bind_param($types, ...$params);
+}
+
+if (!$stmt->execute()) {
+    die("Query execution failed: " . $stmt->error);
+}
+
+$product_result = $stmt->get_result();
 
 $stmt = $conn->prepare($product_query);
 
@@ -678,7 +693,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                 closeAddModal();
             }
         };
-
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.querySelector('input[name="search"]');
+            const searchForm = document.querySelector('.search');
+            
+            if (searchInput && searchForm) {
+                searchInput.addEventListener('input', function() {
+                    // If search input is empty, submit the form to show all results
+                    if (this.value.trim() === '') {
+                        searchForm.submit();
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>

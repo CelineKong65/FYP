@@ -51,7 +51,7 @@ unset($_SESSION['show_loading']);
     <script>
         setTimeout(function() {
             window.location.href = 'index.php';
-        }, 3500);
+        }, 2000);
     </script>
 </body>
 </html>
