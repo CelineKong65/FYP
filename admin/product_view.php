@@ -13,6 +13,7 @@ $category_query = "SELECT * FROM category";
 $category_result = $conn->query($category_query);
 
 $selected_category = isset($_GET['category']) ? $_GET['category'] : '';
+$selected_category = isset($_GET['category']) ? $_GET['category'] : '';
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 $product_query = "
@@ -38,14 +39,16 @@ $where_clauses = [];
 $params = [];
 $types = '';
 
+// Category filter
 if (!empty($selected_category)) {
-    $where_clauses[] = "CategoryID = ?";
+    $where_clauses[] = "p.CategoryID = ?";
     $params[] = $selected_category;
     $types .= 'i';
 }
 
+// Search filter
 if (!empty($search_query)) {
-    $where_clauses[] = "ProductName LIKE ?";
+    $where_clauses[] = "p.ProductName LIKE ?";
     $params[] = "%$search_query%";
     $types .= 's';
 }
@@ -55,6 +58,18 @@ if (!empty($where_clauses)) {
 }
 
 $product_query .= " GROUP BY p.ProductID";
+
+$stmt = $conn->prepare($product_query);
+
+if (!empty($params)) {
+    $stmt->bind_param($types, ...$params);
+}
+
+if (!$stmt->execute()) {
+    die("Query execution failed: " . $stmt->error);
+}
+
+$product_result = $stmt->get_result();
 
 $stmt = $conn->prepare($product_query);
 
@@ -114,24 +129,41 @@ if (isset($_POST['update_product'])) {
         exit();
     }
 
+    $existing_image = $_POST['existing_image'];
+
     if (!empty($image)) {
         $image_extension = strtolower(pathinfo($image, PATHINFO_EXTENSION));
         $allowed_types = ['jpg', 'jpeg', 'png'];
+    
         if (!in_array($image_extension, $allowed_types)) {
             echo "<script>alert('Invalid file format. Only JPG, JPEG, and PNG allowed.'); window.location.href='product_view.php';</script>";
             exit();
         }
-
+    
+        // Create new image name based on updated product name
         $image_name = strtolower(str_replace(' ', '-', $name)) . "." . $image_extension;
         $target_dir = "../image/";
         $target_file = $target_dir . $image_name;
-
+    
+        // Delete the old image if it's different and exists
+        if ($existing_image !== $image_name && file_exists($target_dir . $existing_image)) {
+            unlink($target_dir . $existing_image);
+        }
+    
+        // Move new uploaded image
         if (!move_uploaded_file($image_tmp, $target_file)) {
             echo "<script>alert('Failed to upload image.'); window.location.href='product_view.php';</script>";
             exit();
         }
     } else {
-        $image_name = $_POST['existing_image'];
+        // If no new image uploaded but name changed, rename old image
+        $ext = pathinfo($existing_image, PATHINFO_EXTENSION);
+        $new_image_name = strtolower(str_replace(' ', '-', $name)) . "." . $ext;
+    
+        if ($existing_image !== $new_image_name && file_exists("../image/" . $existing_image)) {
+            rename("../image/" . $existing_image, "../image/" . $new_image_name);
+        }
+        $image_name = $new_image_name;
     }
 
     $conn->begin_transaction();
@@ -489,7 +521,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                 <div class="edit-form">
                     <div class="left">
                         <label>Image:<span> (.jpp,.jpeg or .png only)</span></label>
-                        <input type="file" name="image">
+                        <input type="file" name="image" accept=".jpg,.jpeg,.png">
                         <label>Name:</label>
                         <input type="text" name="name" id="name" required>
                         <label>Price:</label>
@@ -543,7 +575,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
             <div class="add-form">
                 <div class="left">
                     <label>Image:<span> (.jpp,.jpeg or .png only)</span></label>
-                    <input type="file" name="image" required>
+                    <input type="file" name="image" accept=".jpg,.jpeg,.png" required>
                     <label>Name:</label>
                     <input type="text" name="name" id="add_name" required>
                     <label>Price:</label>
@@ -652,6 +684,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         function closeAddModal() {
             document.getElementById('addModal').style.display = 'none';
         }
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById("editModal")) {
+                closeModal();
+            }
+            if (event.target == document.getElementById("addModal")) {
+                closeAddModal();
+            }
+        };
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.querySelector('input[name="search"]');
+            const searchForm = document.querySelector('.search');
+            
+            if (searchInput && searchForm) {
+                searchInput.addEventListener('input', function() {
+                    // If search input is empty, submit the form to show all results
+                    if (this.value.trim() === '') {
+                        searchForm.submit();
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>

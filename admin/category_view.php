@@ -229,16 +229,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         <div class="main-content">
         <h2>Product Categories</h2>
 
-        <div class="search-bar">
-            <form method="GET" action="">
-                <input type="text" name="search" placeholder="Search category" value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>" />
-                <button type="submit" name="search_category" class="search">Search</button>
-            </form>
-        </div>
+        <form method="GET" action="" class="search">
+            <input type="text" name="search" placeholder="Search category" value="<?php echo htmlspecialchars($search_query); ?>">
+            <button type="submit" class="search">Search</button>
+        </form>
 
         <div class="add-category-form">
-    <button type="button" onclick="openAddModal()" class="add_btn">Add Category</button>
-</div>
+            <button type="button" onclick="openAddModal()" class="add_btn">Add Category</button>
+        </div>
 
         <table>
             <thead>
@@ -302,14 +300,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                 <input class="img" type="file" name="profile_picture" id="profile_picture" accept=".jpg,.jpeg,.png" required>
                 <label>Category Name:</label>
                 <input type="text" name="category_name" id="add-name" required>
-                <div class="add_div">
+                <div class="submit_btn">
                     <button type="submit">Add</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <div id="editModal" class="edit">
+    <div id="editModal">
         <div class="edit-content">
             <span class="close" onclick="closeEdit()">&times;</span>
             <h2>Edit Category</h2>
@@ -319,6 +317,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                 <label>New name:</label>
                 <input type="hidden" name="category_id" id="editCategoryID">
                 <input type="text" name="new_category_name" id="editCategoryName" required>
+                <!-- Error display will be inserted here by JavaScript -->
                 <div class="submit_btn">
                     <button type="submit" name="edit_category">Update</button>
                 </div>
@@ -335,15 +334,109 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
             document.getElementById("addModal").style.display = "none";
         }
 
-        function editCategory(id, name) {
-            document.getElementById("editCategoryID").value = id;
-            document.getElementById("editCategoryName").value = name;
-            document.getElementById("editModal").style.display = "block";
+        // Add these functions to your existing JavaScript
+        function validateCategoryName(name) {
+            if (name.trim() === '') {
+                return 'Category name is required';
+            }
+            if (name.length > 50) {
+                return 'Category name must be 50 characters or less';
+            }
+            if (!/^[a-zA-Z0-9\s\/-]+$/.test(name)) {
+                return 'Only letters, numbers, spaces, slashes and hyphens allowed';
+            }
+            return '';
         }
 
+        function showError(fieldId, errorId, message) {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.classList.add('error-field');
+            }
+            const errorElement = document.getElementById(errorId);
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
+        }
+
+        function clearError(fieldId, errorId) {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.classList.remove('error-field');
+            }
+            const errorElement = document.getElementById(errorId);
+            if (errorElement) {
+                errorElement.style.display = 'none';
+            }
+        }
+
+        // Add this to your editCategory function
+        function editCategory(id, name) {
+            // Clear any previous errors
+            closeEdit();
+            
+            // Set values
+            document.getElementById("editCategoryID").value = id;
+            document.getElementById("editCategoryName").value = name;
+            
+            // Add error display element if it doesn't exist
+            if (!document.getElementById('editCategoryName-error')) {
+                const errorDiv = document.createElement('div');
+                errorDiv.id = 'editCategoryName-error';
+                errorDiv.className = 'error';
+                errorDiv.style.display = 'none';
+                document.getElementById('editCategoryName').after(errorDiv);
+            }
+            
+            // Show modal
+            document.getElementById("editModal").style.display = "block";
+            
+            // Add real-time validation
+            document.getElementById('editCategoryName').addEventListener('input', function() {
+                const error = validateCategoryName(this.value);
+                if (error) {
+                    showError('editCategoryName', 'editCategoryName-error', error);
+                } else {
+                    clearError('editCategoryName', 'editCategoryName-error');
+                }
+            });
+        }
+
+        // Update your closeEdit function
         function closeEdit() {
+            // Clear error
+            clearError('editCategoryName', 'editCategoryName-error');
+            
+            // Hide modal
             document.getElementById("editModal").style.display = "none";
         }
+
+        // Add this to your form validation
+        function validateEditForm() {
+            const name = document.getElementById('editCategoryName').value;
+            const error = validateCategoryName(name);
+            
+            if (error) {
+                showError('editCategoryName', 'editCategoryName-error', error);
+                return false;
+            }
+            return true;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.querySelector('input[name="search"]');
+            const searchForm = document.querySelector('.search');
+            
+            if (searchInput && searchForm) {
+                searchInput.addEventListener('input', function() {
+                    // If search input is empty, submit the form to show all results
+                    if (this.value.trim() === '') {
+                        searchForm.submit();
+                    }
+                });
+            }
+        });
 
         // Close modals when clicking outside
         window.onclick = function(event) {

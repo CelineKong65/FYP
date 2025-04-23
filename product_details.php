@@ -172,6 +172,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_to_cart"])) {
     <meta charset="UTF-8">
     <title><?= htmlspecialchars($product['ProductName']) ?> - Product Details</title>
     <link rel="stylesheet" href="product_details.css">
+    <style>
+        .categories h2 {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            transform: translate(10%,8%);
+        }
+
+
+        .categories ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            transform: translate(10%,20%);
+        }
+
+        .size {
+            padding: 5px 10px;
+            margin-right: 5px;
+            cursor: pointer;
+            background: #f0f0f0;
+            border: 1px solid #000;
+            position: relative;
+            transition: 0.3s;
+        }
+    </style>
 </head>
 <body>
     <div class="container-product-details">
