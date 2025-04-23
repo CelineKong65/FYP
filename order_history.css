@@ -39,7 +39,7 @@ form.search {
 }
 
 .search input {
-    width: 200px;
+    width: 250px;
     padding: 8px;
     font-size: 12px;
     margin-bottom: 10px;
@@ -47,7 +47,8 @@ form.search {
     border-radius: 4px;
 }
 
-button {
+button.search{
+    width: 95px;
     padding: 10px 16px;
     background-color: #1e3a8a;
     color: white;
@@ -57,10 +58,6 @@ button {
     margin-right: 5px;
     margin-bottom: 10px;
     font-size: 13px;
-}
-
-button.search{
-    width: 95px;
 }
 
 button:hover {
@@ -77,6 +74,15 @@ button:hover {
 
 button[name="view_details"]{
     background-color: #05ac2c;
+    width: 120px;
+    padding: 10px 16px;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 5px;
+    margin-bottom: 10px;
+    font-size: 13px;
 }
 
 button[name="view_details"]:hover{

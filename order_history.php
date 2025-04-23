@@ -41,7 +41,7 @@ $order_result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order History</title>
-    <link rel='stylesheet' href='order_history.css'>
+    <link rel="stylesheet" href="order_history.css">
 </head>
 <body>
     <div class="history-container">
@@ -49,8 +49,8 @@ $order_result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <h2>Order History</h2>
 
             <form method="GET" action="" class="search">
-                <input type="text" name="search" placeholder="Search by name or contact" value="<?php echo htmlspecialchars($search_query); ?>">
-                <button type="submit">Search</button>
+                <input type="text" name="search" placeholder="Search by name or contact number" value="<?php echo htmlspecialchars($search_query); ?>">
+                <button type="submit" class="search">Search</button>
             </form>
             
             <table>
@@ -83,7 +83,7 @@ $order_result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 </td>                               
                                 <td>RM <?php echo number_format($orderpayment['TotalPrice'], 2); ?></td>
                                 <td>
-                                    <button name="view_details" onclick="window.location.href='order_details.php?order_id=<?php echo $orderpayment['OrderID']; ?>'">View Details</button>
+                                    <button name="view_details" class="view_details" onclick="window.location.href='order_details.php?order_id=<?php echo $orderpayment['OrderID']; ?>'">View Details</button>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
