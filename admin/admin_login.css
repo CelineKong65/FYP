@@ -1,132 +1,232 @@
-*{
+* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
     font-family: Arial, sans-serif;
 }
 
-body {
-    border-radius: 50px;
-    min-height: 100vh;
+header {
+    background-color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 30px;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+.logo img {
+    width: 80px;
+    height: auto;
+}
+
+.home{
     display: flex;
     align-items: center;
     justify-content: center;
-    background: url('../image/admin_back.png');
-    background-size: cover;
+    flex-direction: row;
 }
 
-.header
-{
-    display: flex;
-    align-items: center;
+.home h2 {
+    transition: 0.5s;
+    font-size: medium;
+    color: #000000;
+    font-weight: 300;
+    font-size: 18px;
 }
 
-img{
-    height: 80px;
-    transform: translateX(-3px);
-    margin-right: 10px;
+.home a {
+    transition: 0.5s;
+    text-decoration: none;
 }
 
-h3{
-    font-size: 23pt;
-    margin-left: 40px;
-}
-
-#login-form{
-    padding: 70px;
-    border-radius: 16px;
-    width: 500px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    border-radius: 30px;
-    height: auto;
-    background-color: white;
-}
-
-.input-box{
-    margin: 30px 0;
-}
-
-.input-box input {
-    background-color:#f8f8ff;;
-    width: 100%;
-    border: none;
-    padding: 12px 12px 12px 45px;
-    border-radius: 99px;
-    font-size: 17px;
-    font-weight: 600;
-    margin-top: 10px;
-}
-
-.input-box input::placeholder {
-    color: rgba(0, 0, 0, 0.342);
-    font-size: 17px;
-    font-weight: 500;
-}
-
-p{
-    margin-top: 30px;
-}
-
-a{
-    text-decoration: underline;
-    font-style: italic;
-}
-
-.button {
-    display: flex;
-    justify-content: flex-end;
-}
-
-.forget_password
-{
-    align-items: center;
-    margin: 30px;
-}
-
-p{
-    text-align: center;
-}
-
-.Submit-btn{
-    background-color: #4CAF50;
-    color: white;
-    padding: 10px 25px;
-    border: none;
-    border-radius:10px;
-    font-size: 16px;
+.home a:hover, h2:hover{
+    transition: color 0.5s;
+    color: #007BFF;
     cursor: pointer;
 }
 
-.back_div {
-    position: absolute;
-    top: 30px;
-    left: 30px;
-    z-index: 10;
+.home i:hover{
+    transition: color 0.5s;
+    color: #007BFF;
+    cursor: pointer;
 }
 
-.back{
-    background-color: white;
+.home i {
+    transition: 0.5s;
+    font-size: 20pt;
     color: black;
-    padding: 10px 20px;
-    border-radius: 10px;
-    font-size: 15px;
-    border: transparent;
+    display: flex;
+    align-items: center;
+    gap: 6pt;
 }
 
-.back:hover {
-    background-color: black;
-    color: white;
+.container {
+    display: flex;
+    height: 100vh;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 0px;
+}
+
+.left-side {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: top;
+}
+
+.left-side img {
+    max-width: 108.5%;
+    height: auto;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.right-side {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top: 120px;
+}
+
+.right-side-inner{
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+}
+
+.frame {
+    max-width: 500px;
+    width: 100%;
+    padding-top: 30px;
+}
+
+.frame h2 {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: #000;
+}
+
+.frame label {
+    font-size: 16px;
+    display: block;
+    margin-bottom: 5px;
+    color: #000;
+}
+
+.frame button {
+    font-size: 18px;
+    transition: 0.5s;
+    color: #fff;
+    width: 500px;
+    padding: 8px;
+    margin-top: 20px;
+    border-radius: 10px;
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    background-color: #007BFF;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.frame button:hover {
+    transition: 0.5s;
+    background-color: #007bff94;
+}
+
+.frame input {
+    height: 35px;
+    color: #000;
+    max-width: 500px;
+    width: 100%;
+    padding: 6px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+}
+
+.frame input:hover {
+    border: 1px solid #4c5157;
+    background-color: #f8f8f8;
+}
+
+.frame input:focus {
+    background-color: #fff;
+    color: #000;
+    outline: none;
+    border-color: #007BFF;
+}
+
+.frame input:not(:placeholder-shown) {
+    background-color: #fff;
+    color: #000;
+    outline: none;
+    border-color: #007BFF;
+}
+
+.wrapper{
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.wrapper input{
+    width: 100%;
+    padding-right: 40px;
+}
+
+.pass-field {
+    position: relative;
+}
+
+.pass-field .fa-eye,
+.pass-field .fa-eye-slash {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-100%);
     cursor: pointer;
-    transition: 0.3s ease;
+    color: #7f7f7f;
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 15px;
+}
+
+.pass-field .fa-eye:hover,
+.pass-field .fa-eye-slash:hover {
+    color: #505050;
 }
 
 .error-message {
-    color: red;
-    font-size: 0.9em;
-    margin-top: 5px;
-    text-align: center;
-    font-weight: bold;
+    color: #d32f2f;
+    background-color: #fde8e8;
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+    font-size: 14px;
+    border-left: 4px solid #d32f2f;
 }
+
 .error-field {
-    border: 1px solid red !important;
+    border: 1px solid #d32f2f !important;
+}
+
+.findback{
+    margin-top: 20px;
+}
+
+.findback h3, a{
+    font-size: 11pt;
+    font-weight: 600; 
+}
+
+.findback a{
+    padding-top: 20px;
+    color: #007BFF;   
+}
+
+.findback a:hover{
+    color: #007bff94;
 }

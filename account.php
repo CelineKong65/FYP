@@ -184,7 +184,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
                                 $states = [
                                     "Johor", "Melaka", "Negeri Sembilan", "Kedah", "Kelantan", 
                                     "Pahang", "Penang", "Perak", "Perlis", "Sabah", 
-                                    "Sarawak", "Selangor", "Terengganu", "Kuala Lumpur", "Putrajaya"
+                                    "Sarawak", "Selangor", "Terengganu"
                                 ];
                                 foreach ($states as $stateOption) {
                                     $selected = ($customer['State'] == $stateOption) ? 'selected' : '';
