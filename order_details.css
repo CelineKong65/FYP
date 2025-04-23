@@ -28,7 +28,7 @@ body {
     height: fit-content;
 }
 
-button {
+button[name="print"], button[name="back"]{
     padding: 10px;
     color: white;
     border: none;

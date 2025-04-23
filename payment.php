@@ -277,68 +277,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkout Form</title>
     <link rel="stylesheet" href="payment.css">
-    <style>
-       /* Popup Styles */
-        .simple-popup-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .simple-popup {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        .popup-icon {
-            color: #4CAF50;
-            font-size: 60px;
-            margin-bottom: 20px;
-        }
-
-        .simple-popup h2 {
-            color: #4CAF50;
-            margin-bottom: 15px;
-        }
-
-        .simple-popup p {
-            margin-bottom: 25px;
-            color: #555;
-        }
-
-        .simple-popup-btn {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 30px;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .simple-popup-btn:hover {
-            background: #45a049;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-    </style>
 </head>
 <body>
     <div class="checkout-wrapper">
