@@ -28,7 +28,10 @@ $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 if (!empty($search_query)) {
     $search_param = "%$search_query%";
-    $customer_query = "SELECT * FROM customer WHERE CustName LIKE ? OR CustEmail LIKE ?";
+    $customer_query = "SELECT * FROM customer 
+                       WHERE CustName LIKE ? OR CustEmail LIKE ? 
+                       ORDER BY CASE WHEN CustomerStatus = 'active' THEN 0 ELSE 1 END, 
+                       CustName ASC";
     $stmt = $conn->prepare($customer_query);
     $stmt->bind_param("ss", $search_param, $search_param);
     $stmt->execute();
