@@ -57,6 +57,34 @@ if ($stateToUse === 'Melaka') {
 
 $grandTotalWithDelivery = $subtotal + $deliveryCharge;
 
+// Initialize form fields with empty values
+$formFullName = $custName;
+$formContact = $custPhoneNum;
+$formEmail = $custEmail;
+$formStreetAddress = $custStreetAddress;
+$formCity = $custCity;
+$formPostcode = $custPostcode;
+$formState = $custState;
+$cardName = '';
+$cardNum = '';
+$cardExpDate = '';
+$cardCVV = '';
+
+// Initialize error array for all fields
+$fieldErrors = [
+    'fullname' => '',
+    'contact' => '',
+    'email' => '',
+    'address' => '',
+    'city' => '',
+    'postcode' => '',
+    'state' => '',
+    'cname' => '',
+    'ccnum' => '',
+    'expdate' => '',
+    'cvv' => ''
+];
+
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $formFullName = $_POST['fullname'] ?? '';
@@ -83,42 +111,86 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Full Name Validation
     if (empty($formFullName)) {
         $errors[] = "Full name is required";
+        $fieldErrors['fullname'] = "Full name is required";
     } elseif (!preg_match('/^[a-zA-Z\s]+$/', $formFullName)) {
         $errors[] = "Full name should contain only letters and spaces";
+        $fieldErrors['fullname'] = "Should contain only letters and spaces";
     }
 
     // Contact Validation
     if (empty($formContact)) {
         $errors[] = "Contact number is required";
+        $fieldErrors['contact'] = "Contact number is required";
     } elseif (!preg_match('/^\d{3}-\d{3,4} \d{4}$/', $formContact)) {
         $errors[] = "Contact number must be in XXX-XXX XXXX or XXX-XXXX XXXX format";
+        $fieldErrors['contact'] = "Format: XXX-XXX XXXX or XXX-XXXX XXXX";
     }
 
     // Email Validation
     if (empty($formEmail)) {
         $errors[] = "Email is required";
+        $fieldErrors['email'] = "Email is required";
     } elseif (!filter_var($formEmail, FILTER_VALIDATE_EMAIL) || !preg_match('/\.com$/', $formEmail)) {
         $errors[] = "Invalid email format (must end with .com)";
+        $fieldErrors['email'] = "Must end with .com";
     }
 
-    // Postcode validation (exactly 5 digits)
-    if ($formPostcode && !preg_match('/^\d{5}$/', $formPostcode)) {
+    // Address Validation
+    if (empty($formStreetAddress)) {
+        $errors[] = "Street address is required";
+        $fieldErrors['address'] = "Street address is required";
+    } elseif (!preg_match('/^[a-zA-Z0-9\s\-,.]+$/', $formStreetAddress)) {
+        $errors[] = "Street address should contain only letters, numbers, spaces, hyphens, commas and periods";
+        $fieldErrors['address'] = "Only letters, numbers, spaces, hyphens, commas and periods allowed";
+    }
+
+    // City Validation
+    if (empty($formCity)) {
+        $errors[] = "City is required";
+        $fieldErrors['city'] = "City is required";
+    }
+    elseif (!preg_match('/^[a-zA-Z\s]+$/', $formCity)) {
+        $errors[] = "City should contain only letters and spaces";
+        $fieldErrors['city'] = "Should contain only letters and spaces";
+    }
+
+    // Postcode validation
+    if (empty($formPostcode)) {
+        $errors[] = "Postcode is required";
+        $fieldErrors['postcode'] = "Postcode is required";
+    } elseif (!preg_match('/^\d{5}$/', $formPostcode)) {
         $errors[] = "Postcode must be exactly 5 digits";
+        $fieldErrors['postcode'] = "Must be exactly 5 digits";
+    }
+
+    // State Validation
+    if (empty($formState)) {
+        $errors[] = "State is required";
+        $fieldErrors['state'] = "State is required";
     }
     
-    // Card Name validation (only letters and spaces)
-    if (!preg_match('/^[a-zA-Z\s]+$/', $cardName)) {
+    // Card Name validation
+    if (empty($cardName)) {
+        $errors[] = "Card name is required";
+        $fieldErrors['cname'] = "Card name is required";
+    } elseif (!preg_match('/^[a-zA-Z\s]+$/', $cardName)) {
         $errors[] = "Card name should contain only letters and spaces";
+        $fieldErrors['cname'] = "Should contain only letters and spaces";
     }
     
-    // Card Number validation (13-16 digits)
-    if (!preg_match('/^\d{13,16}$/', $cardNum)) {
+    // Card Number validation
+    if (empty($cardNum)) {
+        $errors[] = "Card number is required";
+        $fieldErrors['ccnum'] = "Card number is required";
+    } elseif (!preg_match('/^\d{13,16}$/', $cardNum)) {
         $errors[] = "Card number must be 13-16 digits";
+        $fieldErrors['ccnum'] = "Must be 13-16 digits";
     }
     
-    // Expiry Date validation (for month input YYYY-MM format)
+    // Expiry Date validation
     if (empty($cardExpDate)) {
         $errors[] = "Expiry date is required";
+        $fieldErrors['expdate'] = "Expiry date is required";
     } else {
         $currentDate = new DateTime();
         $currentYear = $currentDate->format('Y');
@@ -127,49 +199,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $expDateParts = explode('-', $cardExpDate);
         if (count($expDateParts) !== 2) {
             $errors[] = "Invalid expiry date format";
+            $fieldErrors['expdate'] = "Invalid format";
         } else {
             $expYear = $expDateParts[0];
             $expMonth = $expDateParts[1];
             
             if ($expYear < $currentYear || ($expYear == $currentYear && $expMonth < $currentMonth)) {
                 $errors[] = "Card has expired";
+                $fieldErrors['expdate'] = "Card has expired";
             }
         }
     }
     
-    // CVV validation (exactly 3 digits)
-    if (!preg_match('/^\d{3}$/', $cardCVV)) {
+    // CVV validation
+    if (empty($cardCVV)) {
+        $errors[] = "CVV is required";
+        $fieldErrors['cvv'] = "CVV is required";
+    } elseif (!preg_match('/^\d{3}$/', $cardCVV)) {
         $errors[] = "CVV must be exactly 3 digits";
+        $fieldErrors['cvv'] = "Must be exactly 3 digits";
     }
 
     // Check stock availability before processing payment
-    foreach ($cartItems as $item) {
-        // Use IS NULL comparison when size is "Standard Only"
-        if ($item['Size'] === 'Standard Only') {
-            $updateStockQuery = "UPDATE product_size ps
-                                JOIN product p ON ps.ProductID = p.ProductID
-                                SET ps.Stock = ps.Stock - :quantity
-                                WHERE p.ProductName = :productName AND ps.Size IS NULL";
-        } else {
-            $updateStockQuery = "UPDATE product_size ps
-                                JOIN product p ON ps.ProductID = p.ProductID
-                                SET ps.Stock = ps.Stock - :quantity
-                                WHERE p.ProductName = :productName AND ps.Size = :size";
-        }
-        
-        $updateStockStmt = $conn->prepare($updateStockQuery);
-        $updateStockStmt->bindParam(':quantity', $item['Quantity'], PDO::PARAM_INT);
-        $updateStockStmt->bindParam(':productName', $item['ProductName'], PDO::PARAM_STR);
-        
-        // Only bind size parameter if not "Standard Only"
-        if ($item['Size'] !== 'Standard Only') {
-            $updateStockStmt->bindParam(':size', $item['Size'], PDO::PARAM_STR);
-        }
-        
-        $updateStockStmt->execute();
-        
-        if ($updateStockStmt->rowCount() === 0) {
-            throw new Exception("Failed to update stock for product: " . $item['ProductName']);
+    if (empty($errors)) {
+        foreach ($cartItems as $item) {
+            // Use IS NULL comparison when size is "Standard Only"
+            if ($item['Size'] === 'Standard Only') {
+                $updateStockQuery = "UPDATE product_size ps
+                                    JOIN product p ON ps.ProductID = p.ProductID
+                                    SET ps.Stock = ps.Stock - :quantity
+                                    WHERE p.ProductName = :productName AND ps.Size IS NULL";
+            } else {
+                $updateStockQuery = "UPDATE product_size ps
+                                    JOIN product p ON ps.ProductID = p.ProductID
+                                    SET ps.Stock = ps.Stock - :quantity
+                                    WHERE p.ProductName = :productName AND ps.Size = :size";
+            }
+            
+            $updateStockStmt = $conn->prepare($updateStockQuery);
+            $updateStockStmt->bindParam(':quantity', $item['Quantity'], PDO::PARAM_INT);
+            $updateStockStmt->bindParam(':productName', $item['ProductName'], PDO::PARAM_STR);
+            
+            // Only bind size parameter if not "Standard Only"
+            if ($item['Size'] !== 'Standard Only') {
+                $updateStockStmt->bindParam(':size', $item['Size'], PDO::PARAM_STR);
+            }
+            
+            $updateStockStmt->execute();
+            
+            if ($updateStockStmt->rowCount() === 0) {
+                throw new Exception("Failed to update stock for product: " . $item['ProductName']);
+            }
         }
     }
 
@@ -230,7 +310,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $detailStmt->bindParam(':quantity', $quantity, PDO::PARAM_INT);
                     $detailStmt->bindParam(':productPrice', $productPrice, PDO::PARAM_STR);
                     $detailStmt->execute();
-
                 }
 
                 // Clear the cart from database
@@ -257,15 +336,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $conn->rollBack();
             $errors[] = "Error processing order: " . $e->getMessage();
         }
-    }
-    
-    // Display validation errors if any
-    if (!empty($errors)) {
-        echo '<div class="error-messages">';
-        foreach ($errors as $error) {
-            echo '<p>' . htmlspecialchars($error) . '</p>';
-        }
-        echo '</div>';
     }
 }
 ?>
@@ -316,7 +386,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
         <div class="container-bill">
-            <form method="POST" action="payment.php" id="paymentForm">
+            <?php if (!empty($errors)): ?>
+                <div class="error-messages">
+                    <?php foreach ($errors as $error): ?>
+                        <p><?= htmlspecialchars($error) ?></p>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <form method="POST" action="payment.php" id="paymentForm" novalidate>
                 <div class="row">
                     <div class="col">
                         <h2>Billing Address</h2>
@@ -324,33 +402,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="text" id="price" value="RM <?= number_format($grandTotalWithDelivery, 2) ?>" readonly>
 
                         <label for="fullname"><b>Full Name</b></label>
-                        <input type="text" id="fullname" name="fullname" value="<?= htmlspecialchars($custName) ?>" required>
+                        <input type="text" id="fullname" name="fullname" value="<?= htmlspecialchars($formFullName) ?>" required>
+                        <span class="error-text"><?= htmlspecialchars($fieldErrors['fullname']) ?></span>
 
                         <label for="contact"><b>Contact Number</b></label>
-                        <input type="text" id="contact" name="contact" value="<?= htmlspecialchars($custPhoneNum) ?>" pattern="\d{3}-\d{3,4} \d{4}" title="Format: XXX-XXX XXXX or XXX-XXXX XXXX" placeholder="XXX-XXX XXXX" required>
+                        <input type="text" id="contact" name="contact" value="<?= htmlspecialchars($formContact) ?>" required>
+                        <span class="error-text"><?= htmlspecialchars($fieldErrors['contact']) ?></span>
 
                         <label for="email"><b>Email</b></label>
-                        <input type="email" id="email" name="email" value="<?= htmlspecialchars($custEmail) ?>" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.com" title="Email must end with .com" required>
+                        <input type="email" id="email" name="email" value="<?= htmlspecialchars($formEmail) ?>" required>
+                        <span class="error-text"><?= htmlspecialchars($fieldErrors['email']) ?></span>
 
                         <label for="address"><b>Street Address</b></label>
-                        <input type="text" id="address" name="address" value="<?= htmlspecialchars($custStreetAddress) ?>" required>
+                        <input type="text" id="address" name="address" value="<?= htmlspecialchars($formStreetAddress) ?>" required>
+                        <span class="error-text"><?= htmlspecialchars($fieldErrors['address']) ?></span>
 
                         <label for="city"><b>City</b></label>
-                        <input type="text" id="city" name="city" value="<?= htmlspecialchars($custCity) ?>" required>
+                        <input type="text" id="city" name="city" value="<?= htmlspecialchars($formCity) ?>" required>
+                        <span class="error-text"><?= htmlspecialchars($fieldErrors['city']) ?></span>
 
                         <label for="postcode"><b>Postcode</b></label>
-                        <input type="text" id="postcode" name="postcode" value="<?= htmlspecialchars($custPostcode) ?>" pattern="\d{5}" title="Postcode must be exactly 5 digits" required>
+                        <input type="text" id="postcode" name="postcode" value="<?= htmlspecialchars($formPostcode) ?>" required>
+                        <span class="error-text"><?= htmlspecialchars($fieldErrors['postcode']) ?></span>
 
                         <label for="state"><b>State</b></label>
                         <select id="state" name="state" required>
                             <?php
                             $states = ['Johor','Kedah','Kelantan','Melaka','Negeri Sembilan','Pahang','Pulau Pinang','Perak','Perlis','Selangor','Terengganu','Sabah','Sarawak'];
                             foreach ($states as $stateOption):
-                                $selected = ($custState == $stateOption) ? 'selected' : '';
+                                $selected = ($formState == $stateOption) ? 'selected' : '';
                                 echo "<option value=\"$stateOption\" $selected>$stateOption</option>";
                             endforeach;
                             ?>
                         </select>
+                        <span class="error-text"><?= htmlspecialchars($fieldErrors['state']) ?></span>
                     </div>
 
                     <div class="col">
@@ -363,16 +448,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
 
                         <label for="cname"><b>Name on Card</b></label>
-                        <input type="text" id="cname" name="cname" placeholder="Enter name on card" pattern="[a-zA-Z\s]+" title="Only letters and spaces allowed" required>
+                        <input type="text" id="cname" name="cname" placeholder="Enter name on card" value="<?= htmlspecialchars($cardName) ?>" required>
+                        <span class="error-text"><?= htmlspecialchars($fieldErrors['cname']) ?></span>
 
                         <label for="ccnum"><b>Card Number</b></label>
-                        <input type="text" id="ccnum" name="ccnum" placeholder="Enter card number" pattern="\d{13,16}" title="13-16 digit card number" required>
+                        <input type="text" id="ccnum" name="ccnum" placeholder="Enter card number" value="<?= htmlspecialchars($cardNum) ?>" required>
+                        <span class="error-text"><?= htmlspecialchars($fieldErrors['ccnum']) ?></span>
 
                         <label for="expdate"><b>Exp Date</b></label>
-                        <input type="month" id="expdate" name="expdate" min="<?php echo date('Y-m'); ?>" required>
+                        <input type="month" id="expdate" name="expdate" value="<?= htmlspecialchars($cardExpDate) ?>" min="<?php echo date('Y-m'); ?>" required>
+                        <span class="error-text"><?= htmlspecialchars($fieldErrors['expdate']) ?></span>
 
                         <label for="cvv"><b>CVV</b></label>
-                        <input type="text" id="cvv" name="cvv" placeholder="Enter CVV" pattern="\d{3}" title="3-digit CVV" required>
+                        <input type="text" id="cvv" name="cvv" placeholder="Enter CVV" value="<?= htmlspecialchars($cardCVV) ?>" required>
+                        <span class="error-text"><?= htmlspecialchars($fieldErrors['cvv']) ?></span>
                     </div>
                 </div>
 
@@ -381,140 +470,225 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
     <script>
-        // State change handler
-        document.getElementById('state').addEventListener('change', function () {
-            const selectedState = this.value;
-            let deliveryCharge = 15.00;
+    // State change handler
+    document.getElementById('state').addEventListener('change', function () {
+        updateDeliveryCharge();
+    });
 
-            if (selectedState === 'Melaka') {
-                deliveryCharge = 10.00;
-            } else if (selectedState === 'Sabah' || selectedState === 'Sarawak') {
-                deliveryCharge = 50.00;
-            }
+    function updateDeliveryCharge() {
+        const selectedState = document.getElementById('state').value;
+        let deliveryCharge = 15.00;
 
-            const subtotalText = document.getElementById('subtotal').textContent.replace('RM', '').trim();
-            const subtotal = parseFloat(subtotalText);
-            const total = subtotal + deliveryCharge;
+        if (selectedState === 'Melaka') {
+            deliveryCharge = 10.00;
+        } else if (selectedState === 'Sabah' || selectedState === 'Sarawak') {
+            deliveryCharge = 50.00;
+        }
 
-            document.getElementById('delivery').textContent = 'RM ' + deliveryCharge.toFixed(2);
-            document.getElementById('total').textContent = 'RM ' + total.toFixed(2);
-            document.getElementById('price').value = 'RM ' + total.toFixed(2);
-        });
+        const subtotalText = document.getElementById('subtotal').textContent.replace('RM', '').trim();
+        const subtotal = parseFloat(subtotalText);
+        const total = subtotal + deliveryCharge;
 
-        // Client-side validation
-        document.getElementById('paymentForm').addEventListener('submit', function(e) {
-            // Full name validation
-            const fullName = document.getElementById('fullname').value;
-            if (!/^[a-zA-Z\s]+$/.test(fullName)) {
-                alert('Full name should contain only letters and spaces');
-                e.preventDefault();
-                return;
-            }
+        document.getElementById('delivery').textContent = 'RM ' + deliveryCharge.toFixed(2);
+        document.getElementById('total').textContent = 'RM ' + total.toFixed(2);
+        document.getElementById('price').value = 'RM ' + total.toFixed(2);
+    }
 
-            // Contact validation
-            const contact = document.getElementById('contact').value;
-            if (!/^\d{3}-\d{3,4} \d{4}$/.test(contact)) {
-                alert('Contact number must be in XXX-XXX XXXX or XXX-XXXX XXXX format');
-                e.preventDefault();
-                return;
-            }
+    // Function to validate required fields
+    function validateRequiredField(fieldId, fieldName) {
+        const field = document.getElementById(fieldId);
+        const errorElement = document.querySelector(`#${fieldId} + .error-text`);
+        
+        if (!field.value.trim()) {
+            errorElement.textContent = `${fieldName} is required`;
+            return false;
+        }
+        
+        errorElement.textContent = '';
+        return true;
+    }
 
-            // Email validation
-            const email = document.getElementById('email').value;
-            if (!/^[^@]+@[^@]+\.com$/.test(email)) {
-                alert('Please enter a valid email address ending with .com');
-                e.preventDefault();
-                return;
-            }
+    // Field-specific validation functions
+    function validateFullName() {
+        const isValid = validateRequiredField('fullname', 'Full name');
+        if (!isValid) return false;
+        
+        return validateField('fullname', /^[a-zA-Z\s]+$/, 'Should contain only letters and spaces');
+    }
 
-            // Postcode validation
-            const postcode = document.getElementById('postcode').value;
-            if (!/^\d{5}$/.test(postcode)) {
-                alert('Postcode must be exactly 5 digits');
-                e.preventDefault();
-                return;
-            }
-            
-            // Card Name validation
-            const cardName = document.getElementById('cname').value;
-            if (!/^[a-zA-Z\s]+$/.test(cardName)) {
-                alert('Card name should contain only letters and spaces');
-                e.preventDefault();
-                return;
-            }
-            
-            // Card Number validation
-            const cardNum = document.getElementById('ccnum').value;
-            if (!/^\d{13,16}$/.test(cardNum)) {
-                alert('Card number must be 13-16 digits');
-                e.preventDefault();
-                return;
-            }
-            
-            // Expiry Date validation
-            const expDateInput = document.getElementById('expdate');
-            if (!expDateInput.value) {
-                alert('Please select an expiry date');
-                e.preventDefault();
-                return;
-            }
+    function validateContact() {
+        const isValid = validateRequiredField('contact', 'Contact number');
+        if (!isValid) return false;
+        
+        return validateField('contact', /^\d{3}-\d{3,4} \d{4}$/, 'Format: XXX-XXX XXXX or XXX-XXXX XXXX');
+    }
 
-            const selectedDate = new Date(expDateInput.value);
-            const currentDate = new Date();
-                
-            if (selectedDate.getFullYear() < currentDate.getFullYear() || 
-                (selectedDate.getFullYear() === currentDate.getFullYear() && 
-                selectedDate.getMonth() < currentDate.getMonth())) {
-                alert('Card has expired');
-                e.preventDefault();
-                return;
-            }
-            
-            // CVV validation
-            const cvv = document.getElementById('cvv').value;
-            if (!/^\d{3}$/.test(cvv)) {
-                alert('CVV must be exactly 3 digits');
-                e.preventDefault();
-                return;
-            }
-        });
+    function validateEmail() {
+        const isValid = validateRequiredField('email', 'Email');
+        if (!isValid) return false;
+        
+        return validateField('email', /^[^@]+@[^@]+\.com$/, 'Must end with .com');
+    }
 
-        // Success Popup Functions
-        function showSuccessPopup() {
-            // Create the popup HTML
-            const popupHTML = `
-                <div class="simple-popup-overlay">
-                    <div class="simple-popup">
-                        <div class="popup-icon">✓</div>
-                        <h2>Payment Successful!</h2>
-                        <p>Thank you for your purchase. Your order has been placed successfully.</p>
-                        <button class="simple-popup-btn" onclick="closePopup()">OK</button>
-                    </div>
+    function validateAddress() {
+        const isValid = validateRequiredField('address', 'Street address');
+        if (!isValid) return false;
+        
+        return validateField('address', /^[a-zA-Z0-9\s\-,.]+$/, 'Only letters, numbers, spaces, hyphens, commas and periods allowed');
+    }
+
+    function validateCity() {
+        const isValid = validateRequiredField('city', 'City');
+        if (!isValid) return false;
+        
+        return validateField('city', /^[a-zA-Z\s]+$/, 'Should contain only letters and spaces');
+    }
+
+    function validatePostcode() {
+        const isValid = validateRequiredField('postcode', 'Postcode');
+        if (!isValid) return false;
+        
+        return validateField('postcode', /^\d{5}$/, 'Must be exactly 5 digits');
+    }
+
+    function validateCardName() {
+        const isValid = validateRequiredField('cname', 'Card name');
+        if (!isValid) return false;
+        
+        return validateField('cname', /^[a-zA-Z\s]+$/, 'Should contain only letters and spaces');
+    }
+
+    function validateCardNumber() {
+        const isValid = validateRequiredField('ccnum', 'Card number');
+        if (!isValid) return false;
+        
+        return validateField('ccnum', /^\d{13,16}$/, 'Must be 13-16 digits');
+    }
+
+    function validateCVV() {
+        const isValid = validateRequiredField('cvv', 'CVV');
+        if (!isValid) return false;
+        
+        return validateField('cvv', /^\d{3}$/, 'Must be exactly 3 digits');
+    }
+
+    function validateExpDate() {
+        const expDateInput = document.getElementById('expdate');
+        const errorElement = document.querySelector('#expdate + .error-text');
+        
+        if (!expDateInput.value) {
+            errorElement.textContent = 'Expiry date is required';
+            return false;
+        }
+        
+        const selectedDate = new Date(expDateInput.value);
+        const currentDate = new Date();
+        
+        if (selectedDate.getFullYear() < currentDate.getFullYear() || 
+            (selectedDate.getFullYear() === currentDate.getFullYear() && 
+            selectedDate.getMonth() < currentDate.getMonth())) {
+            errorElement.textContent = 'Card has expired';
+            return false;
+        }
+        
+        errorElement.textContent = '';
+        return true;
+    }
+
+    // Generic field validation function
+    function validateField(fieldId, regex, errorMessage) {
+        const field = document.getElementById(fieldId);
+        const errorElement = document.querySelector(`#${fieldId} + .error-text`);
+        
+        if (!regex.test(field.value)) {
+            errorElement.textContent = errorMessage;
+            return false;
+        }
+        
+        errorElement.textContent = '';
+        return true;
+    }
+
+    // Set up event listeners for real-time validation
+    document.getElementById('fullname').addEventListener('input', validateFullName);
+    document.getElementById('contact').addEventListener('input', validateContact);
+    document.getElementById('email').addEventListener('input', validateEmail);
+    document.getElementById('address').addEventListener('input', validateAddress);
+    document.getElementById('city').addEventListener('input', validateCity);
+    document.getElementById('postcode').addEventListener('input', validatePostcode);
+    document.getElementById('cname').addEventListener('input', validateCardName);
+    document.getElementById('ccnum').addEventListener('input', validateCardNumber);
+    document.getElementById('cvv').addEventListener('input', validateCVV);
+    document.getElementById('expdate').addEventListener('change', validateExpDate);
+
+    // Form submission validation
+    document.getElementById('paymentForm').addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        // Validate all required fields
+        isValid = validateFullName() && isValid;
+        isValid = validateContact() && isValid;
+        isValid = validateEmail() && isValid;
+        isValid = validateAddress() && isValid;
+        isValid = validateCity() && isValid;
+        isValid = validatePostcode() && isValid;
+        isValid = validateCardName() && isValid;
+        isValid = validateCardNumber() && isValid;
+        isValid = validateCVV() && isValid;
+        isValid = validateExpDate() && isValid;
+        
+        // State is a select element, just check if it has a value
+        const stateSelect = document.getElementById('state');
+        const stateError = document.querySelector('#state + .error-text');
+        if (!stateSelect.value) {
+            stateError.textContent = 'State is required';
+            isValid = false;
+        } else {
+            stateError.textContent = '';
+        }
+
+        if (!isValid) {
+            e.preventDefault();
+            // Scroll to the first error
+            const firstError = document.querySelector('.error-text');
+            if (firstError && firstError.textContent) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    });
+
+    // Success Popup Functions
+    function showSuccessPopup() {
+        const popupHTML = `
+            <div class="simple-popup-overlay">
+                <div class="simple-popup">
+                    <div class="popup-icon">✓</div>
+                    <h2>Payment Successful!</h2>
+                    <p>Thank you for your purchase. Your order has been placed successfully.</p>
+                    <button class="simple-popup-btn" onclick="closePopup()">OK</button>
                 </div>
-            `;
-            
-            // Add it to the body
-            document.body.insertAdjacentHTML('beforeend', popupHTML);
-        }
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', popupHTML);
+    }
 
-        function closePopup() {
-            // Remove the popup
-            const popup = document.querySelector('.simple-popup-overlay');
-            if (popup) {
-                popup.remove();
-            }
-            // Redirect to index.php
-            window.location.href = 'index.php';
-        }
+    function closePopup() {
+        const popup = document.querySelector('.simple-popup-overlay');
+        if (popup) popup.remove();
+        window.location.href = 'index.php';
+    }
 
-        // Check for success parameter in URL and show popup
-        window.addEventListener('load', function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('payment') === 'success') {
-                showSuccessPopup();
-            }
-        });
-    </script>
+    // Check for success parameter in URL and show popup
+    window.addEventListener('load', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('payment') === 'success') {
+            showSuccessPopup();
+        }
+        
+        // Initialize delivery charge
+        updateDeliveryCharge();
+    });
+</script>
 </body>
 </html>
 
