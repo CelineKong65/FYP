@@ -12,6 +12,12 @@ if (isset($_SESSION['user_id'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
         /* Footer Styles */
         .footer-section {
             background-color: black;
@@ -42,9 +48,11 @@ if (isset($_SESSION['user_id'])) {
             flex: 1;
         }
 
-        .footer-section .col-lg-2,
+        .footer-section .col-lg-2{
+            max-width: 250px;
+        }
         .footer-section .col-lg-1 {
-            max-width: 270px; /* or whatever fits your design */
+            max-width: 270px;
         }
 
 
