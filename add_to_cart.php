@@ -19,7 +19,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         exit();
     }
 
-    // 1. Check if the product already exists in cart (same size)
+    // 1. Check stock availability first
+    $stockQuery = "SELECT Stock FROM product_size WHERE ProductID = :productID AND Size = :size";
+    $stockStmt = $conn->prepare($stockQuery);
+    $stockStmt->execute([
+        ':productID' => $productID,
+        ':size' => $size
+    ]);
+    $stock = $stockStmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$stock || $stock['Stock'] <= 0) {
+        echo "<script>alert('This product is out of stock!'); window.location.href='wishlist.php';</script>";
+        exit();
+    }
+
+    // 2. Check if the product already exists in cart (same size)
     $checkCart = $conn->prepare("SELECT * FROM cart WHERE CustID = :custID AND ProductID = :productID AND Size = :size");
     $checkCart->execute([
         ':custID' => $CustID,
@@ -28,6 +42,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     ]);
 
     if ($checkCart->rowCount() > 0) {
+        // Check if adding more would exceed available stock
+        $cartItem = $checkCart->fetch(PDO::FETCH_ASSOC);
+        $newQty = $cartItem['Quantity'] + $qty;
+        
+        if ($newQty > $stock['Stock']) {
+            echo "<script>alert('Cannot add more than available stock!'); window.location.href='wishlist.php';</script>";
+            exit();
+        }
+
         // Update quantity if exists
         $updateCart = $conn->prepare("UPDATE cart SET Quantity = Quantity + :qty WHERE CustID = :custID AND ProductID = :productID AND Size = :size");
         $updateCart->execute([
@@ -47,7 +70,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         ]);
     }
 
-    // 2. Remove the item from wishlist after adding to cart
+    // 3. Remove the item from wishlist after adding to cart
     $removeWishlist = $conn->prepare("DELETE FROM wishlist WHERE CustID = :custID AND ProductID = :productID AND Size = :size");
     $removeWishlist->execute([
         ':custID' => $CustID,
