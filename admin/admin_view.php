@@ -35,19 +35,34 @@ function generateRandomPassword($length = 8) {
     return $password;
 }
 
-$admin_query = "SELECT * FROM admin";
+$admin_query = "SELECT * FROM admin ORDER BY 
+                CASE WHEN AdminStatus = 'active' THEN 0 ELSE 1 END, 
+                AdminName ASC";
 $admin_result = $conn->query($admin_query);
 
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 if (!empty($search_query)) {
     $search_param = "%$search_query%";
-    $stmt = $conn->prepare("SELECT * FROM admin WHERE BINARY AdminName LIKE ? OR BINARY AdminEmail LIKE ?");
+    $stmt = $conn->prepare("
+        SELECT * FROM admin 
+        WHERE BINARY AdminName LIKE ? OR BINARY AdminEmail LIKE ? 
+        ORDER BY 
+            AdminPosition = 'superadmin' DESC,
+            AdminStatus = 'active' DESC,
+            AdminName ASC
+    ");
     $stmt->bind_param("ss", $search_param, $search_param);
     $stmt->execute();
     $admin_result = $stmt->get_result();
 } else {
-    $admin_result = $conn->query("SELECT * FROM admin");
+    $admin_result = $conn->query("
+        SELECT * FROM admin 
+        ORDER BY 
+            AdminPosition = 'superadmin' DESC,
+            AdminStatus = 'active' DESC,
+            AdminName ASC
+    ");
 }
 
 if (isset($_POST['update_admin'])) {
@@ -218,7 +233,7 @@ if (isset($_POST['add_admin'])) {
             $mail->Subject = 'Your New Admin Account Password';
             $mail->Body = "
                 <h3>Your admin account has been created successfully!</h3>
-                <p>Here are your login details:</p><br>
+                <p>Here are your login details:</p>
                 <p><strong>Admin ID:</strong> {$new_admin_id}</p>
                 <p><strong>Name:</strong> {$name}</p>
                 <p><strong>Email:</strong> {$email}</p>
@@ -242,6 +257,31 @@ if (isset($_POST['add_admin'])) {
     exit();
 }
 
+if (isset($_POST['toggle_status'])) {
+    $admin_id = intval($_POST['admin_id']);
+    $current_status = $_POST['current_status'];
+    
+    $check_position = $conn->prepare("SELECT AdminPosition FROM admin WHERE AdminID = ?");
+    $check_position->bind_param("i", $admin_id);
+    $check_position->execute();
+    $result = $check_position->get_result();
+    $admin = $result->fetch_assoc();
+    
+    if ($admin['AdminPosition'] === 'superadmin') {
+        $_SESSION['error'] = 'Cannot modify status of superadmin.';
+    } else {
+        $new_status = ($current_status === 'active') ? 'inactive' : 'active';
+        
+        $update_query = "UPDATE admin SET AdminStatus = ? WHERE AdminID = ?";
+        $stmt = $conn->prepare($update_query);
+        $stmt->bind_param("si", $new_status, $admin_id);
+        $stmt->execute();
+        $stmt->close();
+    }
+    
+    header("Location: admin_view.php");
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
@@ -251,6 +291,19 @@ if (isset($_POST['add_admin'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin List</title>
     <link rel="stylesheet" href="admin_view.css">
+    <style>
+        .btn-disabled {
+    background-color: #cccccc !important;
+    color: #666666 !important;
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+}
+
+.btn-disabled:hover {
+    background-color: #cccccc !important;
+    color: #666666 !important;
+}
+    </style>
 </head>
 <body>
     <div class="header">
@@ -283,7 +336,7 @@ if (isset($_POST['add_admin'])) {
                         <th>Name</th>
                         <th>Email</th>
                         <th>Phone</th>
-                        <th>Position</th>
+                        <th style="text-align: center;">Position</th>
                         <?php if ($loggedInPosition === 'superadmin'): ?>
                         <th style="text-align: center;">Status</th>
                             <th style="width: 180px;"></th>
@@ -298,7 +351,7 @@ if (isset($_POST['add_admin'])) {
                                 <td><?php echo $admin['AdminName']; ?></td>
                                 <td><?php echo $admin['AdminEmail']; ?></td>
                                 <td><?php echo $admin['AdminPhoneNum']; ?></td>
-                                <td><?php echo $admin['AdminPosition']; ?></td>
+                                <td style="text-align: center;"><?php echo $admin['AdminPosition']; ?></td>
                                 <?php if ($loggedInPosition === 'superadmin'): ?>
                                     <td class="<?php echo ($admin['AdminStatus'] === 'active') ? 'status-active' : 'status-inactive'; ?>" style="text-align: center;">
                                         <?php echo $admin['AdminStatus']; ?>
@@ -312,7 +365,11 @@ if (isset($_POST['add_admin'])) {
                                                 <?php echo json_encode($admin["AdminPosition"]); ?>,
                                                 <?php echo json_encode($admin["AdminPassword"]); ?>)'>Edit
                                         </button>
-                                        <?php if ($admin['AdminPosition'] !== 'superadmin'): ?>
+                                        <?php if ($admin['AdminPosition'] === 'superadmin'): ?>
+                                            <button type="button" class="btn-disabled" title="Cannot modify superadmin status">
+                                                <?php echo ($admin['AdminStatus'] == 'active') ? 'Deactivate' : 'Activate'; ?>
+                                            </button>
+                                        <?php else: ?>
                                             <form method="post" action="" style="display: inline;">
                                                 <input type="hidden" name="toggle_status" value="1">
                                                 <input type="hidden" name="admin_id" value="<?php echo $admin['AdminID']; ?>">
