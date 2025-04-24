@@ -71,7 +71,7 @@ $cartCount = $row['total'] ?? 0;
     <link rel="stylesheet" href="shopping_cart.css">
 </head>
 <body>
-    <div class="cart-container">
+    <div class="cart-div">
         <?php if (isset($_SESSION['error'])): ?>
             <div class="error-message"><?= $_SESSION['error'] ?></div>
             <?php unset($_SESSION['error']); ?>
