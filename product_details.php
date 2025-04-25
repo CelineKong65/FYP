@@ -164,35 +164,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_to_cart"])) {
     }
 }
 
-// Fetch reviews for this product with customer names and sizes
-$reviewsStmt = $conn->prepare("
-    SELECT 
-        pf.Rating,
-        pf.Feedback,
-        pf.FeedbackDate,
-        c.CustName,
-        pf.Size
-    FROM product_feedback pf
-    JOIN customer c ON pf.CustID = c.CustID
-    WHERE pf.ProductID = :productID
-    ORDER BY pf.FeedbackDate DESC
-");
-$reviewsStmt->execute(['productID' => $productID]);
-$reviews = $reviewsStmt->fetchAll();
-
-// Fetch average rating and count
-$avgStmt = $conn->prepare("
-    SELECT 
-        AVG(Rating) AS avg_rating, 
-        COUNT(*) AS review_count
-    FROM product_feedback
-    WHERE ProductID = :productID
-");
-$avgStmt->execute(['productID' => $productID]);
-$avgData = $avgStmt->fetch();
-$avgRating = $avgData['avg_rating'] ? round($avgData['avg_rating'], 1) : 0;
-$reviewCount = $avgData['review_count'] ?: 0;
-
 ?>
 
 <!DOCTYPE html>
@@ -200,7 +171,6 @@ $reviewCount = $avgData['review_count'] ?: 0;
 <head>
     <meta charset="UTF-8">
     <title><?= htmlspecialchars($product['ProductName']) ?> - Product Details</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -456,105 +426,6 @@ $reviewCount = $avgData['review_count'] ?: 0;
         .error-message { color: red; margin: 10px 0; }
         .success-message { color: green; margin: 10px 0; }
 
-        /* Reviews Section */
-        .reviews-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            margin-bottom: 50px;
-        }
-
-        .reviews-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .reviews-title {
-            font-size: 24px;
-            margin: 0;
-        }
-
-        .average-rating {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .average-rating-value {
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        .stars {
-            display: flex;
-            gap: 2px;
-        }
-
-        .star {
-            color: #ffc107;
-            font-size: 20px;
-        }
-
-        .star.empty {
-            color: #ddd;
-        }
-
-        .review-count {
-            color: #666;
-            font-size: 14px;
-        }
-
-        .review {
-            padding: 15px 0;
-            border-bottom: 1px solid #eee;
-        }
-
-        .review:last-child {
-            border-bottom: none;
-        }
-
-        .review-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 5px;
-        }
-
-        .reviewer-name {
-            font-weight: bold;
-        }
-
-        .review-date {
-            color: #666;
-            font-size: 14px;
-        }
-
-        .review-rating {
-            margin-bottom: 5px;
-        }
-
-        .review-size {
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 5px;
-        }
-
-        .review-content {
-            margin-top: 10px;
-            line-height: 1.5;
-        }
-
-        .no-reviews {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-        }
 
         @media (max-width: 768px) {
             .center-wrapper {
@@ -684,59 +555,6 @@ $reviewCount = $avgData['review_count'] ?: 0;
                 </div>
             </div>
         </div>
-    </div>
-
-    <div class="reviews-container">
-        <div class="reviews-header">
-            <h3 class="reviews-title">Customer Reviews</h3>
-            <div class="average-rating">
-                <span class="average-rating-value"><?= $avgRating ?></span>
-                <div class="stars">
-                    <?php for ($i = 1; $i <= 5; $i++): ?>
-                        <?php if ($i <= floor($avgRating)): ?>
-                            <i class="fas fa-star star"></i>
-                        <?php elseif ($i - $avgRating < 1): ?>
-                            <i class="fas fa-star-half-alt star"></i>
-                        <?php else: ?>
-                            <i class="far fa-star star empty"></i>
-                        <?php endif; ?>
-                    <?php endfor; ?>
-                </div>
-                <span class="review-count"><?= $reviewCount ?> reviews</span>
-            </div>
-        </div>
-
-        <?php if (empty($reviews)): ?>
-            <div class="no-reviews">
-                <p>No reviews yet. Be the first to review this product!</p>
-            </div>
-        <?php else: ?>
-            <?php foreach ($reviews as $review): ?>
-                <div class="review">
-                    <div class="review-header">
-                        <span class="reviewer-name"><?= htmlspecialchars($review['CustName']) ?></span>
-                        <span class="review-date"><?= date('F j, Y', strtotime($review['FeedbackDate'])) ?></span>
-                    </div>
-                    <div class="review-rating">
-                        <?php for ($i = 1; $i <= 5; $i++): ?>
-                            <?php if ($i <= $review['Rating']): ?>
-                                <i class="fas fa-star star"></i>
-                            <?php else: ?>
-                                <i class="far fa-star star empty"></i>
-                            <?php endif; ?>
-                        <?php endfor; ?>
-                    </div>
-                    <?php if (!empty($review['Size'])): ?>
-                        <div class="review-size">
-                            Size: <?= htmlspecialchars($review['Size']) ?>
-                        </div>
-                    <?php endif; ?>
-                    <div class="review-content">
-                        <?= nl2br(htmlspecialchars($review['Feedback'])) ?>
-                    </div>
-                </div>
-            <?php endforeach; ?>
-        <?php endif; ?>
     </div>
   
     <script>
