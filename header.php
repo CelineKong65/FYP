@@ -1,6 +1,6 @@
 <?php
-session_start();
 include 'config.php';
+include 'header.php';
 
 // Check if user is logged in
 $isLoggedIn = isset($_SESSION['user_id']);
@@ -235,6 +235,9 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <li><a href="product.php">PRODUCTS</a></li>
                 <li><a href="contact.php">CONTACT</a></li>
                 <?php if ($isLoggedIn): ?>
+                    <li><a href="rate_products.php">Rate</a></li>
+                <?php endif; ?>
+                <?php if ($isLoggedIn): ?>
                     <li><a href="feedback.php">FEEDBACK</a></li>
                 <?php endif; ?>
             </ul>
@@ -297,9 +300,9 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
             const query = document.getElementById('searchQuery').value.trim();
             if (!query) {
                 window.location.href = 'product.php';
-                return false; // Prevent form submission
+                return false;
             }
-            return true; // Allow form submission
+            return true; 
         }
     </script>
 </body>

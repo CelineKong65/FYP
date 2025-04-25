@@ -1,5 +1,4 @@
 <?php
-session_start();
 include 'config.php';
 include 'header.php';
 
@@ -46,17 +45,31 @@ if (empty($query)) {
     <meta charset="UTF-8">
     <title>Search Results - Watersport Equipment Shop</title>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f8f8;
+        }
+
+        h2 {
+            margin-top: 120px;
+        }
+
         .product-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 20px;
             padding: 40px;
         }
+        
         .product-card {
             border: 1px solid #ccc;
             border-radius: 12px;
             padding: 16px;
             text-align: center;
+            background-color: white;
+
         }
         .product-card img {
             width: 100%;
@@ -86,9 +99,11 @@ if (empty($query)) {
             <?php endforeach; ?>
         </div>
     <?php else: ?>
-        <p>No products found matching "<?= htmlspecialchars($query) ?>".</p>
+        <h2>No products found matching "<?= htmlspecialchars($query) ?>".</h2>
     <?php endif; ?>
 </main>
 
 </body>
 </html>
+
+<?php include 'footer.php'; ?>

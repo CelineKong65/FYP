@@ -172,7 +172,7 @@
                     <div class="footer-center">
                         <h5>Information</h5>
                         <ul>
-                            <li><a href="about.php">About Us</a></li>
+                            <li><a href="about_us.php">About Us</a></li>
                             <li><a href="contact.php">Contact</a></li>
                         </ul>
                     </div>

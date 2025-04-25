@@ -163,6 +163,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_to_cart"])) {
         exit();
     }
 }
+
+// Fetch reviews for this product with customer names and sizes
+$reviewsStmt = $conn->prepare("
+    SELECT 
+        pf.Rating,
+        pf.Feedback,
+        pf.FeedbackDate,
+        c.CustName,
+        pf.Size
+    FROM product_feedback pf
+    JOIN customer c ON pf.CustID = c.CustID
+    WHERE pf.ProductID = :productID
+    ORDER BY pf.FeedbackDate DESC
+");
+$reviewsStmt->execute(['productID' => $productID]);
+$reviews = $reviewsStmt->fetchAll();
+
+// Fetch average rating and count
+$avgStmt = $conn->prepare("
+    SELECT 
+        AVG(Rating) AS avg_rating, 
+        COUNT(*) AS review_count
+    FROM product_feedback
+    WHERE ProductID = :productID
+");
+$avgStmt->execute(['productID' => $productID]);
+$avgData = $avgStmt->fetch();
+$avgRating = $avgData['avg_rating'] ? round($avgData['avg_rating'], 1) : 0;
+$reviewCount = $avgData['review_count'] ?: 0;
+
 ?>
 
 <!DOCTYPE html>
@@ -170,6 +200,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_to_cart"])) {
 <head>
     <meta charset="UTF-8">
     <title><?= htmlspecialchars($product['ProductName']) ?> - Product Details</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -299,7 +330,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_to_cart"])) {
             background: darkblue;
         }
 
-
         .categories {
             background-color: #fff;
             padding: 20px;
@@ -395,7 +425,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_to_cart"])) {
             margin-top: 20px; 
         }
 
-
         .price {
             color: red;
             font-size: 22px;
@@ -426,138 +455,290 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_to_cart"])) {
 
         .error-message { color: red; margin: 10px 0; }
         .success-message { color: green; margin: 10px 0; }
-        .categories h2 {
+
+        /* Reviews Section */
+        .reviews-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 50px;
+        }
+
+        .reviews-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .reviews-title {
+            font-size: 24px;
+            margin: 0;
+        }
+
+        .average-rating {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .average-rating-value {
             font-size: 20px;
             font-weight: bold;
-            margin-bottom: 15px;
-            transform: translate(10%,8%);
         }
 
-
-        .categories ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            transform: translate(10%,20%);
+        .stars {
+            display: flex;
+            gap: 2px;
         }
 
-        .size {
-            padding: 5px 15px;
-            margin-right: 5px;
-            cursor: pointer;
-            background: #f0f0f0;
-            border: 1px solid #000;
-            position: relative;
-            transition: 0.3s;
+        .star {
+            color: #ffc107;
+            font-size: 20px;
+        }
+
+        .star.empty {
+            color: #ddd;
+        }
+
+        .review-count {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .review {
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .review:last-child {
+            border-bottom: none;
+        }
+
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .reviewer-name {
+            font-weight: bold;
+        }
+
+        .review-date {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .review-rating {
+            margin-bottom: 5px;
+        }
+
+        .review-size {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .review-content {
+            margin-top: 10px;
+            line-height: 1.5;
+        }
+
+        .no-reviews {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .center-wrapper {
+                flex-direction: column;
+                margin-top: 150px;
+            }
+            
+            .container-product-details {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .categories, .product-details {
+                width: 100%;
+                max-width: 500px;
+            }
+            
+            .product-details {
+                flex-direction: column;
+            }
+            
+            .info {
+                max-width: 100%;
+            }
         }
     </style>
 </head>
 <body>
     <div class="center-wrapper">
-    <div class="container-product-details">
-        <div class="categories">
-            <h2>Categories</h2>
-            <ul>
-                <?php
-                    $catQuery = $conn->prepare("SELECT CategoryID, CategoryName FROM category WHERE CategoryStatus = 'active'");
-                    $catQuery->execute();
-                    $categories = $catQuery->fetchAll();
+        <div class="container-product-details">
+            <div class="categories">
+                <h2>Categories</h2>
+                <ul>
+                    <?php
+                        $catQuery = $conn->prepare("SELECT CategoryID, CategoryName FROM category WHERE CategoryStatus = 'active'");
+                        $catQuery->execute();
+                        $categories = $catQuery->fetchAll();
 
-                    if ($categories) {
-                        foreach ($categories as $cat) {
-                            echo "<li><a href='category.php?id=" . htmlspecialchars($cat['CategoryID']) . "'>" . htmlspecialchars($cat['CategoryName']) . "</a></li>";
+                        if ($categories) {
+                            foreach ($categories as $cat) {
+                                echo "<li><a href='category.php?id=" . htmlspecialchars($cat['CategoryID']) . "'>" . htmlspecialchars($cat['CategoryName']) . "</a></li>";
+                            }
+                        } else {
+                            echo "<li>No active categories found.</li>";
                         }
-                    } else {
-                        echo "<li>No active categories found.</li>";
-                    }
-                ?>
-            </ul>
-        </div>
-
-        <div class="product-details">
-            <div class="product-images">
-                <?php
-                $imageSrc = $product['ProductPicture'] ? 'image/' . $product['ProductPicture'] : 'image/default-image.png';
-                ?>
-                <div class="main-image">
-                    <img src="<?= $imageSrc ?>" alt="<?= htmlspecialchars($product['ProductName']) ?>">
-                </div>
+                    ?>
+                </ul>
             </div>
-            <div class="info">
-                <h2><?= htmlspecialchars($product['ProductName']) ?></h2>
-                <p class="price">RM <?= number_format($product['ProductPrice'], 2) ?></p>
-                <p><?= nl2br(htmlspecialchars($product['ProductDesc'])) ?></p>
 
-                <?php if ($totalStock > 0): ?>
-                    <p class="in-stock-message">In Stock</p>
-                <?php else: ?>
-                    <p class="out-of-stock-message">Out of Stock</p>
-                <?php endif; ?>
-
-                <!-- Messages Container -->
-                <div class="message-container">
-                    <?php if (isset($wishlistMessage)): ?>
-                        <p class="<?= strpos($wishlistMessage, 'error') !== false ? 'error-message' : 'success-message' ?>">
-                            <?= htmlspecialchars($wishlistMessage) ?>
-                        </p>
-                    <?php endif; ?>
-                    
-                    <?php if (isset($cartMessage)): ?>
-                        <p class="<?= strpos(strtolower($cartMessage), 'exceeds available stock') !== false || strpos(strtolower($cartMessage), 'error') !== false ? 'error-message' : 'success-message' ?>">
-                            <?= htmlspecialchars($cartMessage) ?>
-                        </p>
-                    <?php endif; ?>
+            <div class="product-details">
+                <div class="product-images">
+                    <?php
+                    $imageSrc = $product['ProductPicture'] ? 'image/' . $product['ProductPicture'] : 'image/default-image.png';
+                    ?>
+                    <div class="main-image">
+                        <img src="<?= $imageSrc ?>" alt="<?= htmlspecialchars($product['ProductName']) ?>">
+                    </div>
                 </div>
+                <div class="info">
+                    <h2><?= htmlspecialchars($product['ProductName']) ?></h2>
+                    <p class="price">RM <?= number_format($product['ProductPrice'], 2) ?></p>
+                    <p><?= nl2br(htmlspecialchars($product['ProductDesc'])) ?></p>
 
-                <!-- Main form -->
-                <form method="post" action="">
-                    <input type="hidden" name="productID" value="<?= $productID ?>">
-                    <input type="hidden" name="size" id="selectedSize" value="">
+                    <?php if ($totalStock > 0): ?>
+                        <p class="in-stock-message">In Stock</p>
+                    <?php else: ?>
+                        <p class="out-of-stock-message">Out of Stock</p>
+                    <?php endif; ?>
 
-                    <div class="quantity">
-                        <button type="button" onclick="decreaseQty()">-</button>
-                        <input type="number" id="qty" name="qty" value="1" min="1" <?= $totalStock == 0 ? 'disabled' : '' ?>>
-                        <button type="button" onclick="increaseQty()" <?= $totalStock == 0 ? 'disabled' : '' ?>>+</button>
+                    <!-- Messages Container -->
+                    <div class="message-container">
+                        <?php if (isset($wishlistMessage)): ?>
+                            <p class="<?= strpos($wishlistMessage, 'error') !== false ? 'error-message' : 'success-message' ?>">
+                                <?= htmlspecialchars($wishlistMessage) ?>
+                            </p>
+                        <?php endif; ?>
+                        
+                        <?php if (isset($cartMessage)): ?>
+                            <p class="<?= strpos(strtolower($cartMessage), 'exceeds available stock') !== false || strpos(strtolower($cartMessage), 'error') !== false ? 'error-message' : 'success-message' ?>">
+                                <?= htmlspecialchars($cartMessage) ?>
+                            </p>
+                        <?php endif; ?>
                     </div>
 
-                    <div class="sizes">
-                        <?php foreach ($sizeStocks as $sizeStock): ?>
-                            <?php 
-                                $size = $sizeStock['Size'] === null ? 'Standard Only' : $sizeStock['Size'];
-                                $stock = $sizeStock['Stock'];
-                                $isOutOfStock = $stock <= 0;
-                            ?>
-                            <label class="size <?= $isOutOfStock ? 'out-of-stock' : '' ?>">
-                                <input 
-                                    type="radio" 
-                                    name="size" 
-                                    value="<?= htmlspecialchars($size) ?>" 
-                                    <?= $isOutOfStock ? 'disabled' : '' ?>
-                                    required
-                                    onchange="document.getElementById('selectedSize').value = this.value;"
-                                >
-                                <?= htmlspecialchars($size) ?>
-                                <span class="stock-info"><?= $stock ?> available</span>
-                            </label>
-                        <?php endforeach; ?>
-                    </div>
+                    <!-- Main form -->
+                    <form method="post" action="">
+                        <input type="hidden" name="productID" value="<?= $productID ?>">
+                        <input type="hidden" name="size" id="selectedSize" value="">
 
-                    <div class="button">
-                        <button type="submit" name="add_to_cart" class="add-to-cart-btn" <?= $totalStock == 0 ? 'disabled' : '' ?>>
-                            <?= $totalStock == 0 ? 'Out of Stock' : 'Add to Cart' ?>
-                        </button>
-                        <button type="submit" name="add_to_wishlist" class="wishlist-btn">
-                            <img src="image/circle-heart.png" alt="Wishlist" class="heart-button">
-                        </button>
-                    </div>
-                </form>
+                        <div class="quantity">
+                            <button type="button" onclick="decreaseQty()">-</button>
+                            <input type="number" id="qty" name="qty" value="1" min="1" <?= $totalStock == 0 ? 'disabled' : '' ?>>
+                            <button type="button" onclick="increaseQty()" <?= $totalStock == 0 ? 'disabled' : '' ?>>+</button>
+                        </div>
+
+                        <div class="sizes">
+                            <?php foreach ($sizeStocks as $sizeStock): ?>
+                                <?php 
+                                    $size = $sizeStock['Size'] === null ? 'Standard Only' : $sizeStock['Size'];
+                                    $stock = $sizeStock['Stock'];
+                                    $isOutOfStock = $stock <= 0;
+                                ?>
+                                <label class="size <?= $isOutOfStock ? 'out-of-stock' : '' ?>">
+                                    <input 
+                                        type="radio" 
+                                        name="size" 
+                                        value="<?= htmlspecialchars($size) ?>" 
+                                        <?= $isOutOfStock ? 'disabled' : '' ?>
+                                        required
+                                        onchange="document.getElementById('selectedSize').value = this.value;"
+                                    >
+                                    <?= htmlspecialchars($size) ?>
+                                    <span class="stock-info"><?= $stock ?> available</span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+
+                        <div class="button">
+                            <button type="submit" name="add_to_cart" class="add-to-cart-btn" <?= $totalStock == 0 ? 'disabled' : '' ?>>
+                                <?= $totalStock == 0 ? 'Out of Stock' : 'Add to Cart' ?>
+                            </button>
+                            <button type="submit" name="add_to_wishlist" class="wishlist-btn">
+                                <img src="image/circle-heart.png" alt="Wishlist" class="heart-button">
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
+
+    <div class="reviews-container">
+        <div class="reviews-header">
+            <h3 class="reviews-title">Customer Reviews</h3>
+            <div class="average-rating">
+                <span class="average-rating-value"><?= $avgRating ?></span>
+                <div class="stars">
+                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                        <?php if ($i <= floor($avgRating)): ?>
+                            <i class="fas fa-star star"></i>
+                        <?php elseif ($i - $avgRating < 1): ?>
+                            <i class="fas fa-star-half-alt star"></i>
+                        <?php else: ?>
+                            <i class="far fa-star star empty"></i>
+                        <?php endif; ?>
+                    <?php endfor; ?>
+                </div>
+                <span class="review-count"><?= $reviewCount ?> reviews</span>
+            </div>
         </div>
 
-
-
+        <?php if (empty($reviews)): ?>
+            <div class="no-reviews">
+                <p>No reviews yet. Be the first to review this product!</p>
+            </div>
+        <?php else: ?>
+            <?php foreach ($reviews as $review): ?>
+                <div class="review">
+                    <div class="review-header">
+                        <span class="reviewer-name"><?= htmlspecialchars($review['CustName']) ?></span>
+                        <span class="review-date"><?= date('F j, Y', strtotime($review['FeedbackDate'])) ?></span>
+                    </div>
+                    <div class="review-rating">
+                        <?php for ($i = 1; $i <= 5; $i++): ?>
+                            <?php if ($i <= $review['Rating']): ?>
+                                <i class="fas fa-star star"></i>
+                            <?php else: ?>
+                                <i class="far fa-star star empty"></i>
+                            <?php endif; ?>
+                        <?php endfor; ?>
+                    </div>
+                    <?php if (!empty($review['Size'])): ?>
+                        <div class="review-size">
+                            Size: <?= htmlspecialchars($review['Size']) ?>
+                        </div>
+                    <?php endif; ?>
+                    <div class="review-content">
+                        <?= nl2br(htmlspecialchars($review['Feedback'])) ?>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
+    </div>
+  
     <script>
         function decreaseQty() {
             let qtyInput = document.getElementById('qty'); 
