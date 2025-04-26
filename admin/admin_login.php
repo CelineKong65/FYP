@@ -110,7 +110,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <div class="pass-field">
                                 <input type="password" name="admin_pass" 
                                        class="<?php echo isset($errors['password']) ? 'error-field' : ''; ?>"
-                                       placeholder="example: 123%abc" required minlength="8">
+                                       placeholder="example: 123%abc">
                                 <i class="fa-solid fa-eye" id="show-password"></i>
                             </div>
                         </div>
