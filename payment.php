@@ -7,8 +7,7 @@ include 'header.php';
 $cartItems = $_SESSION['cart_items'] ?? [];
 $subtotal = $_SESSION['subtotal'] ?? 0;
 
-// Initialize delivery fee and grand total
-$deliveryCharge = 0.00;
+// Initialize grand total
 $grandTotalWithDelivery = $subtotal;
 
 // Retrieve customer details
@@ -38,24 +37,6 @@ if ($custID) {
         $custState = $customer['State'];
     }
 }
-
-// Set delivery fee based on state
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $stateToUse = $_POST['state'] ?? $custState;
-} else {
-    $stateToUse = $custState;
-}
-
-// Set delivery fee based on state
-if ($stateToUse === 'Melaka') {
-    $deliveryCharge = 10.00;
-} elseif ($stateToUse === 'Sabah' || $stateToUse === 'Sarawak') {
-    $deliveryCharge = 50.00;
-} else {
-    $deliveryCharge = 15.00;
-}
-
-$grandTotalWithDelivery = $subtotal + $deliveryCharge;
 
 // Initialize form fields with empty values
 $formFullName = $custName;
@@ -274,7 +255,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $insertStmt->bindParam(':postcode', $finalPostcode, PDO::PARAM_STR);
             $insertStmt->bindParam(':state', $finalState, PDO::PARAM_STR);
             $insertStmt->bindParam(':totalPrice', $grandTotalWithDelivery, PDO::PARAM_STR);
-            $insertStmt->bindParam(':deliveryFee', $deliveryCharge, PDO::PARAM_STR);
             $insertStmt->bindParam(':cardName', $cardName, PDO::PARAM_STR);
             $insertStmt->bindParam(':cardNum', $cardNum, PDO::PARAM_STR);
             $insertStmt->bindParam(':expDate', $cardExpDate, PDO::PARAM_STR);
@@ -370,14 +350,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php endif; ?>
                 </div>
 
-                <div class="subtotal">
-                    <span>Subtotal:</span>
-                    <span id="subtotal">RM <?= number_format($subtotal, 2) ?></span>
-                </div>
-                <div class="delivery">
-                    <span>Delivery:</span>
-                    <span id="delivery">RM <?= number_format($deliveryCharge, 2) ?></span>
-                </div>
                 <div class="total">
                     <span>Total (Incl. Delivery):</span>
                     <span id="total" class="total-price">RM <?= number_format($grandTotalWithDelivery, 2) ?></span>
@@ -470,30 +442,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
     <script>
-    // State change handler
-    document.getElementById('state').addEventListener('change', function () {
-        updateDeliveryCharge();
-    });
-
-    function updateDeliveryCharge() {
-        const selectedState = document.getElementById('state').value;
-        let deliveryCharge = 15.00;
-
-        if (selectedState === 'Melaka') {
-            deliveryCharge = 10.00;
-        } else if (selectedState === 'Sabah' || selectedState === 'Sarawak') {
-            deliveryCharge = 50.00;
-        }
-
-        const subtotalText = document.getElementById('subtotal').textContent.replace('RM', '').trim();
-        const subtotal = parseFloat(subtotalText);
-        const total = subtotal + deliveryCharge;
-
-        document.getElementById('delivery').textContent = 'RM ' + deliveryCharge.toFixed(2);
-        document.getElementById('total').textContent = 'RM ' + total.toFixed(2);
-        document.getElementById('price').value = 'RM ' + total.toFixed(2);
-    }
-
     // Function to validate required fields
     function validateRequiredField(fieldId, fieldName) {
         const field = document.getElementById(fieldId);
@@ -684,9 +632,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (urlParams.get('payment') === 'success') {
             showSuccessPopup();
         }
-        
-        // Initialize delivery charge
-        updateDeliveryCharge();
     });
 </script>
 </body>
