@@ -14,7 +14,16 @@
         <li><a href="product_view.php">Product List</a></li>
         <li><a href="order_view.php">Order List</a></li>
         <li><a href="contact_view.php">Contact Records</a></li>
-        <li><a href="feedback_view.php">Feeback Records</a></li>
+
+        <!-- Feedback Menu with Submenu -->
+        <li class="has-submenu">
+            <a href="#">Feedback Records</a>
+            <ul class="submenu">
+                <li><a href="feedback_view.php">Customer Feedback</a></li>
+                <li><a href="feedback_product.php">Product Feedback</a></li>
+            </ul>
+        </li>
+        <li><a href="sales_report.php">Sales Report</a></li>
         <li><a href="profile.php">My Profile</a></li>
     </ul>
 </body>

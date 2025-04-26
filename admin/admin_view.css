@@ -30,13 +30,14 @@ body {
     position: fixed;
     left: 0;
     top: 0; 
+    z-index: 999;
 }
 
 .main-content {
     flex-grow: 1;
     padding: 20px;
     margin: 10px;
-    background-color: #ffffff;
+    background-color: transparent;
     border-radius: 10px;
     position: relative;
 }
