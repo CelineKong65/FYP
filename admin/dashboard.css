@@ -66,10 +66,21 @@ td{
     background: rgba(199, 228, 247, 0.7);
     padding: 15px;
     border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.17);
+    box-shadow: 0 4px 2px rgba(0, 0, 0, 0.1);
     text-align: center;
     min-height: 100px;
     width: 290px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    background: rgba(172, 217, 247, 0.9);
+    cursor: pointer;
 }
 
 h3 {
@@ -99,7 +110,13 @@ p {
     border-radius: 10px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     padding: 20px;
-    margin-bottom: 30px;
+    transition: all 0.3s ease;
+}
+
+.chart-box:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
 }
 
 .chart-title {

@@ -13,13 +13,19 @@ $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 if (!empty($search_query)) {
     $search_param = "%$search_query%";
-    $category_query = "SELECT * FROM category WHERE CategoryName LIKE ?";
+    $category_query = "SELECT * FROM category WHERE CategoryName LIKE ? 
+                      ORDER BY 
+                          CategoryStatus = 'active' DESC,
+                          CategoryName ASC";
     $stmt = $conn->prepare($category_query);
     $stmt->bind_param("s", $search_param);
     $stmt->execute();
     $category_result = $stmt->get_result();
 } else {
-    $category_query = "SELECT * FROM category";
+    $category_query = "SELECT * FROM category 
+                      ORDER BY 
+                          CategoryStatus = 'active' DESC,
+                          CategoryName ASC";
     $category_result = $conn->query($category_query);
 }
 
@@ -52,9 +58,10 @@ if (isset($_POST['add_category'])) {
                 exit();
             }
 
-            $base_name = preg_split("/[\s\/]+/", $category_name)[0];
-            $base_name = preg_replace("/[^a-zA-Z0-9_-]/", "", $base_name); // remove special characters
-            $image_name = strtolower($base_name) . '.' . $image_extension;
+            // Generate image name from full category name
+            $image_name = strtolower(str_replace(' ', '_', $category_name)) . '.' . $image_extension;
+            $image_name = preg_replace("/[^a-z0-9_.]/", "", $image_name); // Remove special chars
+            
             $target_dir = "../image/categories/";
             $target_file = $target_dir . $image_name;
 
@@ -112,22 +119,19 @@ if (isset($_POST['edit_category'])) {
     $stmt->close();
 
     $target_dir = "../image/categories/";
-    
-    // Generate new filename based on new category name
-    $name_parts = preg_split("/[\s\/]+/", $new_name);
-    $base_name = preg_replace("/[^a-zA-Z0-9_-]/", "", $name_parts[0]);
-    $clean_name = strtolower($base_name);
-
-    // Determine file extension (use from new upload if exists, otherwise from old image)
     $new_image_uploaded = !empty($_FILES['profile_picture']['name']);
-    $ext = '';
     
+    // Generate new filename based on full new category name
+    $clean_name = strtolower(str_replace(' ', '_', $new_name));
+    $clean_name = preg_replace("/[^a-z0-9_]/", "", $clean_name);
+    
+    // Determine file extension
     if ($new_image_uploaded) {
         $ext = strtolower(pathinfo($_FILES['profile_picture']['name'], PATHINFO_EXTENSION));
     } elseif (!empty($old_image)) {
         $ext = pathinfo($old_image, PATHINFO_EXTENSION);
     } else {
-        $ext = 'png'; // default extension if no image exists
+        $ext = 'png'; // default extension
     }
 
     $image_name_to_store = $clean_name . '.' . $ext;
@@ -136,7 +140,7 @@ if (isset($_POST['edit_category'])) {
     // Handle file operations
     if ($new_image_uploaded) {
         // Delete old image if it exists and isn't default
-        if (!empty($old_image) && $old_image !== 'default.png' && file_exists($target_dir . $old_image)) {
+        if (!empty($old_image) && file_exists($target_dir . $old_image)) {
             unlink($target_dir . $old_image);
         }
 
@@ -145,18 +149,11 @@ if (isset($_POST['edit_category'])) {
             echo "<script>alert('Failed to upload new image.'); window.location.href='category_view.php';</script>";
             exit();
         }
-    } else {
-        // No new image uploaded - just rename existing file
-        if (!empty($old_image) && $old_image !== 'default.png' && file_exists($target_dir . $old_image)) {
-            // Rename the existing file
+    } elseif (!empty($old_image) && $old_image !== $image_name_to_store) {
+        // Rename existing file to match new category name
+        if (file_exists($target_dir . $old_image)) {
             if (!rename($target_dir . $old_image, $new_path)) {
                 echo "<script>alert('Failed to rename image file.'); window.location.href='category_view.php';</script>";
-                exit();
-            }
-        } elseif (empty($old_image) || $old_image === 'default.png') {
-            // If no image or default image, copy default to new name
-            if (!copy($target_dir . 'default.png', $new_path)) {
-                echo "<script>alert('Failed to create new image file.'); window.location.href='category_view.php';</script>";
                 exit();
             }
         }
@@ -169,14 +166,15 @@ if (isset($_POST['edit_category'])) {
         echo "<script>alert('Category updated successfully!'); window.location.href='category_view.php';</script>";
     } else {
         // If update failed, try to revert file changes
-        if (file_exists($new_path)) {
-            unlink($new_path);
+        if (file_exists($new_path) && ($old_image !== $image_name_to_store)) {
+            rename($new_path, $target_dir . $old_image);
         }
         echo "<script>alert('Failed to update category.'); window.location.href='category_view.php';</script>";
     }
     $stmt->close();
     exit();
 }
+
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     $category_id = (int)$_POST['category_id'];
     $currentStatus = strtolower($_POST['current_status']);
