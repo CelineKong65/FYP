@@ -13,9 +13,24 @@ $category_query = "SELECT * FROM category";
 $category_result = $conn->query($category_query);
 
 $selected_category = isset($_GET['category']) ? $_GET['category'] : '';
-$selected_category = isset($_GET['category']) ? $_GET['category'] : '';
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 
+// Pagination logic
+$productsPerPage = 10; // Number of products per page
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$offset = ($page - 1) * $productsPerPage;
+
+// Base query for counting total products
+$count_query = "
+    SELECT COUNT(DISTINCT p.ProductID) 
+    FROM product p
+    LEFT JOIN product_size ps_S ON p.ProductID = ps_S.ProductID AND ps_S.Size = 'S'
+    LEFT JOIN product_size ps_M ON p.ProductID = ps_M.ProductID AND ps_M.Size = 'M'
+    LEFT JOIN product_size ps_L ON p.ProductID = ps_L.ProductID AND ps_L.Size = 'L'
+    LEFT JOIN product_size ps_XL ON p.ProductID = ps_XL.ProductID AND ps_XL.Size = 'XL'
+";
+
+// Base query for fetching products
 $product_query = "
     SELECT p.*,
             COALESCE(ps_S.Stock, 0) as stock_S,
@@ -55,32 +70,40 @@ if (!empty($search_query)) {
 
 if (!empty($where_clauses)) {
     $product_query .= " WHERE " . implode(" AND ", $where_clauses);
+    $count_query .= " WHERE " . implode(" AND ", $where_clauses);
 }
 
-$product_query .= " GROUP BY p.ProductID";
+// Add this line to sort by status (active first)
+$product_query .= " ORDER BY CASE WHEN p.ProductStatus = 'active' THEN 0 ELSE 1 END, p.ProductID";
 
+// Then add your existing LIMIT clause
+$product_query .= " LIMIT ? OFFSET ?";
+$types .= 'ii'; // Add types for limit and offset
+$params[] = $productsPerPage;
+$params[] = $offset;
+
+// Get total number of products for pagination
+$stmt_count = $conn->prepare($count_query);
+if (!empty($where_clauses)) {
+    // Remove last 2 types (limit and offset) for count query
+    $count_types = substr($types, 0, -2);
+    // Remove last 2 params (limit and offset) for count query
+    $count_params = array_slice($params, 0, -2);
+    
+    $stmt_count->bind_param($count_types, ...$count_params);
+}
+$stmt_count->execute();
+$totalProducts = $stmt_count->get_result()->fetch_row()[0];
+$stmt_count->close();
+
+$totalPages = ceil($totalProducts / $productsPerPage);
+
+// Prepare and execute the product query
 $stmt = $conn->prepare($product_query);
-
 if (!empty($params)) {
     $stmt->bind_param($types, ...$params);
 }
-
-if (!$stmt->execute()) {
-    die("Query execution failed: " . $stmt->error);
-}
-
-$product_result = $stmt->get_result();
-
-$stmt = $conn->prepare($product_query);
-
-if (!empty($params)) {
-    $stmt->bind_param($types, ...$params);
-}
-
-if (!$stmt->execute()) {
-    die("Query execution failed: " . $stmt->error);
-}
-
+$stmt->execute();
 $product_result = $stmt->get_result();
 
 if ($product_result === false) {
@@ -392,6 +415,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product List</title>
     <link rel='stylesheet' href='product_view.css'>
+
+    <style>
+        .pagination {
+            text-align: center;
+            margin-top: 20px;
+            padding: 20px;
+        }
+
+        .pagination .page {
+            display: inline-block;
+            padding: 8px 12px;
+            margin: 0 5px;
+            text-decoration: none;
+            color: #333;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .pagination .page:hover {
+            background-color: #007BFF;
+            color: #fff;
+        }
+
+        .pagination .page.active {
+            background-color: #333;
+            color: #fff;
+            border-color: #333;
+        }
+    </style>
 </head>
 <body>
     <div class="header">
@@ -508,6 +560,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                     <?php endif; ?>
                 </tbody>
             </table>
+            <div class="pagination">
+                <?php if ($page > 1): ?>
+                    <a href="?page=<?= $page - 1 ?><?= !empty($selected_category) ? '&category=' . $selected_category : '' ?><?= !empty($search_query) ? '&search=' . urlencode($search_query) : '' ?>" class="page">Previous</a>
+                <?php endif; ?>
+
+                <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                    <a href="?page=<?= $i ?><?= !empty($selected_category) ? '&category=' . $selected_category : '' ?><?= !empty($search_query) ? '&search=' . urlencode($search_query) : '' ?>" class="page <?= $i === $page ? 'active' : '' ?>"><?= $i ?></a>
+                <?php endfor; ?>
+
+                <?php if ($page < $totalPages): ?>
+                    <a href="?page=<?= $page + 1 ?><?= !empty($selected_category) ? '&category=' . $selected_category : '' ?><?= !empty($search_query) ? '&search=' . urlencode($search_query) : '' ?>" class="page">Next</a>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 
@@ -520,7 +585,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                 <input type="hidden" name="existing_image" id="existing_image">
                 <div class="edit-form">
                     <div class="left">
-                        <label>Image:<span> (.jpp,.jpeg or .png only)</span></label>
+                        <label>Image:<span> (.jpg,.jpeg or .png only)</span></label>
                         <input type="file" name="image" accept=".jpg,.jpeg,.png">
                         <label>Name:</label>
                         <input type="text" name="name" id="name" required>
@@ -574,7 +639,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
             <input type="hidden" name="product_id" id="product_id">
             <div class="add-form">
                 <div class="left">
-                    <label>Image:<span> (.jpp,.jpeg or .png only)</span></label>
+                    <label>Image:<span> (.jpg,.jpeg or .png only)</span></label>
                     <input type="file" name="image" accept=".jpg,.jpeg,.png" required>
                     <label>Name:</label>
                     <input type="text" name="name" id="add_name" required>
@@ -706,6 +771,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                 });
             }
         });
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const pages = document.querySelectorAll(".pagination .page");
+
+            pages.forEach(page => {
+                page.addEventListener("click", function () {
+                    // Remove 'active' class from all pages
+                    pages.forEach(p => p.classList.remove("active"));
+
+                    // Add 'active' class to the clicked page
+                    this.classList.add("active");
+                });
+            });
+        });        
     </script>
 </body>
 </html>
