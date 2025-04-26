@@ -8,7 +8,7 @@
 <body>
     <header>
         <div class="logo">
-            <img src="../image/logo.png" alt="Watersport Equipment Shop Logo">
+            <a href="dashboard.php"><img src="../image/logo.png" alt="Watersport Equipment Shop Logo"></a>
         </div>
         <div class="header-right">
             <a href="logout.php" class="logout-button">LOGOUT</a>
