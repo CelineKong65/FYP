@@ -242,9 +242,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             // Insert payment information
             $insertQuery = "INSERT INTO orderpayment 
-                (CustID, ReceiverName, ReceiverContact, ReceiverEmail, StreetAddress, City, Postcode, State, OrderDate, TotalPrice, DeliveryFee, CardName, CardNum, ExpDate, CardCVV) 
+                (CustID, ReceiverName, ReceiverContact, ReceiverEmail, StreetAddress, City, Postcode, State, OrderDate, TotalPrice, CardName, CardNum, ExpDate, CardCVV) 
                 VALUES 
-                (:custID, :receiverName, :receiverContact, :receiverEmail, :streetAddress, :city, :postcode, :state, NOW(), :totalPrice, :deliveryFee, :cardName, :cardNum, :expDate, :cardCVV)";
+                (:custID, :receiverName, :receiverContact, :receiverEmail, :streetAddress, :city, :postcode, :state, NOW(), :totalPrice, :cardName, :cardNum, :expDate, :cardCVV)";
             $insertStmt = $conn->prepare($insertQuery);
             $insertStmt->bindParam(':custID', $custID, PDO::PARAM_INT);
             $insertStmt->bindParam(':receiverName', $formFullName, PDO::PARAM_STR);
