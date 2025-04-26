@@ -115,15 +115,11 @@ h2 {
     font-weight: bold;
 }
 
-/* Subtotal, Total */
-.subtotal, .total, .delivery{
+.total {
     display: flex;
     justify-content: space-between;
     padding: 5px 0;
     font-weight: bold;
-}
-
-.total {
     border-top: 2px solid #000;
     color: red;
 }

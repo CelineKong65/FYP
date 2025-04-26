@@ -125,10 +125,6 @@ if (!$customer) {
                         </tr>
                         <?php endforeach; ?>
                         <tr class="highlight-row">
-                            <td colspan="6" style="text-align: right;">Delivery Fee:</td>
-                            <td>RM <?php echo number_format($orderpayment['DeliveryFee'], 2); ?></td>
-                        </tr>
-                        <tr class="highlight-row">
                             <td colspan="6" style="text-align: right;">TOTAL</td>
                             <td>RM <?php echo number_format($orderpayment['TotalPrice'], 2); ?></td>
                         </tr>
