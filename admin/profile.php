@@ -378,7 +378,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             isValid = false;
         }
         
-        // Validate new password
+        // Validate new password is different
+        if (newPasswordInput.value === currentPasswordInput.value) {
+            showError(newPasswordInput, 'New password cannot be the same as current password');
+            isValid = false;
+        }
+        
+        // Validate new password meets requirements
         const passwordValid = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/.test(newPasswordInput.value);
         if (!passwordValid) {
             showError(newPasswordInput, 'Password must meet all requirements');
@@ -406,15 +412,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         return '';
     }
 
+    function validateNewPasswordDifferent(currentPass, newPass) {
+        if (currentPass === newPass) {
+            return 'New password cannot be the same as current password';
+        }
+        return '';
+    }
     // Update the password input event listener
     newPasswordInput.addEventListener('input', function() {
         const error = validateNewPassword(this.value);
-        const passwordValid = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/.test(this.value);
+        const differentError = validatePasswordDifferent(currentPasswordInput.value, this.value);
         
-        if (error && this.value.trim() !== '') {
+        // Clear previous error first
+        clearError(this);
+        
+        // Check for different errors in priority order
+        if (differentError) {
+            showError(this, differentError);
+        } else if (error) {
             showError(this, error);
-        } else {
-            clearError(this);
         }
         
         // Update password requirements visibility
@@ -526,33 +542,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     });
 
-    // Form submission handlers
-    profileForm.addEventListener('submit', function(e) {
-        let isValid = true;
-        
-        const nameError = validateName(document.getElementById('name').value);
-        if (nameError) {
-            showError(document.getElementById('name'), nameError);
-            isValid = false;
-        }
-        
-        const emailError = validateEmail(document.getElementById('email').value);
-        if (emailError) {
-            showError(document.getElementById('email'), emailError);
-            isValid = false;
-        }
-        
-        const phoneError = validatePhone(document.getElementById('phone').value);
-        if (phoneError) {
-            showError(document.getElementById('phone'), phoneError);
-            isValid = false;
-        }
-        
-        if (!isValid) {
-            e.preventDefault();
-        }
-    });
-
+    // Update the form submission handler
     passwordForm.addEventListener('submit', function(e) {
         let isValid = true;
         
@@ -562,14 +552,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         clearError(confirmPasswordInput);
         
         // Validate current password
-        if (currentPasswordInput.value.trim() === '') {
-            showError(currentPasswordInput, 'Current password is required');
+        const currentPasswordError = validateCurrentPassword(currentPasswordInput.value);
+        if (currentPasswordError) {
+            showError(currentPasswordInput, currentPasswordError);
             isValid = false;
         }
         
-        // Validate new password
-        const passwordValid = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/.test(newPasswordInput.value);
-        if (!passwordValid) {
+        // Validate new password is different from current
+        if (newPasswordInput.value === currentPasswordInput.value) {
+            showError(newPasswordInput, 'New password cannot be the same as current password');
+            isValid = false;
+        }
+        
+        // Validate new password meets requirements (only if different from current)
+        else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/.test(newPasswordInput.value)) {
             showError(newPasswordInput, 'Password must meet all requirements');
             isValid = false;
         }
@@ -583,6 +579,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (!isValid) {
             e.preventDefault();
         }
+
     });
 </script>
 </body>
