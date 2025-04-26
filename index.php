@@ -33,7 +33,7 @@
             <h1>KPL Watersport</h1>
             <h1>Equipment Shop</h1>
             <p>Find the best equipment for all your watersport needs!</p>
-            <button class="join-btn">JOIN US</button>
+            <a href="register.php"><button class="join-btn">JOIN US</button></a>
         </div>
         <div class="advertisement-box">
             <h2>Advertisement</h2>
