@@ -3,6 +3,13 @@ ob_start();
 include 'config.php';
 include 'header.php';
 
+// Check if this is a top-up request
+if (isset($_GET['topup']) && $_GET['topup'] == 'success') {
+    $_SESSION['topup_success'] = true;
+    header('Location: payment.php');
+    exit();
+}
+
 // Retrieve cart items from session
 $cartItems = $_SESSION['cart_items'] ?? [];
 $subtotal = $_SESSION['subtotal'] ?? 0;
@@ -20,6 +27,8 @@ $custCity = '';
 $custPostcode = '';
 $custState = '';
 
+// Get current E-wallet balance (if any)
+$eWalletBalance = 0;
 if ($custID) {
     $query = "SELECT CustName, CustPhoneNum, CustEmail, StreetAddress, City, Postcode, State FROM customer WHERE CustID = :custID";
     $stmt = $conn->prepare($query);
@@ -36,6 +45,13 @@ if ($custID) {
         $custPostcode = $customer['Postcode'];
         $custState = $customer['State'];
     }
+    
+    // Get E-wallet balance
+    $balanceQuery = "SELECT EWalletBalance FROM customer WHERE CustID = :custID";
+    $balanceStmt = $conn->prepare($balanceQuery);
+    $balanceStmt->bindParam(':custID', $custID, PDO::PARAM_INT);
+    $balanceStmt->execute();
+    $eWalletBalance = $balanceStmt->fetchColumn() ?? 0;
 }
 
 // Initialize form fields with empty values
@@ -46,6 +62,7 @@ $formStreetAddress = $custStreetAddress;
 $formCity = $custCity;
 $formPostcode = $custPostcode;
 $formState = $custState;
+$paymentMethod = isset($_POST['paymentMethod']) ? $_POST['paymentMethod'] : '';
 $cardName = '';
 $cardNum = '';
 $cardExpDate = '';
@@ -63,7 +80,8 @@ $fieldErrors = [
     'cname' => '',
     'ccnum' => '',
     'expdate' => '',
-    'cvv' => ''
+    'cvv' => '',
+    'paymentMethod' => ''
 ];
 
 // Handle form submission
@@ -75,19 +93,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $formCity = $_POST['city'] ?? '';
     $formPostcode = $_POST['postcode'] ?? '';
     $formState = $_POST['state'] ?? '';
+    $paymentMethod = $_POST['paymentMethod'] ?? '';
 
     $finalStreetAddress = $formStreetAddress ?: $custStreetAddress;
     $finalCity = $formCity ?: $custCity;
     $finalPostcode = $formPostcode ?: $custPostcode;
     $finalState = $formState ?: $custState;
 
-    $cardName = $_POST['cname'] ?? '';
-    $cardNum = $_POST['ccnum'] ?? '';
-    $cardExpDate = $_POST['expdate'] ?? '';
-    $cardCVV = $_POST['cvv'] ?? '';
+    // Only get card details if payment method is credit card or debit card
+    if ($paymentMethod === 'Credit Card' || $paymentMethod === 'Debit Card') {
+        $cardName = $_POST['cname'] ?? '';
+        $cardNum = $_POST['ccnum'] ?? '';
+        $cardExpDate = $_POST['expdate'] ?? '';
+        $cardCVV = $_POST['cvv'] ?? '';
+    }
 
     // Validate all fields
     $errors = [];
+    
+    // Payment Method Validation
+    if (empty($paymentMethod)) {
+        $errors[] = "Payment method is required";
+        $fieldErrors['paymentMethod'] = "Payment method is required";
+    } elseif ($paymentMethod === 'E-wallet' && $eWalletBalance < $grandTotalWithDelivery) {
+        // Redirect to top-up page if balance is insufficient
+        $_SESSION['required_amount'] = $grandTotalWithDelivery;
+        header('Location: topup.php');
+        exit();
+    }
     
     // Full Name Validation
     if (empty($formFullName)) {
@@ -129,8 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($formCity)) {
         $errors[] = "City is required";
         $fieldErrors['city'] = "City is required";
-    }
-    elseif (!preg_match('/^[a-zA-Z\s]+$/', $formCity)) {
+    } elseif (!preg_match('/^[a-zA-Z\s]+$/', $formCity)) {
         $errors[] = "City should contain only letters and spaces";
         $fieldErrors['city'] = "Should contain only letters and spaces";
     }
@@ -150,55 +182,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $fieldErrors['state'] = "State is required";
     }
     
-    // Card Name validation
-    if (empty($cardName)) {
-        $errors[] = "Card name is required";
-        $fieldErrors['cname'] = "Card name is required";
-    } elseif (!preg_match('/^[a-zA-Z\s]+$/', $cardName)) {
-        $errors[] = "Card name should contain only letters and spaces";
-        $fieldErrors['cname'] = "Should contain only letters and spaces";
-    }
-    
-    // Card Number validation
-    if (empty($cardNum)) {
-        $errors[] = "Card number is required";
-        $fieldErrors['ccnum'] = "Card number is required";
-    } elseif (!preg_match('/^\d{13,16}$/', $cardNum)) {
-        $errors[] = "Card number must be 13-16 digits";
-        $fieldErrors['ccnum'] = "Must be 13-16 digits";
-    }
-    
-    // Expiry Date validation
-    if (empty($cardExpDate)) {
-        $errors[] = "Expiry date is required";
-        $fieldErrors['expdate'] = "Expiry date is required";
-    } else {
-        $currentDate = new DateTime();
-        $currentYear = $currentDate->format('Y');
-        $currentMonth = $currentDate->format('m');
+    // Credit Card validations (only if payment method is credit card)
+    if ($paymentMethod === 'Credit Card') {
+        // Card Name validation
+        if (empty($cardName)) {
+            $errors[] = "Card name is required";
+            $fieldErrors['cname'] = "Card name is required";
+        } elseif (!preg_match('/^[a-zA-Z\s]+$/', $cardName)) {
+            $errors[] = "Card name should contain only letters and spaces";
+            $fieldErrors['cname'] = "Should contain only letters and spaces";
+        }
         
-        $expDateParts = explode('-', $cardExpDate);
-        if (count($expDateParts) !== 2) {
-            $errors[] = "Invalid expiry date format";
-            $fieldErrors['expdate'] = "Invalid format";
+        // Card Number validation
+        if (empty($cardNum)) {
+            $errors[] = "Card number is required";
+            $fieldErrors['ccnum'] = "Card number is required";
+        } elseif (!preg_match('/^\d{13,16}$/', $cardNum)) {
+            $errors[] = "Card number must be 13-16 digits";
+            $fieldErrors['ccnum'] = "Must be 13-16 digits";
+        }
+        
+        // Expiry Date validation
+        if (empty($cardExpDate)) {
+            $errors[] = "Expiry date is required";
+            $fieldErrors['expdate'] = "Expiry date is required";
         } else {
-            $expYear = $expDateParts[0];
-            $expMonth = $expDateParts[1];
+            $currentDate = new DateTime();
+            $currentYear = $currentDate->format('Y');
+            $currentMonth = $currentDate->format('m');
             
-            if ($expYear < $currentYear || ($expYear == $currentYear && $expMonth < $currentMonth)) {
-                $errors[] = "Card has expired";
-                $fieldErrors['expdate'] = "Card has expired";
+            $expDateParts = explode('-', $cardExpDate);
+            if (count($expDateParts) !== 2) {
+                $errors[] = "Invalid expiry date format";
+                $fieldErrors['expdate'] = "Invalid format";
+            } else {
+                $expYear = $expDateParts[0];
+                $expMonth = $expDateParts[1];
+                
+                if ($expYear < $currentYear || ($expYear == $currentYear && $expMonth < $currentMonth)) {
+                    $errors[] = "Card has expired";
+                    $fieldErrors['expdate'] = "Card has expired";
+                }
             }
         }
-    }
-    
-    // CVV validation
-    if (empty($cardCVV)) {
-        $errors[] = "CVV is required";
-        $fieldErrors['cvv'] = "CVV is required";
-    } elseif (!preg_match('/^\d{3}$/', $cardCVV)) {
-        $errors[] = "CVV must be exactly 3 digits";
-        $fieldErrors['cvv'] = "Must be exactly 3 digits";
+        
+        // CVV validation
+        if (empty($cardCVV)) {
+            $errors[] = "CVV is required";
+            $fieldErrors['cvv'] = "CVV is required";
+        } elseif (!preg_match('/^\d{3}$/', $cardCVV)) {
+            $errors[] = "CVV must be exactly 3 digits";
+            $fieldErrors['cvv'] = "Must be exactly 3 digits";
+        }
     }
 
     // Check stock availability before processing payment
@@ -242,9 +277,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             // Insert payment information
             $insertQuery = "INSERT INTO orderpayment 
-                (CustID, ReceiverName, ReceiverContact, ReceiverEmail, StreetAddress, City, Postcode, State, OrderDate, TotalPrice, CardName, CardNum, ExpDate, CardCVV) 
+                (CustID, ReceiverName, ReceiverContact, ReceiverEmail, StreetAddress, City, Postcode, State, 
+                OrderDate, TotalPrice, PaymentMethod, CardName, CardNum, ExpDate, CardCVV) 
                 VALUES 
-                (:custID, :receiverName, :receiverContact, :receiverEmail, :streetAddress, :city, :postcode, :state, NOW(), :totalPrice, :cardName, :cardNum, :expDate, :cardCVV)";
+                (:custID, :receiverName, :receiverContact, :receiverEmail, :streetAddress, :city, :postcode, :state, 
+                NOW(), :totalPrice, :paymentMethod, :cardName, :cardNum, :expDate, :cardCVV)";
+                
             $insertStmt = $conn->prepare($insertQuery);
             $insertStmt->bindParam(':custID', $custID, PDO::PARAM_INT);
             $insertStmt->bindParam(':receiverName', $formFullName, PDO::PARAM_STR);
@@ -255,10 +293,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $insertStmt->bindParam(':postcode', $finalPostcode, PDO::PARAM_STR);
             $insertStmt->bindParam(':state', $finalState, PDO::PARAM_STR);
             $insertStmt->bindParam(':totalPrice', $grandTotalWithDelivery, PDO::PARAM_STR);
-            $insertStmt->bindParam(':cardName', $cardName, PDO::PARAM_STR);
-            $insertStmt->bindParam(':cardNum', $cardNum, PDO::PARAM_STR);
-            $insertStmt->bindParam(':expDate', $cardExpDate, PDO::PARAM_STR);
-            $insertStmt->bindParam(':cardCVV', $cardCVV, PDO::PARAM_STR);
+            $insertStmt->bindParam(':paymentMethod', $paymentMethod, PDO::PARAM_STR);
+            
+            // For E-wallet, store the remaining balance after payment
+            $remainingBalance = ($paymentMethod === 'E-wallet') ? ($eWalletBalance - $grandTotalWithDelivery) : NULL;
+           
+            
+            // Only bind card details if payment method is credit card or debit card
+            $cardNameToBind = ($paymentMethod === 'Credit Card' || $paymentMethod === 'Debit Card') ? $cardName : NULL;
+            $cardNumToBind = ($paymentMethod === 'Credit Card' || $paymentMethod === 'Debit Card') ? $cardNum : NULL;
+            $expDateToBind = ($paymentMethod === 'Credit Card' || $paymentMethod === 'Debit Card') ? $cardExpDate : NULL;
+            $cardCVVToBind = ($paymentMethod === 'Credit Card' || $paymentMethod === 'Debit Card') ? $cardCVV : NULL;
+            
+            $insertStmt->bindParam(':cardName', $cardNameToBind, PDO::PARAM_STR);
+            $insertStmt->bindParam(':cardNum', $cardNumToBind, PDO::PARAM_STR);
+            $insertStmt->bindParam(':expDate', $expDateToBind, PDO::PARAM_STR);
+            $insertStmt->bindParam(':cardCVV', $cardCVVToBind, PDO::PARAM_STR);
             
             if ($insertStmt->execute()) {
                 $orderID = $conn->lastInsertId();
@@ -290,6 +340,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $detailStmt->bindParam(':quantity', $quantity, PDO::PARAM_INT);
                     $detailStmt->bindParam(':productPrice', $productPrice, PDO::PARAM_STR);
                     $detailStmt->execute();
+                }
+
+                // Update E-wallet balance if payment method is E-wallet
+                if ($paymentMethod === 'E-wallet') {
+                    $remainingBalance = $eWalletBalance - $grandTotalWithDelivery;
+                    $updateBalanceQuery = "UPDATE customer SET EWalletBalance = :newBalance WHERE CustID = :custID";
+                    $updateBalanceStmt = $conn->prepare($updateBalanceQuery);
+                    $updateBalanceStmt->bindParam(':newBalance', $remainingBalance, PDO::PARAM_STR);
+                    $updateBalanceStmt->bindParam(':custID', $custID, PDO::PARAM_INT);
+                    $updateBalanceStmt->execute();
                 }
 
                 // Clear the cart from database
@@ -327,6 +387,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkout Form</title>
     <link rel="stylesheet" href="payment.css">
+    <style>
+        .payment-method {
+            margin-bottom: 20px;
+        }
+        .payment-method label {
+            display: inline-block;
+            margin-right: 15px;
+            cursor: pointer;
+        }
+        .payment-method input[type="radio"] {
+            margin-right: 5px;
+        }
+        .payment-section {
+            display: none;
+        }
+        .payment-section.active {
+            display: block;
+        }
+        .e-wallet-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .topup-btn {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+
+        .topup-btn:hover {
+            background-color: #45a049;
+        }
+
+        .text-danger {
+            color: #dc3545;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
     <div class="checkout-wrapper">
@@ -354,6 +461,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <span>Total (Incl. Delivery):</span>
                     <span id="total" class="total-price">RM <?= number_format($grandTotalWithDelivery, 2) ?></span>
                 </div>
+                
+                <?php if ($paymentMethod === 'E-wallet' || (isset($_SESSION['topup_success']) && $_SESSION['topup_success'])): ?>
+                    <div class="e-wallet-info">
+                        <p>Your E-wallet balance: RM <?= number_format($eWalletBalance, 2) ?></p>
+                        <?php if ($eWalletBalance < $grandTotalWithDelivery): ?>
+                            <p class="text-danger">Insufficient balance. Please top up your E-wallet.</p>
+                        <?php else: ?>
+                            <p>Remaining balance after payment: RM <?= number_format($eWalletBalance - $grandTotalWithDelivery, 2) ?></p>
+                        <?php endif; ?>
+                    </div>
+                    <?php unset($_SESSION['topup_success']); ?>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -412,28 +531,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     <div class="col">
                         <h2>Payment</h2>
-                        <p>Accepted Cards</p>
-                        <div class="card-icons">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg" alt="Visa">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/3/30/American_Express_logo.svg" alt="Amex">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard">
+                        
+                        <div class="payment-method">
+                            <label>
+                                <input type="radio" name="paymentMethod" value="Credit Card" <?= $paymentMethod === 'Credit Card' ? 'checked' : '' ?> required>
+                                Credit Card
+                            </label>
+                            <label>
+                                <input type="radio" name="paymentMethod" value="Debit Card" <?= $paymentMethod === 'Debit Card' ? 'checked' : '' ?>>
+                                Debit Card
+                            </label>
+                            <label>
+                                <input type="radio" name="paymentMethod" value="E-wallet" <?= $paymentMethod === 'E-wallet' ? 'checked' : '' ?>>
+                                E-wallet
+                            </label>
+                            <span class="error-text"><?= htmlspecialchars($fieldErrors['paymentMethod']) ?></span>
                         </div>
+                        
+                        <!-- Credit Card Section -->
+                        <div id="creditCardSection" class="payment-section <?= $paymentMethod === 'Credit Card' ? 'active' : '' ?>">
+                            <p>Accepted Cards</p>
+                            <div class="card-icons">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg" alt="Visa">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/3/30/American_Express_logo.svg" alt="Amex">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard">
+                            </div>
 
-                        <label for="cname"><b>Name on Card</b></label>
-                        <input type="text" id="cname" name="cname" placeholder="Enter name on card" value="<?= htmlspecialchars($cardName) ?>" required>
-                        <span class="error-text"><?= htmlspecialchars($fieldErrors['cname']) ?></span>
+                            <label for="cname"><b>Name on Card</b></label>
+                            <input type="text" id="cname" name="cname" placeholder="Enter name on card" value="<?= htmlspecialchars($cardName) ?>" <?= $paymentMethod === 'Credit Card' ? 'required' : '' ?>>
+                            <span class="error-text"><?= htmlspecialchars($fieldErrors['cname']) ?></span>
 
-                        <label for="ccnum"><b>Card Number</b></label>
-                        <input type="text" id="ccnum" name="ccnum" placeholder="Enter card number" value="<?= htmlspecialchars($cardNum) ?>" required>
-                        <span class="error-text"><?= htmlspecialchars($fieldErrors['ccnum']) ?></span>
+                            <label for="ccnum"><b>Card Number</b></label>
+                            <input type="text" id="ccnum" name="ccnum" placeholder="Enter card number" value="<?= htmlspecialchars($cardNum) ?>" <?= $paymentMethod === 'Credit Card' ? 'required' : '' ?>>
+                            <span class="error-text"><?= htmlspecialchars($fieldErrors['ccnum']) ?></span>
 
-                        <label for="expdate"><b>Exp Date</b></label>
-                        <input type="month" id="expdate" name="expdate" value="<?= htmlspecialchars($cardExpDate) ?>" min="<?php echo date('Y-m'); ?>" required>
-                        <span class="error-text"><?= htmlspecialchars($fieldErrors['expdate']) ?></span>
+                            <label for="expdate"><b>Exp Date</b></label>
+                            <input type="month" id="expdate" name="expdate" value="<?= htmlspecialchars($cardExpDate) ?>" min="<?php echo date('Y-m'); ?>" <?= $paymentMethod === 'Credit Card' ? 'required' : '' ?>>
+                            <span class="error-text"><?= htmlspecialchars($fieldErrors['expdate']) ?></span>
 
-                        <label for="cvv"><b>CVV</b></label>
-                        <input type="text" id="cvv" name="cvv" placeholder="Enter CVV" value="<?= htmlspecialchars($cardCVV) ?>" required>
-                        <span class="error-text"><?= htmlspecialchars($fieldErrors['cvv']) ?></span>
+                            <label for="cvv"><b>CVV</b></label>
+                            <input type="text" id="cvv" name="cvv" placeholder="Enter CVV" value="<?= htmlspecialchars($cardCVV) ?>" <?= $paymentMethod === 'Credit Card' ? 'required' : '' ?>>
+                            <span class="error-text"><?= htmlspecialchars($fieldErrors['cvv']) ?></span>
+                        </div>
+                        
+                        <!-- E-wallet Section -->
+                        <div id="eWalletSection" class="payment-section <?= $paymentMethod === 'E-wallet' ? 'active' : '' ?>">
+                            <div class="e-wallet-info">
+                                <p>Current E-wallet balance: RM <?= number_format($eWalletBalance, 2) ?></p>
+                                <?php if ($paymentMethod === 'E-wallet'): ?>
+                                    <?php if ($eWalletBalance < $grandTotalWithDelivery): ?>
+                                        <p class="text-danger">Insufficient balance. You need RM <?= number_format($grandTotalWithDelivery - $eWalletBalance, 2) ?> more.</p>
+                                    <?php else: ?>
+                                        <p>Remaining balance after payment: RM <?= number_format($eWalletBalance - $grandTotalWithDelivery, 2) ?></p>
+                                    <?php endif; ?>
+                                    <a href="topup.php?amount=<?= ceil(($grandTotalWithDelivery - $eWalletBalance)/50)*50 ?>" class="topup-btn">Top Up Now</a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -443,196 +597,276 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
     <script>
     // Function to validate required fields
-    function validateRequiredField(fieldId, fieldName) {
-        const field = document.getElementById(fieldId);
-        const errorElement = document.querySelector(`#${fieldId} + .error-text`);
-        
-        if (!field.value.trim()) {
-            errorElement.textContent = `${fieldName} is required`;
-            return false;
-        }
-        
-        errorElement.textContent = '';
+function validateRequiredField(fieldId, fieldName) {
+    const field = document.getElementById(fieldId);
+    const errorElement = document.querySelector(`#${fieldId} + .error-text`);
+    
+    if (!field.value.trim()) {
+        errorElement.textContent = `${fieldName} is required`;
+        return false;
+    }
+    
+    errorElement.textContent = '';
+    return true;
+}
+
+// Field-specific validation functions
+function validateFullName() {
+    const isValid = validateRequiredField('fullname', 'Full name');
+    if (!isValid) return false;
+    
+    return validateField('fullname', /^[a-zA-Z\s]+$/, 'Should contain only letters and spaces');
+}
+
+function validateContact() {
+    const isValid = validateRequiredField('contact', 'Contact number');
+    if (!isValid) return false;
+    
+    return validateField('contact', /^\d{3}-\d{3,4} \d{4}$/, 'Format: XXX-XXX XXXX or XXX-XXXX XXXX');
+}
+
+function validateEmail() {
+    const isValid = validateRequiredField('email', 'Email');
+    if (!isValid) return false;
+    
+    return validateField('email', /^[^@]+@[^@]+\.com$/, 'Must end with .com');
+}
+
+function validateAddress() {
+    const isValid = validateRequiredField('address', 'Street address');
+    if (!isValid) return false;
+    
+    return validateField('address', /^[a-zA-Z0-9\s\-,.]+$/, 'Only letters, numbers, spaces, hyphens, commas and periods allowed');
+}
+
+function validateCity() {
+    const isValid = validateRequiredField('city', 'City');
+    if (!isValid) return false;
+    
+    return validateField('city', /^[a-zA-Z\s]+$/, 'Should contain only letters and spaces');
+}
+
+function validatePostcode() {
+    const isValid = validateRequiredField('postcode', 'Postcode');
+    if (!isValid) return false;
+    
+    return validateField('postcode', /^\d{5}$/, 'Must be exactly 5 digits');
+}
+
+function validateCardName() {
+    // Only validate if credit card or debit card is selected
+    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
+    if (!paymentMethod || (paymentMethod.value !== 'Credit Card' && paymentMethod.value !== 'Debit Card')) {
+        document.querySelector('#cname + .error-text').textContent = '';
         return true;
     }
+    
+    const isValid = validateRequiredField('cname', 'Card name');
+    if (!isValid) return false;
+    
+    return validateField('cname', /^[a-zA-Z\s]+$/, 'Should contain only letters and spaces');
+}
 
-    // Field-specific validation functions
-    function validateFullName() {
-        const isValid = validateRequiredField('fullname', 'Full name');
-        if (!isValid) return false;
-        
-        return validateField('fullname', /^[a-zA-Z\s]+$/, 'Should contain only letters and spaces');
-    }
-
-    function validateContact() {
-        const isValid = validateRequiredField('contact', 'Contact number');
-        if (!isValid) return false;
-        
-        return validateField('contact', /^\d{3}-\d{3,4} \d{4}$/, 'Format: XXX-XXX XXXX or XXX-XXXX XXXX');
-    }
-
-    function validateEmail() {
-        const isValid = validateRequiredField('email', 'Email');
-        if (!isValid) return false;
-        
-        return validateField('email', /^[^@]+@[^@]+\.com$/, 'Must end with .com');
-    }
-
-    function validateAddress() {
-        const isValid = validateRequiredField('address', 'Street address');
-        if (!isValid) return false;
-        
-        return validateField('address', /^[a-zA-Z0-9\s\-,.]+$/, 'Only letters, numbers, spaces, hyphens, commas and periods allowed');
-    }
-
-    function validateCity() {
-        const isValid = validateRequiredField('city', 'City');
-        if (!isValid) return false;
-        
-        return validateField('city', /^[a-zA-Z\s]+$/, 'Should contain only letters and spaces');
-    }
-
-    function validatePostcode() {
-        const isValid = validateRequiredField('postcode', 'Postcode');
-        if (!isValid) return false;
-        
-        return validateField('postcode', /^\d{5}$/, 'Must be exactly 5 digits');
-    }
-
-    function validateCardName() {
-        const isValid = validateRequiredField('cname', 'Card name');
-        if (!isValid) return false;
-        
-        return validateField('cname', /^[a-zA-Z\s]+$/, 'Should contain only letters and spaces');
-    }
-
-    function validateCardNumber() {
-        const isValid = validateRequiredField('ccnum', 'Card number');
-        if (!isValid) return false;
-        
-        return validateField('ccnum', /^\d{13,16}$/, 'Must be 13-16 digits');
-    }
-
-    function validateCVV() {
-        const isValid = validateRequiredField('cvv', 'CVV');
-        if (!isValid) return false;
-        
-        return validateField('cvv', /^\d{3}$/, 'Must be exactly 3 digits');
-    }
-
-    function validateExpDate() {
-        const expDateInput = document.getElementById('expdate');
-        const errorElement = document.querySelector('#expdate + .error-text');
-        
-        if (!expDateInput.value) {
-            errorElement.textContent = 'Expiry date is required';
-            return false;
-        }
-        
-        const selectedDate = new Date(expDateInput.value);
-        const currentDate = new Date();
-        
-        if (selectedDate.getFullYear() < currentDate.getFullYear() || 
-            (selectedDate.getFullYear() === currentDate.getFullYear() && 
-            selectedDate.getMonth() < currentDate.getMonth())) {
-            errorElement.textContent = 'Card has expired';
-            return false;
-        }
-        
-        errorElement.textContent = '';
+function validateCardNumber() {
+    // Only validate if credit card or debit card is selected
+    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
+    if (!paymentMethod || (paymentMethod.value !== 'Credit Card' && paymentMethod.value !== 'Debit Card')) {
+        document.querySelector('#ccnum + .error-text').textContent = '';
         return true;
     }
+    
+    const isValid = validateRequiredField('ccnum', 'Card number');
+    if (!isValid) return false;
+    
+    return validateField('ccnum', /^\d{13,16}$/, 'Must be 13-16 digits');
+}
 
-    // Generic field validation function
-    function validateField(fieldId, regex, errorMessage) {
-        const field = document.getElementById(fieldId);
-        const errorElement = document.querySelector(`#${fieldId} + .error-text`);
-        
-        if (!regex.test(field.value)) {
-            errorElement.textContent = errorMessage;
-            return false;
-        }
-        
-        errorElement.textContent = '';
+function validateCVV() {
+    // Only validate if credit card or debit card is selected
+    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
+    if (!paymentMethod || (paymentMethod.value !== 'Credit Card' && paymentMethod.value !== 'Debit Card')) {
+        document.querySelector('#cvv + .error-text').textContent = '';
         return true;
     }
+    
+    const isValid = validateRequiredField('cvv', 'CVV');
+    if (!isValid) return false;
+    
+    return validateField('cvv', /^\d{3}$/, 'Must be exactly 3 digits');
+}
 
-    // Set up event listeners for real-time validation
-    document.getElementById('fullname').addEventListener('input', validateFullName);
-    document.getElementById('contact').addEventListener('input', validateContact);
-    document.getElementById('email').addEventListener('input', validateEmail);
-    document.getElementById('address').addEventListener('input', validateAddress);
-    document.getElementById('city').addEventListener('input', validateCity);
-    document.getElementById('postcode').addEventListener('input', validatePostcode);
-    document.getElementById('cname').addEventListener('input', validateCardName);
-    document.getElementById('ccnum').addEventListener('input', validateCardNumber);
-    document.getElementById('cvv').addEventListener('input', validateCVV);
-    document.getElementById('expdate').addEventListener('change', validateExpDate);
+function validateExpDate() {
+    // Only validate if credit card or debit card is selected
+    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
+    if (!paymentMethod || (paymentMethod.value !== 'Credit Card' && paymentMethod.value !== 'Debit Card')) {
+        document.querySelector('#expdate + .error-text').textContent = '';
+        return true;
+    }
+    
+    const expDateInput = document.getElementById('expdate');
+    const errorElement = document.querySelector('#expdate + .error-text');
+    
+    if (!expDateInput.value) {
+        errorElement.textContent = 'Expiry date is required';
+        return false;
+    }
+    
+    const selectedDate = new Date(expDateInput.value);
+    const currentDate = new Date();
+    
+    if (selectedDate.getFullYear() < currentDate.getFullYear() || 
+        (selectedDate.getFullYear() === currentDate.getFullYear() && 
+        selectedDate.getMonth() < currentDate.getMonth())) {
+        errorElement.textContent = 'Card has expired';
+        return false;
+    }
+    
+    errorElement.textContent = '';
+    return true;
+}
 
-    // Form submission validation
-    document.getElementById('paymentForm').addEventListener('submit', function(e) {
-        let isValid = true;
+function validatePaymentMethod() {
+    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
+    const errorElement = document.querySelector('.payment-method .error-text');
+    
+    if (!paymentMethod) {
+        errorElement.textContent = 'Payment method is required';
+        return false;
+    }
+    
+    // Remove the E-wallet balance check here since we want to show the top-up button
+    errorElement.textContent = '';
+    return true;
+}
+
+// Generic field validation function
+function validateField(fieldId, regex, errorMessage) {
+    const field = document.getElementById(fieldId);
+    const errorElement = document.querySelector(`#${fieldId} + .error-text`);
+    
+    if (!regex.test(field.value)) {
+        errorElement.textContent = errorMessage;
+        return false;
+    }
+    
+    errorElement.textContent = '';
+    return true;
+}
+
+function togglePaymentSections() {
+    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
+    
+    if (paymentMethod) {
+        document.getElementById('creditCardSection').classList.remove('active');
+        document.getElementById('eWalletSection').classList.remove('active');
         
-        // Validate all required fields
-        isValid = validateFullName() && isValid;
-        isValid = validateContact() && isValid;
-        isValid = validateEmail() && isValid;
-        isValid = validateAddress() && isValid;
-        isValid = validateCity() && isValid;
-        isValid = validatePostcode() && isValid;
+        if (paymentMethod.value === 'Credit Card' || paymentMethod.value === 'Debit Card') {
+            document.getElementById('creditCardSection').classList.add('active');
+            // Make credit card fields required
+            document.getElementById('cname').required = true;
+            document.getElementById('ccnum').required = true;
+            document.getElementById('expdate').required = true;
+            document.getElementById('cvv').required = true;
+        } else if (paymentMethod.value === 'E-wallet') {
+            document.getElementById('eWalletSection').classList.add('active');
+            // Make credit card fields not required
+            document.getElementById('cname').required = false;
+            document.getElementById('ccnum').required = false;
+            document.getElementById('expdate').required = false;
+            document.getElementById('cvv').required = false;
+        }
+    }
+}
+
+// Set up event listeners for payment method radio buttons
+document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        togglePaymentSections();
+    });
+});
+
+// Set up event listeners for real-time validation
+document.getElementById('fullname').addEventListener('input', validateFullName);
+document.getElementById('contact').addEventListener('input', validateContact);
+document.getElementById('email').addEventListener('input', validateEmail);
+document.getElementById('address').addEventListener('input', validateAddress);
+document.getElementById('city').addEventListener('input', validateCity);
+document.getElementById('postcode').addEventListener('input', validatePostcode);
+document.getElementById('cname').addEventListener('input', validateCardName);
+document.getElementById('ccnum').addEventListener('input', validateCardNumber);
+document.getElementById('cvv').addEventListener('input', validateCVV);
+document.getElementById('expdate').addEventListener('change', validateExpDate);
+
+// Form submission validation
+document.getElementById('paymentForm').addEventListener('submit', function(e) {
+    let isValid = true;
+    
+    // Validate all required fields
+    isValid = validateFullName() && isValid;
+    isValid = validateContact() && isValid;
+    isValid = validateEmail() && isValid;
+    isValid = validateAddress() && isValid;
+    isValid = validateCity() && isValid;
+    isValid = validatePostcode() && isValid;
+    isValid = validatePaymentMethod() && isValid;
+    
+    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
+    if (paymentMethod && (paymentMethod.value === 'Credit Card' || paymentMethod.value === 'Debit Card')) {
         isValid = validateCardName() && isValid;
         isValid = validateCardNumber() && isValid;
-        isValid = validateCVV() && isValid;
         isValid = validateExpDate() && isValid;
-        
-        // State is a select element, just check if it has a value
-        const stateSelect = document.getElementById('state');
-        const stateError = document.querySelector('#state + .error-text');
-        if (!stateSelect.value) {
-            stateError.textContent = 'State is required';
-            isValid = false;
-        } else {
-            stateError.textContent = '';
-        }
+        isValid = validateCVV() && isValid;
+    }
+    
+    // State is a select element, just check if it has a value
+    const stateSelect = document.getElementById('state');
+    const stateError = document.querySelector('#state + .error-text');
+    if (!stateSelect.value) {
+        stateError.textContent = 'State is required';
+        isValid = false;
+    } else {
+        stateError.textContent = '';
+    }
 
-        if (!isValid) {
-            e.preventDefault();
-            // Scroll to the first error
-            const firstError = document.querySelector('.error-text');
-            if (firstError && firstError.textContent) {
-                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
+    if (!isValid) {
+        e.preventDefault();
+        // Scroll to the first error
+        const firstError = document.querySelector('.error-text');
+        if (firstError && firstError.textContent) {
+            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-    });
+    }
+});
 
-    // Success Popup Functions
-    function showSuccessPopup() {
-        const popupHTML = `
-            <div class="simple-popup-overlay">
-                <div class="simple-popup">
-                    <div class="popup-icon">✓</div>
-                    <h2>Payment Successful!</h2>
-                    <p>Thank you for your purchase. Your order has been placed successfully.</p>
-                    <button class="simple-popup-btn" onclick="closePopup()">OK</button>
-                </div>
+// Success Popup Functions
+function showSuccessPopup() {
+    const popupHTML = `
+        <div class="simple-popup-overlay">
+            <div class="simple-popup">
+                <div class="popup-icon">✓</div>
+                <h2>Payment Successful!</h2>
+                <p>Thank you for your purchase. Your order has been placed successfully.</p>
+                <button class="simple-popup-btn" onclick="closePopup()">OK</button>
             </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', popupHTML);
-    }
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', popupHTML);
+}
 
-    function closePopup() {
-        const popup = document.querySelector('.simple-popup-overlay');
-        if (popup) popup.remove();
-        window.location.href = 'index.php';
-    }
+function closePopup() {
+    const popup = document.querySelector('.simple-popup-overlay');
+    if (popup) popup.remove();
+    window.location.href = 'index.php';
+}
 
-    // Check for success parameter in URL and show popup
-    window.addEventListener('load', function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('payment') === 'success') {
-            showSuccessPopup();
-        }
-    });
+// Check for success parameter in URL and show popup
+window.addEventListener('load', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('payment') === 'success') {
+        showSuccessPopup();
+    }
+    togglePaymentSections();
+});
 </script>
 </body>
 </html>
