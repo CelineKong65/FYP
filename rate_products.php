@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$error) {
-        // Verify the user actually purchased this product in this size
+        // Verify the user actually purchased this product in this size AND order is delivered
         $verificationSql = "
             SELECT od.OrderDetailID
             FROM orderdetails od
@@ -37,6 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               AND op.CustID = ?
               AND p.ProductID = ?
               AND od.Size = ?
+              AND op.OrderStatus = 'Delivered'
               AND NOT EXISTS (
                   SELECT 1 FROM product_feedback pf
                   WHERE pf.OrderID = op.OrderID
@@ -50,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$orderId, $user_id, $productId, $size]);
         
         if ($stmt->rowCount() === 0) {
-            $error = 'You can only review products you\'ve purchased in this specific size.';
+            $error = 'You can only review delivered products you\'ve purchased in this specific size.';
         } else {
             // Insert new feedback
             $insertSql = "
@@ -69,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Fetch all purchased products not yet reviewed, grouped by size
+// Fetch all delivered purchased products not yet reviewed, grouped by size
 $listSql = "
     SELECT 
       op.OrderID,
@@ -87,6 +88,7 @@ $listSql = "
       AND pf.Size = od.Size
       AND pf.CustID = op.CustID
     WHERE op.CustID = ?
+      AND op.OrderStatus = 'Delivered'
       AND pf.ProductFeedbackID IS NULL
     ORDER BY op.OrderDate DESC, p.ProductName, od.Size
 ";
@@ -101,7 +103,7 @@ $ordersResult = $stmt->fetchAll(PDO::FETCH_ASSOC);
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rate Your Purchases</title>
-  <link rel="stylesheet" href="rate_products.css">
+  <link rel="stylesheet" href= "rate_products.css">
 </head>
 <body>
   <h2>Rate Your Purchases</h2>
@@ -116,7 +118,7 @@ $ordersResult = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
   <?php if (empty($ordersResult)): ?>
     <div class="alert info">
-      You don't have any products to review at this time.
+      You don't have any delivered products to review at this time.
     </div>
   <?php else: ?>
     <div class="product-grid">
