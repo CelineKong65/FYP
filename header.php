@@ -218,7 +218,18 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
             width: 15px;
         }
 
-        
+        @keyframes click-bounce {
+            0%   { transform: scale(1); }
+            30%  { transform: scale(1.3); }
+            50%  { transform: scale(0.9); }
+            70%  { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* New class to trigger animation */
+        .bounce {
+            animation: click-bounce 0.5s;
+        }
     </style>
 </head>
 <body>
@@ -234,9 +245,6 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <li><a href="about_us.php">ABOUT</a></li>
                 <li><a href="product.php">PRODUCTS</a></li>
                 <li><a href="contact.php">CONTACT</a></li>
-                <?php if ($isLoggedIn): ?>
-                    <li><a href="rate_products.php">Rate</a></li>
-                <?php endif; ?>
                 <?php if ($isLoggedIn): ?>
                     <li><a href="feedback.php">FEEDBACK</a></li>
                 <?php endif; ?>
@@ -304,6 +312,31 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
             }
             return true; 
         }
+
+        // For cart and wishlist click animations
+        document.addEventListener("DOMContentLoaded", function () {
+            const cartIcon = document.querySelector(".cart-icon");
+            const wishlistIcon = document.querySelector(".love-icon");
+
+            function animateClick(icon) {
+                icon.classList.add("bounce");
+                setTimeout(() => {
+                    icon.classList.remove("bounce");
+                }, 500); // Remove the class after animation ends
+            }
+
+            if (cartIcon) {
+                cartIcon.addEventListener("click", function (e) {
+                    animateClick(cartIcon);
+                });
+            }
+
+            if (wishlistIcon) {
+                wishlistIcon.addEventListener("click", function (e) {
+                    animateClick(wishlistIcon);
+                });
+            }
+        });
     </script>
 </body>
 </html>
