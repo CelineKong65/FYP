@@ -268,7 +268,7 @@ input::placeholder{
     font-style: italic;
 }
 
-.error {
+.error-message {
     color: red;
     font-size: 12px;
     display: block;

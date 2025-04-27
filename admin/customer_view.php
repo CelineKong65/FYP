@@ -208,6 +208,56 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     $stmt->close();
 }
 
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability'])) {
+    $type = $_POST['type'];
+    $value = trim($_POST['value']);
+    $cust_id = isset($_POST['cust_id']) ? (int)$_POST['cust_id'] : 0;
+    $exists = false;
+    $is_valid_format = true;
+    $error_message = '';
+
+    if ($type === 'name') {
+        $sql = "SELECT CustID FROM customer WHERE CustName = ? AND CustID != ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("si", $value, $cust_id);
+        $stmt->execute();
+        $stmt->store_result();
+        $exists = $stmt->num_rows > 0;
+        $stmt->close();
+    } elseif ($type === 'email') {
+        if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+            $is_valid_format = false;
+            $error_message = "Invalid email format";
+        } elseif (!preg_match('/\.com$/', $value)) {
+            $is_valid_format = false;
+            $error_message = "Email must end with .com";
+        } else {
+            $sql = "SELECT CustID FROM customer WHERE CustEmail = ? AND CustID != ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("si", $value, $cust_id);
+            $stmt->execute();
+            $stmt->store_result();
+            $exists = $stmt->num_rows > 0;
+            $stmt->close();
+        }
+    } elseif ($type === 'phone') {
+        if (!preg_match('/^\d{3}-\d{3,4} \d{4}$/', $value)) {
+            $is_valid_format = false;
+            $error_message = "Invalid phone format (XXX-XXX XXXX or XXX-XXXX XXXX)";
+        } else {
+            $sql = "SELECT CustID FROM customer WHERE CustPhoneNum = ? AND CustID != ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("si", $value, $cust_id);
+            $stmt->execute();
+            $stmt->store_result();
+            $exists = $stmt->num_rows > 0;
+            $stmt->close();
+        }
+    }
+
+    echo json_encode(['exists' => $exists, 'valid_format' => $is_valid_format, 'message' => $error_message]);
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
@@ -321,7 +371,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         <div class="edit-content">
             <span class="close" onclick="closeModal()">&times;</span>
             <h3>Edit Customer</h3>
-            <form method="POST" action="" enctype="multipart/form-data" class="edit">
+            <form method="POST" action="" enctype="multipart/form-data" class="edit" id="editCustomerForm">
                 <input type="hidden" name="cust_id" id="cust_id">
 
                 <div class="edit-form">
@@ -329,25 +379,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                         <label>Profile Picture:<span> (.jpp,.jpeg or .png only)</span></label>
                         <input class="img" type="file" name="profile_picture" id="profile_picture">
                         <label>Name:</label>
-                        <input type="text" name="name" id="name" required>
-                        <div id="name-error" class="error"></div>
+                        <input type="text" name="name" id="name" required onblur="checkAvailability('name', this.value)">
+                        <div id="name-error" class="error-message"></div>
                         <label>Email:</label>
-                        <input type="email" name="email" id="email" placeholder="example@gmail.com" required>
-                        <div id="email-error" class="error"></div>
+                        <input type="email" name="email" id="email" placeholder="example@gmail.com" required onblur="checkAvailability('email', this.value)">
+                        <div id="email-error" class="error-message"></div>
                         <label>Phone:</label>
-                        <input type="text" name="phone" id="phone" placeholder="XXX-XXX XXXX or XXX-XXXX XXXX format" required>
-                        <div id="phone-error" class="error"></div>
+                        <input type="text" name="phone" id="phone" placeholder="XXX-XXX XXXX or XXX-XXXX XXXX format" required onblur="checkAvailability('phone', this.value)">
+                        <div id="phone-error" class="error-message"></div>
                     </div>
                     <div class="right">
                         <label>Street Address:</label>
                         <input type="text" name="street" id="street" required>
-                        <div id="street-error" class="error"></div>
+                        <div id="street-error" class="error-message"></div>
                         <label>Postcode:</label>
                         <input type="text" name="postcode" id="postcode" required>
-                        <div id="postcode-error" class="error"></div>
+                        <div id="postcode-error" class="error-message"></div>
                         <label>City:</label>
                         <input type="text" name="city" id="city" required>
-                        <div id="city-error" class="error"></div>
+                        <div id="city-error" class="error-message"></div>
                         <label>State:</label>
                         <select name="state" id="state" required>
                             <option value="">-- Select City/State --</option>
@@ -365,6 +415,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                             <option value="Sabah">Sabah</option>
                             <option value="Sarawak">Sarawak</option>
                         </select>
+                        <div id="state-error" class="error-message"></div>
                     </div>
                 </div>            
 
@@ -376,6 +427,49 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     </div>
 
     <script>
+               function checkAvailability(type, value) {
+            const custId = document.getElementById('cust_id').value;
+            const errorElement = document.getElementById(`${type}-error`);
+            
+            if (!value.trim()) {
+                errorElement.textContent = '';
+                errorElement.style.display = 'none';
+                document.getElementById(type).classList.remove('error-field');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('check_availability', 'true');
+            formData.append('type', type);
+            formData.append('value', value);
+            formData.append('cust_id', custId);
+
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                const inputField = document.getElementById(type);
+                
+                if (!data.valid_format) {
+                    errorElement.textContent = data.message;
+                    errorElement.style.display = 'block';
+                    inputField.classList.add('error-field');
+                } else if (data.exists) {
+                    errorElement.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} already exists`;
+                    errorElement.style.display = 'block';
+                    inputField.classList.add('error-field');
+                } else {
+                    errorElement.textContent = '';
+                    errorElement.style.display = 'none';
+                    inputField.classList.remove('error-field');
+                }
+            })
+            .catch(error => {
+                console.error('Error checking availability:', error);
+            });
+        }
         function validateName(name) {
             if (name.trim() === '') {
                 return 'Name is required';
@@ -457,7 +551,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                 errorElement.style.display = 'none';
             }
         }
-
+        document.getElementById('editCustomerForm').addEventListener('submit', function(e) {
+            let isValid = true;
+            
+            // Check for any visible error messages
+            const errorMessages = document.querySelectorAll('.error-message');
+            errorMessages.forEach(error => {
+                if (error.style.display === 'block' || error.textContent.trim() !== '') {
+                    isValid = false;
+                }
+            });
+            
+            // Check for any fields with error class
+            const errorFields = document.querySelectorAll('.error-field');
+            if (errorFields.length > 0) {
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+                alert('Please fix all errors before submitting.');
+            }
+        });
         // Add event listeners when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
             // Edit modal validation
