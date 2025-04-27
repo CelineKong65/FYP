@@ -120,6 +120,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
         <ul class="sidebar-menu">
             <li class="active"><a href="#"><i class="fas fa-user"></i> Profile</a></li>
             <li><a href="order_history.php"><i class="fas fa-history"></i> Order History</a></li>
+            <?php if ($isLoggedIn): ?>
+                    <li><a href="rate_products.php">Rate</a></li>
+            <?php endif; ?>
         </ul>
         <div class="sidebar-footer">
             <button class="logout-btn" onclick="window.location.href='logout.php'"><i class="fas fa-sign-out-alt"></i> LOG OUT</button>
