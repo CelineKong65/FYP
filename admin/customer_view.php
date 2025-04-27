@@ -498,16 +498,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
             });
         }
 
-                // Real-time input validation
-                document.getElementById('email').addEventListener('input', function() {
-                    checkAvailability('email', this.value);
-                });
+        document.getElementById('email').addEventListener('input', function() {
+            checkAvailability('email', this.value);
+        });
 
-                document.getElementById('phone').addEventListener('input', function() {
-                    checkAvailability('phone', this.value);
-                });
+        document.getElementById('phone').addEventListener('input', function() {
+            checkAvailability('phone', this.value);
+        });
 
-                document.getElementById('name').addEventListener('input', function() {
+        document.getElementById('name').addEventListener('input', function() {
             const errorElement = document.getElementById('name-error');
             const inputField = document.getElementById('name');
             if (!this.value.trim()) {
@@ -548,6 +547,68 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 inputField.classList.add('valid-field');
             }
         });
+
+        // Validate all fields before form submission
+        // Validate all fields before form submission
+        function validateForm() {
+            let isValid = true;
+
+            // Validate required fields and format checks
+            const requiredFields = ['name', 'email', 'phone', 'postcode'];
+            
+            requiredFields.forEach(field => {
+                const fieldValue = document.getElementById(field).value.trim();
+                const errorElement = document.getElementById(`${field}-error`);
+                const inputField = document.getElementById(field);
+                
+                // Check if field is empty
+                if (!fieldValue) {
+                    errorElement.textContent = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
+                    errorElement.style.display = 'block';
+                    inputField.classList.add('error-field');
+                    inputField.classList.remove('valid-field');
+                    isValid = false;
+                } else {
+                    errorElement.textContent = '';
+                    errorElement.style.display = 'none';
+                    inputField.classList.remove('error-field');
+                    inputField.classList.add('valid-field');
+                }
+            });
+
+            // Check email format (if email is provided)
+            const email = document.getElementById('email').value.trim();
+            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                document.getElementById('email-error').textContent = 'Invalid email format';
+                document.getElementById('email-error').style.display = 'block';
+                document.getElementById('email').classList.add('error-field');
+                document.getElementById('email').classList.remove('valid-field');
+                isValid = false;
+            }
+
+            // Check phone format (if phone is provided)
+            const phone = document.getElementById('phone').value.trim();
+            if (phone && !/^\d{3}-\d{3,4} \d{4}$/.test(phone)) {
+                document.getElementById('phone-error').textContent = 'Phone must be in XXX-XXX XXXX or XXX-XXXX XXXX format';
+                document.getElementById('phone-error').style.display = 'block';
+                document.getElementById('phone').classList.add('error-field');
+                document.getElementById('phone').classList.remove('valid-field');
+                isValid = false;
+            }
+
+            // Check postcode format (if postcode is provided)
+            const postcode = document.getElementById('postcode').value.trim();
+            if (postcode && !/^\d{5}$/.test(postcode)) {
+                document.getElementById('postcode-error').textContent = 'Postcode must be 5 digits';
+                document.getElementById('postcode-error').style.display = 'block';
+                document.getElementById('postcode').classList.add('error-field');
+                document.getElementById('postcode').classList.remove('valid-field');
+                isValid = false;
+            }
+
+            // Return whether the form is valid or not
+            return isValid;
+        }
 
         // Form submission validation
         document.getElementById('editCustomerForm').addEventListener('submit', function(e) {
