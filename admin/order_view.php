@@ -172,7 +172,12 @@ if (isset($_POST['edit_status'])) {
                 });
             }
         });
-    </script>
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById("editModal")) {
+                closeEdit();
+            }
+        }    </script>
 
 </body>
 </html>
