@@ -19,7 +19,7 @@ $loggedInPosition = $adminData['AdminPosition'];
 $stmt->close();
 
 $customer_query = "SELECT * FROM customer ORDER BY 
-                  CASE WHEN CustomerStatus = 'active' THEN 0 ELSE 1 END, 
+                  CASE WHEN CustomerStatus = 'Active' THEN 0 ELSE 1 END, 
                   CustName ASC";
 $customer_result = $conn->query($customer_query);
 
@@ -29,7 +29,7 @@ if (!empty($search_query)) {
     $search_param = "%$search_query%";
     $customer_query = "SELECT * FROM customer 
                        WHERE CustName LIKE ? OR CustEmail LIKE ? 
-                       ORDER BY CASE WHEN CustomerStatus = 'active' THEN 0 ELSE 1 END, 
+                       ORDER BY CASE WHEN CustomerStatus = 'Active' THEN 0 ELSE 1 END, 
                        CustName ASC";
     $stmt = $conn->prepare($customer_query);
     $stmt->bind_param("ss", $search_param, $search_param);
@@ -37,7 +37,7 @@ if (!empty($search_query)) {
     $customer_result = $stmt->get_result();
 } else {
     $customer_query = "SELECT * FROM customer ORDER BY 
-    CASE WHEN CustomerStatus = 'active' THEN 0 ELSE 1 END, 
+    CASE WHEN CustomerStatus = 'Active' THEN 0 ELSE 1 END, 
     CustName ASC";
     $customer_result = $conn->query($customer_query);
 }
@@ -188,17 +188,16 @@ if (isset($_POST['update_customer'])) {
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     $custID = (int)$_POST['cust_id'];
     $currentStatus = strtolower($_POST['current_status']);
-    
-    $newStatus = ($currentStatus == 'active') ? 'inactive' : 'active';
-    
+    $newStatus = ($currentStatus == 'active') ? 'Inactive' : 'Active';
+
     $stmt = $conn->prepare("UPDATE customer SET CustomerStatus = ? WHERE CustID = ?");
     $stmt->bind_param("si", $newStatus, $custID);
-    
+
     if ($stmt->execute()) {
         header("Location: customer_view.php");
         exit();
     } else {
-        $error = "Status update failed: " . $conn->error;
+        echo "Status update failed: " . $conn->error;
     }
     $stmt->close();
 }
@@ -325,7 +324,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                                     echo htmlspecialchars($full_address);
                                     ?>
                                 </td>
-                                <td class="<?php echo ($customer['CustomerStatus'] === 'active') ? 'status-active' : 'status-inactive'; ?>">
+                                <td class="<?php echo ($customer['CustomerStatus'] === 'Active') ? 'status-active' : 'status-inactive'; ?>">
                                     <?php echo $customer['CustomerStatus']; ?>
                                 </td>
                                 <td>
@@ -345,8 +344,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                                         <input type="hidden" name="toggle_status" value="1">
                                         <input type="hidden" name="cust_id" value="<?php echo $customer['CustID']; ?>">
                                         <input type="hidden" name="current_status" value="<?php echo $customer['CustomerStatus']; ?>">
-                                        <button type="submit" class="btn-status <?php echo ($customer['CustomerStatus'] == 'active') ? 'btn-inactive' : 'btn-active'; ?>">
-                                            <?php echo ($customer['CustomerStatus'] == 'active') ? 'Deactivate' : 'Activate'; ?>
+                                        <button type="submit" class="btn-status <?php echo ($customer['CustomerStatus'] == 'Active') ? 'btn-inactive' : 'btn-active'; ?>">
+                                            <?php echo ($customer['CustomerStatus'] == 'Active') ? 'Deactivate' : 'Activate'; ?>
                                         </button>
                                     </form>
                                 </td>

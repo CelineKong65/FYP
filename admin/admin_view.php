@@ -36,7 +36,7 @@ function generateRandomPassword($length = 8) {
 }
 
 $admin_query = "SELECT * FROM admin ORDER BY 
-                CASE WHEN AdminStatus = 'active' THEN 0 ELSE 1 END, 
+                CASE WHEN AdminStatus = 'Active' THEN 0 ELSE 1 END, 
                 AdminName ASC";
 $admin_result = $conn->query($admin_query);
 
@@ -49,7 +49,7 @@ if (!empty($search_query)) {
         WHERE BINARY AdminName LIKE ? OR BINARY AdminEmail LIKE ? 
         ORDER BY 
             AdminPosition = 'superadmin' DESC,
-            AdminStatus = 'active' DESC,
+            AdminStatus = 'Active' DESC,
             AdminName ASC
     ");
     $stmt->bind_param("ss", $search_param, $search_param);
@@ -60,7 +60,7 @@ if (!empty($search_query)) {
         SELECT * FROM admin 
         ORDER BY 
             AdminPosition = 'superadmin' DESC,
-            AdminStatus = 'active' DESC,
+            AdminStatus = 'Active' DESC,
             AdminName ASC
     ");
 }
@@ -156,7 +156,7 @@ if (isset($_POST['add_admin'])) {
     $email = strtolower(trim($_POST['email']));
     $phone = trim($_POST['phone']);
     $position = trim($_POST['position']);
-    $status = 'active';
+    $status = 'Active';
     
     // Generate random 8-character password
     $password = generateRandomPassword(8);
@@ -270,7 +270,7 @@ if (isset($_POST['toggle_status'])) {
     if ($admin['AdminPosition'] === 'superadmin') {
         $_SESSION['error'] = 'Cannot modify status of superadmin.';
     } else {
-        $new_status = ($current_status === 'active') ? 'inactive' : 'active';
+        $new_status = ($current_status === 'Active') ? 'Inactive' : 'Active';
         
         $update_query = "UPDATE admin SET AdminStatus = ? WHERE AdminID = ?";
         $stmt = $conn->prepare($update_query);
@@ -392,7 +392,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                                 <td><?php echo $admin['AdminPhoneNum']; ?></td>
                                 <td style="text-align: center;"><?php echo $admin['AdminPosition']; ?></td>
                                 <?php if ($loggedInPosition === 'superadmin'): ?>
-                                    <td class="<?php echo ($admin['AdminStatus'] === 'active') ? 'status-active' : 'status-inactive'; ?>" style="text-align: center;">
+                                    <td class="<?php echo ($admin['AdminStatus'] === 'Active') ? 'status-active' : 'status-inactive'; ?>" style="text-align: center;">
                                         <?php echo $admin['AdminStatus']; ?>
                                     </td>
                                     <td>
@@ -406,14 +406,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                                         </button>
                                         <?php if ($admin['AdminPosition'] === 'superadmin'): ?>
                                             <button type="button" class="btn-disabled" title="Cannot modify superadmin status">
-                                                <?php echo ($admin['AdminStatus'] == 'active') ? 'Deactivate' : 'Activate'; ?>
+                                                <?php echo ($admin['AdminStatus'] == 'Active') ? 'Deactivate' : 'Activate'; ?>
                                             </button>
                                         <?php else: ?>
                                             <form method="post" action="" style="display: inline;">
                                                 <input type="hidden" name="toggle_status" value="1">
                                                 <input type="hidden" name="admin_id" value="<?php echo $admin['AdminID']; ?>">
                                                 <input type="hidden" name="current_status" value="<?php echo $admin['AdminStatus']; ?>">
-                                                <button type="submit" class="btn-status <?php echo ($admin['AdminStatus'] == 'active') ? 'btn-inactive' : 'btn-active'; ?>">
+                                                <button type="submit" class="btn-status <?php echo ($admin['AdminStatus'] == 'Active') ? 'btn-inactive' : 'btn-active'; ?>">
                                                     <?php echo ($admin['AdminStatus'] == 'active') ? 'Deactivate' : 'Activate'; ?>
                                                 </button>
                                             </form>
