@@ -310,3 +310,13 @@ body {
 .password-req li span {
     flex: 1;
 }
+
+.error-message {
+    color: #e74c3c;
+    font-size: 0.8rem;
+    margin-top: 5px;
+    display: block;
+}
+.error-field {
+    border-color: #e74c3c !important;
+}
