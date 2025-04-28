@@ -63,6 +63,13 @@ form.editForm,.addForm{
     margin-right: 50px;
 }
 
+form.search, div.add{
+    width: 90%;
+    margin: 0 auto;
+    margin-top: 12px;
+
+}
+
 .search input {
     width: 200px;
     padding: 8px;
@@ -110,7 +117,6 @@ button[name="edit_admin"]:hover{
 .add{
     display: flex;
     justify-content: flex-end;
-    margin-top: 12px;
 }
 
 .add_btn{
@@ -265,4 +271,16 @@ input::placeholder{
 
 .error-field {
     border: 1px solid red !important;
+}
+
+.btn-disabled {
+    background-color: #cccccc !important;
+    color: #666666 !important;
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+}
+
+.btn-disabled:hover {
+    background-color: #cccccc !important;
+    color: #666666 !important;
 }
