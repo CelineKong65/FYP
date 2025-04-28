@@ -282,6 +282,58 @@ if (isset($_POST['toggle_status'])) {
     header("Location: admin_view.php");
     exit();
 }
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability'])) {
+    $type = $_POST['type'];
+    $value = trim($_POST['value']);
+    $admin_id = isset($_POST['admin_id']) ? (int)$_POST['admin_id'] : 0;
+    $exists = false;
+    $is_valid_format = true;
+    $error_message = '';
+
+    if ($type === 'name') {
+        $sql = "SELECT AdminID FROM admin WHERE AdminName = ? AND AdminID != ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("si", $value, $admin_id);
+        $stmt->execute();
+        $stmt->store_result();
+        $exists = $stmt->num_rows > 0;
+        $stmt->close();
+    } elseif ($type === 'email') {
+        if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+            $is_valid_format = false;
+            $error_message = "Invalid email format";
+        } elseif (!preg_match('/\.com$/', $value)) {
+            $is_valid_format = false;
+            $error_message = "Email must end with .com";
+        } else {
+            $sql = "SELECT AdminID FROM admin WHERE AdminEmail = ? AND AdminID != ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("si", $value, $admin_id);
+            $stmt->execute();
+            $stmt->store_result();
+            $exists = $stmt->num_rows > 0;
+            $stmt->close();
+        }
+    } elseif ($type === 'phone') {
+        if (!preg_match('/^\d{3}-\d{3,4} \d{4}$/', $value)) {
+            $is_valid_format = false;
+            $error_message = "Invalid phone format (XXX-XXX XXXX or XXX-XXXX XXXX)";
+        } else {
+            $sql = "SELECT AdminID FROM admin WHERE AdminPhoneNum = ? AND AdminID != ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("si", $value, $admin_id);
+            $stmt->execute();
+            $stmt->store_result();
+            $exists = $stmt->num_rows > 0;
+            $stmt->close();
+        }
+    }
+
+    header('Content-Type: application/json');
+    echo json_encode(['exists' => $exists, 'valid_format' => $is_valid_format, 'message' => $error_message]);
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
@@ -291,19 +343,6 @@ if (isset($_POST['toggle_status'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin List</title>
     <link rel="stylesheet" href="admin_view.css">
-    <style>
-        .btn-disabled {
-    background-color: #cccccc !important;
-    color: #666666 !important;
-    cursor: not-allowed !important;
-    opacity: 0.6 !important;
-}
-
-.btn-disabled:hover {
-    background-color: #cccccc !important;
-    color: #666666 !important;
-}
-    </style>
 </head>
 <body>
     <div class="header">
@@ -397,20 +436,23 @@ if (isset($_POST['toggle_status'])) {
         <div class="edit-content">
             <span class="close" onclick="closeModal()">&times;</span>
             <h3>Edit Admin</h3>
-            <form method="POST" action="" enctype="multipart/form-data" class="edit">
+            <form method="POST" action="" enctype="multipart/form-data">
                 <input type="hidden" name="admin_id" id="admin_id">
                 <label>Name:</label>
-                <input type="text" name="name" id="name" required>
+                <input type="text" name="name" id="name" required onblur="checkAvailability('name', this.value, document.getElementById('admin_id').value)">
                 <div id="name-error" class="error"></div>
+
                 <label>Email:</label>
-                <input type="email" name="email" id="email" placeholder="example@gmail.com" required>
+                <input type="email" name="email" id="email" placeholder="example@gmail.com" required onblur="checkAvailability('email', this.value, document.getElementById('admin_id').value)">
                 <div id="email-error" class="error"></div>
+
                 <label>Phone:</label>
-                <input type="text" name="phone" id="phone" placeholder="XXX-XXX XXXX or XXX-XXXX XXXX format"required>
+                <input type="text" name="phone" id="phone" placeholder="XXX-XXX XXXX or XXX-XXXX XXXX format" required onblur="checkAvailability('phone', this.value, document.getElementById('admin_id').value)">
                 <div id="phone-error" class="error"></div>
+
                 <label>Position:</label>
                 <div id="position-container">
-                    <!-- Position field will be inserted here dynamically -->
+
                 </div>
                 <div class="upd_div">
                     <button type="submit" name="update_admin">Update</button>
@@ -423,18 +465,18 @@ if (isset($_POST['toggle_status'])) {
         <div class="add-content">
             <span class="close" onclick="closeAddModal()">&times;</span>
             <h3>Add Admin</h3>
-            <form method="POST" action="" enctype="multipart/form-data" class="edit">
+            <form method="POST" action="" enctype="multipart/form-data">
                 <label>Name:</label>
-                <input type="text" name="name" id="add-name" required>
-                <span id="add-name-error" class="error"></span>
+                <input type="text" name="name" id="add-name" required onblur="checkAvailability('name', this.value)">
+                <div id="add-name-error" class="error"></div>
                 
                 <label>Email:</label>
-                <input type="email" name="email" id="add-email" placeholder="example@gmail.com" required>
-                <span id="add-email-error" class="error"></span>
+                <input type="email" name="email" id="add-email" placeholder="example@gmail.com" required onblur="checkAvailability('email', this.value)">
+                <div id="add-email-error" class="error"></div>
                 
                 <label>Phone:</label>
-                <input type="text" name="phone" id="add-phone" placeholder="XXX-XXX XXXX or XXX-XXXX XXXX format" required>
-                <span id="add-phone-error" class="error"></span>
+                <input type="text" name="phone" id="add-phone" placeholder="XXX-XXX XXXX or XXX-XXXX XXXX format" required onblur="checkAvailability('phone', this.value)">
+                <div id="add-phone-error" class="error"></div>
                 
                 <label>Position:</label>
                 <select name="position" id="add-position" required>
@@ -450,235 +492,243 @@ if (isset($_POST['toggle_status'])) {
     </div>
 
     <script>
-        function validateName(name) {
-            if (name.trim() === '') {
-                return 'Name is required';
-            }
-            return '';
+function checkAvailability(type, value, adminId = 0, isAddModal = false) {
+    const prefix = isAddModal ? 'add-' : 'edit-'; // Use 'edit-' for edit modal errors
+    const errorElement = document.getElementById(`${prefix}${type}-error`);
+    const inputField = document.getElementById(`${isAddModal ? 'add-' : ''}${type}`); // Adjust input ID selection
+
+    errorElement.textContent = '';
+    errorElement.style.display = 'none';
+    inputField.classList.remove('error-field', 'valid-field');
+
+    if (!value.trim()) {
+        errorElement.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} is required`;
+        errorElement.style.display = 'block';
+        inputField.classList.add('error-field');
+        return false; // Indicate error
+    }
+
+    let isValidFormat = true;
+    let formatErrorMessage = '';
+
+    if (type === 'email') {
+        if (!/^[^\s@]+@[^\s@]+\.com$/.test(value)) {
+            isValidFormat = false;
+            formatErrorMessage = "Invalid email format (must contain @ and end with .com)";
         }
-
-        function validateEmail(email) {
-            if (email.trim() === '') {
-                return 'Email is required';
-            }
-            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !email.endsWith('.com')) {
-                return 'Invalid email format (must contain @ and end with .com)';
-            }
-            return '';
+    } else if (type === 'phone') {
+        if (!/^\d{3}-\d{3,4} \d{4}$/.test(value)) {
+            isValidFormat = false;
+            formatErrorMessage = "Phone must be in XXX-XXX XXXX or XXX-XXXX XXXX format";
         }
+    }
 
-        function validatePhone(phone) {
-            if (phone.trim() === '') {
-                return 'Phone is required';
-            }
-            if (!/^\d{3}-\d{3,4} \d{4}$/.test(phone)) {
-                return 'Phone must be in XXX-XXX XXXX or XXX-XXXX XXXX format';
-            }
-            return '';
+    if (!isValidFormat) {
+        errorElement.textContent = formatErrorMessage;
+        errorElement.style.display = 'block';
+        inputField.classList.add('error-field');
+        return false; // Indicate error
+    }
+
+    const formData = new FormData();
+    formData.append('check_availability', 'true');
+    formData.append('type', type);
+    formData.append('value', value);
+    formData.append('admin_id', adminId);
+
+    return fetch(window.location.href, {
+        method: 'POST',
+        body: formData,
+    })
+    .then(response => response.json())
+    .then(data => {
+        const currentErrorElement = document.getElementById(`${prefix}${type}-error`);
+        const currentInputField = document.getElementById(`${isAddModal ? 'add-' : ''}${type}`);
+
+        if (data.exists) {
+            currentErrorElement.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} already exists`;
+            currentErrorElement.style.display = 'block';
+            currentInputField.classList.add('error-field');
+            return false; // Indicate error
+        } else if (!data.valid_format) {
+            currentErrorElement.textContent = data.message;
+            currentErrorElement.style.display = 'block';
+            currentInputField.classList.add('error-field');
+            return false; // Indicate error
+        } else {
+            currentErrorElement.textContent = '';
+            currentErrorElement.style.display = 'none';
+            currentInputField.classList.remove('error-field');
+            currentInputField.classList.add('valid-field');
+            return true; // Indicate success
         }
+    })
+    .catch(error => {
+        console.error('Error checking availability:', error);
+        return false; // Indicate error on fetch failure
+    });
+}
 
-        // Show error message
-        function showError(fieldId, errorId, message) {
-            document.getElementById(fieldId).classList.add('error-field');
-            const errorElement = document.getElementById(errorId);
-            errorElement.textContent = message;
-            errorElement.style.display = 'block';
+document.getElementById('name')?.addEventListener('blur', function() {
+    const adminId = document.getElementById('admin_id').value || 0;
+    checkAvailability('name', this.value, adminId);
+});
+
+document.getElementById('email')?.addEventListener('blur', function() {
+    const adminId = document.getElementById('admin_id').value || 0;
+    checkAvailability('email', this.value, adminId);
+});
+
+document.getElementById('phone')?.addEventListener('blur', function() {
+    const adminId = document.getElementById('admin_id').value || 0;
+    checkAvailability('phone', this.value, adminId);
+});
+
+document.getElementById('add-name')?.addEventListener('blur', function() {
+    checkAvailability('name', this.value, 0, true);
+});
+
+document.getElementById('add-email')?.addEventListener('blur', function() {
+    checkAvailability('email', this.value, 0, true);
+});
+
+document.getElementById('add-phone')?.addEventListener('blur', function() {
+    checkAvailability('phone', this.value, 0, true);
+});
+
+function hasErrors(prefix = '') {
+    const errorMessages = document.querySelectorAll(`#${prefix}modal .error`);
+    for (const error of errorMessages) {
+        if (error.style.display === 'block' && error.textContent.trim() !== '') {
+            return true;
         }
+    }
+    const errorFields = document.querySelectorAll(`#${prefix}modal .error-field`);
+    return errorFields.length > 0;
+}
 
-        // Clear error message
-        function clearError(fieldId, errorId) {
-            document.getElementById(fieldId).classList.remove('error-field');
-            document.getElementById(errorId).style.display = 'none';
-        }
-
-        // Real-time validation for edit modal
-        document.getElementById('name').addEventListener('input', function() {
-            const error = validateName(this.value);
-            if (error) {
-                showError('name', 'name-error', error);
-            } else {
-                clearError('name', 'name-error');
-            }
-        });
-
-        document.getElementById('email').addEventListener('input', function() {
-            const error = validateEmail(this.value);
-            if (error) {
-                showError('email', 'email-error', error);
-            } else {
-                clearError('email', 'email-error');
-            }
-        });
-
-        document.getElementById('phone').addEventListener('input', function() {
-            const error = validatePhone(this.value);
-            if (error) {
-                showError('phone', 'phone-error', error);
-            } else {
-                clearError('phone', 'phone-error');
-            }
-        });
-
-        // Real-time validation for add modal
-        document.getElementById('add-name').addEventListener('input', function() {
-            const error = validateName(this.value);
-            if (error) {
-                showError('add-name', 'add-name-error', error);
-            } else {
-                clearError('add-name', 'add-name-error');
-            }
-        });
-
-        document.getElementById('add-email').addEventListener('input', function() {
-            const error = validateEmail(this.value);
-            if (error) {
-                showError('add-email', 'add-email-error', error);
-            } else {
-                clearError('add-email', 'add-email-error');
-            }
-        });
-
-        document.getElementById('add-phone').addEventListener('input', function() {
-            const error = validatePhone(this.value);
-            if (error) {
-                showError('add-phone', 'add-phone-error', error);
-            } else {
-                clearError('add-phone', 'add-phone-error');
-            }
-        });
-
-        // Form submission validation
-        document.querySelector('#editModal form').addEventListener('submit', function(e) {
-            let isValid = true;
-            
-            const name = document.getElementById('name').value;
-            const nameError = validateName(name);
-            if (nameError) {
-                showError('name', 'name-error', nameError);
-                isValid = false;
-            }
-            
-            const email = document.getElementById('email').value;
-            const emailError = validateEmail(email);
-            if (emailError) {
-                showError('email', 'email-error', emailError);
-                isValid = false;
-            }
-            
-            const phone = document.getElementById('phone').value;
-            const phoneError = validatePhone(phone);
-            if (phoneError) {
-                showError('phone', 'phone-error', phoneError);
-                isValid = false;
-            }
-            
+// Edit form submission
+document.querySelector('#editModal form')?.addEventListener('submit', async function(e) {
+    // Prevent default only if we need to validate
+    let shouldPreventDefault = false;
+    
+    const fields = ['name', 'email', 'phone'];
+    for (const field of fields) {
+        const element = document.getElementById(field);
+        if (element) {
+            const adminId = document.getElementById('admin_id').value || 0;
+            const isValid = await checkAvailability(field, element.value, adminId);
             if (!isValid) {
-                e.preventDefault();
+                shouldPreventDefault = true;
             }
-        });
+        }
+    }
 
-        document.querySelector('#addModal form').addEventListener('submit', function(e) {
-            let isValid = true;
-            
-            const name = document.getElementById('add-name').value;
-            const nameError = validateName(name);
-            if (nameError) {
-                showError('add-name', 'add-name-error', nameError);
-                isValid = false;
-            }
-            
-            const email = document.getElementById('add-email').value;
-            const emailError = validateEmail(email);
-            if (emailError) {
-                showError('add-email', 'add-email-error', emailError);
-                isValid = false;
-            }
-            
-            const phone = document.getElementById('add-phone').value;
-            const phoneError = validatePhone(phone);
-            if (phoneError) {
-                showError('add-phone', 'add-phone-error', phoneError);
-                isValid = false;
-            }
-            
+    if (shouldPreventDefault) {
+        e.preventDefault();
+        alert('Please fix all errors before submitting.');
+    }
+    // If no errors, allow normal form submission
+});
+
+// Add form submission
+document.querySelector('#addModal form')?.addEventListener('submit', async function(e) {
+    // Prevent default only if we need to validate
+    let shouldPreventDefault = false;
+    
+    const fields = ['add-name', 'add-email', 'add-phone'];
+    for (const field of fields) {
+        const element = document.getElementById(field);
+        if (element) {
+            const isValid = await checkAvailability(field.replace('add-', ''), element.value, 0, true);
             if (!isValid) {
-                e.preventDefault();
+                shouldPreventDefault = true;
+            }
+        }
+    }
+
+    if (shouldPreventDefault) {
+        e.preventDefault();
+        alert('Please fix all errors before submitting.');
+    }
+    // If no errors, allow normal form submission
+});
+
+function editAdmin(admin_id, name, email, phone, position, password) {
+    document.getElementById('admin_id').value = admin_id;
+    document.getElementById('name').value = name;
+    document.getElementById('email').value = email;
+    document.getElementById('phone').value = phone;
+    const positionContainer = document.getElementById('position-container');
+    if (position === 'superadmin') {
+        positionContainer.innerHTML = `
+            <div class="position-display">${position}</div>
+            <input type="hidden" name="position" value="superadmin">
+        `;
+    } else {
+        positionContainer.innerHTML = `
+            <select name="position" id="position" required>
+                <option value="admin" ${position === 'admin' ? 'selected' : ''}>admin</option>
+                <option value="superadmin" ${position === 'superadmin' ? 'selected' : ''}>superadmin</option>
+            </select>
+        `;
+    }
+    document.getElementById('editModal').style.display = 'block';
+}
+
+function openAddModal() {
+    document.getElementById('addModal').style.display = 'block';
+}
+
+function closeModal() {
+    // Clear errors and styles for edit modal
+    clearError('name', 'edit-name-error');
+    clearError('email', 'edit-email-error');
+    clearError('phone', 'edit-phone-error');
+
+    document.getElementById('editModal').style.display = 'none';
+}
+
+function closeAddModal() {
+    // Clear errors and styles for add modal
+    clearError('add-name', 'add-name-error');
+    clearError('add-email', 'add-email-error');
+    clearError('add-phone', 'add-phone-error');
+
+    document.querySelector('#addModal form').reset(); // Optionally reset the form
+    document.getElementById('addModal').style.display = 'none';
+}
+
+function clearError(inputId, errorId) {
+    const inputElement = document.getElementById(inputId);
+    const errorElement = document.getElementById(errorId);
+    if (inputElement && errorElement) {
+        inputElement.classList.remove('error-field', 'valid-field');
+        errorElement.textContent = '';
+        errorElement.style.display = 'none';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.querySelector('input[name="search"]');
+    const searchForm = document.querySelector('.search');
+    if (searchInput && searchForm) {
+        searchInput.addEventListener('input', function() {
+            if (this.value.trim() === '') {
+                searchForm.submit();
             }
         });
-        function editAdmin(admin_id, name, email, phone, position, password) {
-            document.getElementById('admin_id').value = admin_id;
-            document.getElementById('name').value = name;
-            document.getElementById('email').value = email;
-            document.getElementById('phone').value = phone;
-            
-            const positionContainer = document.getElementById('position-container');
-            
-            if (position === 'superadmin') {
-                positionContainer.innerHTML = `
-                    <div class="position-display">${position}</div>
-                    <input type="hidden" name="position" value="superadmin">
-                `;
-            } else {
-                positionContainer.innerHTML = `
-                    <select name="position" id="position" required>
-                        <option value="admin" ${position === 'admin' ? 'selected' : ''}>admin</option>
-                        <option value="superadmin" ${position === 'superadmin' ? 'selected' : ''}>superadmin</option>
-                    </select>
-                `;
-            }
+    }
+});
 
-            document.getElementById('editModal').style.display = 'block';
-        }
-
-        function closeModal() {
-            // Clear all error messages and styling in edit modal
-            clearError('name', 'name-error');
-            clearError('email', 'email-error');
-            clearError('phone', 'phone-error');
-            
-            // Hide the modal
-            document.getElementById('editModal').style.display = 'none';
-        }
-
-        function openAddModal() {
-            document.getElementById('addModal').style.display = 'block';
-        }
-
-        function closeAddModal() {
-            // Clear all error messages and styling in add modal
-            clearError('add-name', 'add-name-error');
-            clearError('add-email', 'add-email-error');
-            clearError('add-phone', 'add-phone-error');
-            
-            // Reset the form (optional)
-            document.querySelector('#addModal form').reset();
-            
-            // Hide the modal
-            document.getElementById('addModal').style.display = 'none';
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.querySelector('input[name="search"]');
-            const searchForm = document.querySelector('.search');
-            
-            if (searchInput && searchForm) {
-                searchInput.addEventListener('input', function() {
-                    // If search input is empty, submit the form to show all results
-                    if (this.value.trim() === '') {
-                        searchForm.submit();
-                    }
-                });
-            }
-        });
-
-        window.onclick = function(event) {
-            if (event.target == document.getElementById("addModal")) {
-                closeAddModal();
-            }
-            if (event.target == document.getElementById("editModal")) {
-                closeModal();
-            }
-        }
-    </script>
+window.onclick = function(event) {
+    if (event.target == document.getElementById("addModal")) {
+        closeAddModal();
+    }
+    if (event.target == document.getElementById("editModal")) {
+        closeModal();
+    }
+}
+</script>
 </body>
 </html>
