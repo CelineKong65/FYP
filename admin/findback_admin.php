@@ -76,8 +76,191 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="utf-8">
     <title>Find Back your Account</title>
-    <link rel="stylesheet" type="text/css" href="findback_admin.css">
     <script src="https://kit.fontawesome.com/c2f7d169d6.js" crossorigin="anonymous"></script>
+    <style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+header {
+    background-color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 30px;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+.logo img {
+    width: 80px;
+    height: auto;
+}
+
+.return{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: row;
+}
+
+.return h2 {
+    transition: 0.5s;
+    font-size: medium;
+    color: #000000;
+    font-weight: 300;
+    font-size: 18px;
+}
+
+.return a {
+    transition: 0.5s;
+    text-decoration: none;
+}
+
+.return a:hover, h2:hover{
+    transition: color 0.5s;
+    color: #007BFF;
+    cursor: pointer;
+}
+
+.return i:hover{
+    transition: color 0.5s;
+    color: #007BFF;
+    cursor: pointer;
+}
+
+.return i {
+    transition: 0.5s;
+    font-size: 20pt;
+    color: black;
+    display: flex;
+    align-items: center;
+    gap: 6pt;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 15px;
+}
+
+.left-side {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: top;
+    
+}
+
+.left-side img {
+    max-width: 108.5%;
+    height: auto;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.right-side {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top: 120px;
+}
+
+.right-side-inner{
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+}
+
+.frame {
+    max-width: 500px;
+    width: 100%;
+    padding-top: 30px;
+}
+
+.frame h2 {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #000;
+}
+
+.frame h4{
+    margin-top: 10px;
+    font-weight: 500;
+}
+
+.frame p{
+    font-weight: 500;
+    margin-bottom: 20px;
+}
+
+.frame label {
+    font-size: 16px;
+    display: block;
+    margin-bottom: 5px;
+    color: #000;
+}
+
+.frame input {
+    height: 35px;
+    color: white;
+    max-width: 500px;
+    width: 100%;
+    padding: 6px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+}
+
+.frame input:hover, textarea:hover {
+    border: 1px solid #4c5157;
+    background-color: #b3b0b0;
+}
+
+.frame input:focus, textarea:focus {
+    background-color: #007bff94;
+    color: white;
+    outline: none;
+    border-color: #007BFF;
+}
+
+.frame input:not(:placeholder-shown), textarea:not(:placeholder-shown) {
+    background-color: #007bff94;
+    color: white;
+    outline: none;
+    border-color: #007BFF;
+}
+
+.frame button{
+    font-size: 18px;
+    transition: 0.5s;
+    color: #fff;
+    width: 500px;
+    padding: 8px;
+    margin-top: 20px;
+    border-radius: 10px;
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    background-color: #007BFF;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.frame button:hover{
+    transition: 0.5s;
+    background-color: #0060c7;
+}
+
+.error{
+    color: red;
+    margin-top: 10px;
+}
+    </style>
 </head>
 
 <body>
@@ -85,25 +268,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <div class="logo">
             <img src="../image/logo.png" alt="Watersport Equipment Shop Logo">
         </div>
-        <div class="back_div">
-            <button name="back" class="back" onclick="window.location.href='admin_login.php'">BACK</button>
+        <div class="return">
+        <a onclick="history.back();"><i class="fa-solid fa-rotate-left"><h2>RETURN</h2></i></a>
         </div>
     </header>
 
     <section class="container">
-        <div class="main-content">
-            <h2>FindBack Your Account</h2>
-            <p>Enter your email address to receive an OTP for password reset.</p>
-            <div class="frame">
-                <h2>Enter Your Email</h2>
-                    <form method="POST" action="">
-                        <label>Email:</label>
-                        <input type="email" name="email" placeholder="Enter your email address" required>
-                        <button type="submit" class="sub">SEND OTP</button>
-                    </form>
-                    <?php if ($error_message): ?>
-                        <p class="error"><?php echo $error_message; ?></p>
-                    <?php endif; ?>
+        <div class="left-side">
+            <img src="../image/admin_back.png" alt="Side Picture">
+        </div>
+
+        <div class="right-side">
+            <div class="right-side-inner">
+                <h2>FindBack Your Account</h2>
+                <p>Enter your email address to receive an OTP for password reset.</p>
+                <div class="frame">
+                    <h2>Enter Your Email</h2>
+                        <form method="POST" action="">
+                            <label>Email:</label>
+                            <input style="email" name="email" placeholder="Enter your email address" required>
+                            <button type="submit" class="sub">SEND OTP</button>
+                        </form>
+                        <?php if ($error_message): ?>
+                            <p class="error"><?php echo $error_message; ?></p>
+                        <?php endif; ?>
+                </div>
             </div>
         </div>
     </section>

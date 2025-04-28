@@ -268,15 +268,18 @@ input::placeholder{
     font-style: italic;
 }
 
-.error {
+.error-message {
     color: red;
     font-size: 12px;
-    display: block;
+    display: none;
     margin-bottom: 5px;
 }
-
 .error-field {
     border: 1px solid red !important;
+}
+
+.valid-field {
+    border: 1px solid green !important;
 }
 
 span{

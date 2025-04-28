@@ -29,7 +29,7 @@ $stmt->execute();
 $order_details = $stmt->get_result();
 
 $cust_id = $orderpayment['CustID'];
-$customer_query = "SELECT CustName, CustEmail FROM customer WHERE CustID = ?";
+$customer_query = "SELECT CustID, CustName, CustEmail FROM customer WHERE CustID = ?";
 $stmt = $conn->prepare($customer_query);
 $stmt->bind_param("i", $cust_id);
 $stmt->execute();
@@ -60,78 +60,91 @@ $customer = $stmt->get_result()->fetch_assoc();
             
             <div class="cust-info">
                 <p><b>User Information</b></p>
+                <p>ID: <?php echo $customer['CustID']; ?></p>
                 <p>Name: <?php echo $customer['CustName']; ?></p>
                 <p>Email: <?php echo $customer['CustEmail']; ?></p>
             </div>
+            <div style="display: flex; gap: 50px; flex-wrap: wrap; margin-top: 20px;">
+    
             <div class="rec-info">
                 <h3>Receiver Information</h3>
                 <p><b>Name:</b> <?php echo($orderpayment['ReceiverName']); ?></p>
                 <p><b>Contact Number:</b> <?php echo $orderpayment['ReceiverContact']; ?></p>
                 <p><b>Email:</b> <?php echo $orderpayment['ReceiverEmail']; ?></p>
                 <p><b>Address:</b> <?php echo $orderpayment['StreetAddress'] . ', ' . $orderpayment['Postcode'] . ' ' . $orderpayment['City'] . ', ' . $orderpayment['State']; ?></p>
-                <p><b>Order Date:</b> <?php echo $orderpayment['OrderDate']; ?></p>
-                <p><b>Order Status:</b> 
-                    <span class="<?php echo ($orderpayment['OrderStatus'] == 'Out for delivery') ? 'status-completed' : 'status-pending'; ?>">
+            </div>
+
+            <div class="order-info">
+                <h3>Order Info</h3>
+                <p><b>Order Date: </b><?php echo $orderpayment['OrderDate']; ?></p>
+                <p><b>Status: </b>
+                    <span class="status-badge <?php echo ($orderpayment['OrderStatus'] == 'Out for delivery' || $orderpayment['OrderStatus'] == 'Delivered') ? 'status-completed' : 'status-pending'; ?>">
                         <?php echo $orderpayment['OrderStatus']; ?>
                     </span>
                 </p>
+                <p><b>Payment Method: </b><?php echo $orderpayment['PaymentMethod']; ?></p>
             </div>
+
+        </div>
+
 
             <div class="order_item">
-                <h3>Order Items</h3>
+                <h3>Order Summary</h3>
                 <table>
-                    <thead>
-                        <tr>
-                            <th>No.</th>
-                            <th></th>
-                            <th colspan="2">Product</th>
-                            <th class="center">Price (RM)</th>
-                            <th class="center">Qty</th>
-                            <th style="text-align: right;">Total (RM)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php 
-                        $counter = 1;
+                <tbody>
 
-                        while ($orderdetails = $order_details->fetch_assoc()): 
-                            $total_item = $orderdetails['ProductPrice'] * $orderdetails['Quantity'];
-                        ?>
-                        <tr>
-                            <td><?php echo $counter++; ?></td>
-                            <td style="display: grid; place-items: center;">
-                                <?php
-                                $imageName = strtolower(str_replace(' ', '-', $orderdetails['ProductName']));
-                                $jpgPath = "../image/{$imageName}.jpg";
-                                $pngPath = "../image/{$imageName}.png";
+                    <tr>
+                        <th>No.</th>
+                        <th colspan="2">Product</th>
+                        <th>Price (RM)</th>
+                        <th>Qty</th>
+                        <th style="text-align: right;">Total (RM)</th>
+                    </tr>
 
-                                if (file_exists($jpgPath)) {
-                                    echo "<img src='{$jpgPath}' alt='{$orderdetails['ProductName']}'>";
-                                } elseif (file_exists($pngPath)) {
-                                    echo "<img src='{$pngPath}' alt='{$orderdetails['ProductName']}'>";
-                                } else {
-                                    echo "<img src='../image/placeholder.jpg' alt='Image not available' width='150'>";
-                                }
-                                ?>
-                            <td colspan="2" style="line-height: 1.5;"><strong><?php echo $orderdetails['ProductName']; ?></strong><br>Size: <?php echo $orderdetails['Size']; ?></td>
-                            <td class="center"><?php echo number_format($orderdetails['ProductPrice'], 2); ?></td>
-                            <td class="center"><?php echo $orderdetails['Quantity']; ?></td>
-                            <td><?php echo number_format($total_item, 2); ?></td>
-                        </tr>
-                        <?php endwhile; ?>
-                        <tr class="highlight-row">
-                            <td colspan="6" style="text-align: right;">Delivery Fee:</td>
-                            <td>RM <?php echo number_format($orderpayment['DeliveryFee'], 2); ?></td>
-                        </tr>
-                        <tr class="highlight-row">
-                            <td colspan="6" style="text-align: right;">TOTAL</td>
-                            <td>RM <?php echo number_format($orderpayment['TotalPrice'], 2); ?></td>
-                        </tr>
+                    <!-- Order Items -->
+                    <?php 
+                    $counter = 1;
+                    while ($orderdetails = $order_details->fetch_assoc()): 
+                        $total_item = $orderdetails['ProductPrice'] * $orderdetails['Quantity'];
+                    ?>
+                    <tr>
+                        <td><?php echo $counter++; ?></td>
+                        <td colspan="2">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <?php
+                            $imageName = strtolower(str_replace(' ', '-', $orderdetails['ProductName']));
+                            $jpgPath = "../image/{$imageName}.jpg";
+                            $pngPath = "../image/{$imageName}.png";
 
-                    </tbody>
-                </table> 
+                            if (file_exists($jpgPath)) {
+                                echo "<img src='{$jpgPath}' alt='{$orderdetails['ProductName']}' style='width: 70px;'>";
+                            } elseif (file_exists($pngPath)) {
+                                echo "<img src='{$pngPath}' alt='{$orderdetails['ProductName']}' style='width: 70px;'>";
+                            } else {
+                                echo "<img src='../image/placeholder.jpg' alt='Image not available' style='width: 70px;'>";
+                            }
+                            ?>
+                            <div style="margin-left: 20px; text-align: left;">
+                                <strong><?php echo $orderdetails['ProductName']; ?></strong><br>
+                                Size: <?php echo $orderdetails['Size']; ?>
+                            </div>
+                        </div>
+                        </td>
+                        <td><?php echo number_format($orderdetails['ProductPrice'], 2); ?></td>
+                        <td>&times <?php echo $orderdetails['Quantity']; ?></td>
+                        <td style="text-align: right;"><?php echo number_format($total_item, 2); ?></td>
+                    </tr>
+                    <?php endwhile; ?>
+
+                    <!-- Total Row -->
+                    <tr class="total-row">
+                        <td colspan="5" class="total-label">Total (Incl. Delivery):</td>
+                        <td class="total-value">RM <?php echo number_format($orderpayment['TotalPrice'], 2); ?></td>
+                    </tr>
+                </tbody>
+                </table>
+
             </div>
-
         </div>
     </div>
 

@@ -1,5 +1,4 @@
 <?php
-
 session_start();
 
 if (!isset($_SESSION['AdminID'])) {
@@ -53,8 +52,8 @@ if (isset($_POST['update_customer'])) {
     $city = trim($_POST['city']);
     $state = trim($_POST['state']); 
 
-    if (empty($name) || empty($email) || empty($phone) || empty($street) || empty($postcode) || empty($city) || empty($state)) {
-        echo "<script>alert('All fields are required.'); window.location.href='customer_view.php';</script>";
+    if (empty($name) || empty($email) || empty($phone)) {
+        echo "<script>alert('Name, email and phone are required.'); window.location.href='customer_view.php';</script>";
         exit();
     }
 
@@ -91,7 +90,6 @@ if (isset($_POST['update_customer'])) {
             unlink($target_dir . $existing_picture);
         }
 
-        // Generate new filename
         $image_name = $cust_id . "." . $image_extension;
         $target_file = $target_dir . $image_name;
 
@@ -108,7 +106,6 @@ if (isset($_POST['update_customer'])) {
         $stmt->close();
     }
 
-    // Check for duplicate email
     $stmt = $conn->prepare("SELECT CustID FROM customer WHERE CustEmail = ? AND CustID != ?");
     $stmt->bind_param("si", $email, $cust_id);
     $stmt->execute();
@@ -120,7 +117,6 @@ if (isset($_POST['update_customer'])) {
     }
     $stmt->close();
 
-    // Check for duplicate name
     $stmt = $conn->prepare("SELECT CustID FROM customer WHERE CustName = ? AND CustID != ?");
     $stmt->bind_param("si", $name, $cust_id);
     $stmt->execute();
@@ -132,7 +128,6 @@ if (isset($_POST['update_customer'])) {
     }
     $stmt->close();
 
-    // Check for duplicate phone
     $stmt = $conn->prepare("SELECT CustID FROM customer WHERE CustPhoneNum = ? AND CustID != ?");
     $stmt->bind_param("si", $phone, $cust_id);
     $stmt->execute();
@@ -208,6 +203,56 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     $stmt->close();
 }
 
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability'])) {
+    $type = $_POST['type'];
+    $value = trim($_POST['value']);
+    $cust_id = isset($_POST['cust_id']) ? (int)$_POST['cust_id'] : 0;
+    $exists = false;
+    $is_valid_format = true;
+    $error_message = '';
+
+    if ($type === 'name') {
+        $sql = "SELECT CustID FROM customer WHERE CustName = ? AND CustID != ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("si", $value, $cust_id);
+        $stmt->execute();
+        $stmt->store_result();
+        $exists = $stmt->num_rows > 0;
+        $stmt->close();
+    } elseif ($type === 'email') {
+        if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+            $is_valid_format = false;
+            $error_message = "Invalid email format";
+        } elseif (!preg_match('/\.com$/', $value)) {
+            $is_valid_format = false;
+            $error_message = "Email must end with .com";
+        } else {
+            $sql = "SELECT CustID FROM customer WHERE CustEmail = ? AND CustID != ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("si", $value, $cust_id);
+            $stmt->execute();
+            $stmt->store_result();
+            $exists = $stmt->num_rows > 0;
+            $stmt->close();
+        }
+    } elseif ($type === 'phone') {
+        if (!preg_match('/^\d{3}-\d{3,4} \d{4}$/', $value)) {
+            $is_valid_format = false;
+            $error_message = "Invalid phone format (XXX-XXX XXXX or XXX-XXXX XXXX)";
+        } else {
+            $sql = "SELECT CustID FROM customer WHERE CustPhoneNum = ? AND CustID != ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("si", $value, $cust_id);
+            $stmt->execute();
+            $stmt->store_result();
+            $exists = $stmt->num_rows > 0;
+            $stmt->close();
+        }
+    }
+
+    echo json_encode(['exists' => $exists, 'valid_format' => $is_valid_format, 'message' => $error_message]);
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
@@ -321,7 +366,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         <div class="edit-content">
             <span class="close" onclick="closeModal()">&times;</span>
             <h3>Edit Customer</h3>
-            <form method="POST" action="" enctype="multipart/form-data" class="edit">
+            <form method="POST" action="" enctype="multipart/form-data" class="edit" id="editCustomerForm">
                 <input type="hidden" name="cust_id" id="cust_id">
 
                 <div class="edit-form">
@@ -329,27 +374,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                         <label>Profile Picture:<span> (.jpp,.jpeg or .png only)</span></label>
                         <input class="img" type="file" name="profile_picture" id="profile_picture">
                         <label>Name:</label>
-                        <input type="text" name="name" id="name" required>
-                        <div id="name-error" class="error"></div>
+                        <input type="text" name="name" id="name" required onblur="checkAvailability('name', this.value)">
+                        <div id="name-error" class="error-message"></div>
                         <label>Email:</label>
-                        <input type="email" name="email" id="email" placeholder="example@gmail.com" required>
-                        <div id="email-error" class="error"></div>
+                        <input type="email" name="email" id="email" placeholder="example@gmail.com" required onblur="checkAvailability('email', this.value)">
+                        <div id="email-error" class="error-message"></div>
                         <label>Phone:</label>
-                        <input type="text" name="phone" id="phone" placeholder="XXX-XXX XXXX or XXX-XXXX XXXX format" required>
-                        <div id="phone-error" class="error"></div>
+                        <input type="text" name="phone" id="phone" placeholder="XXX-XXX XXXX or XXX-XXXX XXXX format" required onblur="checkAvailability('phone', this.value)">
+                        <div id="phone-error" class="error-message"></div>
                     </div>
                     <div class="right">
                         <label>Street Address:</label>
-                        <input type="text" name="street" id="street" required>
-                        <div id="street-error" class="error"></div>
+                        <input type="text" name="street" id="street">
+                        <div id="street-error" class="error-message"></div>
                         <label>Postcode:</label>
-                        <input type="text" name="postcode" id="postcode" required>
-                        <div id="postcode-error" class="error"></div>
+                        <input type="text" name="postcode" id="postcode">
+                        <div id="postcode-error" class="error-message"></div>
                         <label>City:</label>
-                        <input type="text" name="city" id="city" required>
-                        <div id="city-error" class="error"></div>
+                        <input type="text" name="city" id="city">
+                        <div id="city-error" class="error-message"></div>
                         <label>State:</label>
-                        <select name="state" id="state" required>
+                        <select name="state" id="state">
                             <option value="">-- Select City/State --</option>
                             <option value="Johor">Johor</option>
                             <option value="Kedah">Kedah</option>
@@ -365,6 +410,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                             <option value="Sabah">Sabah</option>
                             <option value="Sarawak">Sarawak</option>
                         </select>
+                        <div id="state-error" class="error-message"></div>
                     </div>
                 </div>            
 
@@ -376,227 +422,242 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     </div>
 
     <script>
-        function validateName(name) {
-            if (name.trim() === '') {
-                return 'Name is required';
-            }
-            return '';
+        // Add this function to check address field dependencies
+        function validateAddressFields() {
+    const street = document.getElementById('street');
+    const postcode = document.getElementById('postcode');
+    const city = document.getElementById('city');
+    const state = document.getElementById('state');
+
+    // First clear all previous errors
+    const fields = [street, postcode, city, state];
+    fields.forEach(field => {
+        const errorElement = document.getElementById(`${field.id}-error`);
+        errorElement.textContent = '';
+        errorElement.style.display = 'none';
+        field.classList.remove('error-field');
+    });
+
+    let isValid = true;
+
+    const streetVal = street.value.trim();
+    const postcodeVal = postcode.value.trim();
+    const cityVal = city.value.trim();
+    const stateVal = state.value.trim();
+
+    const anyAddressFieldFilled = streetVal || postcodeVal || cityVal || stateVal;
+
+    if (anyAddressFieldFilled) {
+        if (!streetVal) {
+            document.getElementById('street-error').textContent = 'Street address is required when filling address';
+            document.getElementById('street-error').style.display = 'block';
+            street.classList.add('error-field');
+            isValid = false;
         }
 
-        function validateEmail(email) {
-            if (email.trim() === '') {
-                return 'Email is required';
-            }
-            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !email.endsWith('.com')) {
-                return 'Invalid email format (must contain @ and end with .com)';
-            }
-            return '';
+        if (!postcodeVal) {
+            document.getElementById('postcode-error').textContent = 'Postcode is required when filling address';
+            document.getElementById('postcode-error').style.display = 'block';
+            postcode.classList.add('error-field');
+            isValid = false;
         }
 
-        function validatePhone(phone) {
-            if (phone.trim() === '') {
-                return 'Phone is required';
-            }
-            if (!/^\d{3}-\d{3,4} \d{4}$/.test(phone)) {
-                return 'Phone must be in XXX-XXX XXXX or XXX-XXXX XXXX format';
-            }
-            return '';
+        if (!cityVal) {
+            document.getElementById('city-error').textContent = 'City is required when filling address';
+            document.getElementById('city-error').style.display = 'block';
+            city.classList.add('error-field');
+            isValid = false;
         }
 
-        function validateStreet(street) {
-            if (street.trim() === '') {
-                return 'Street address is required';
-            }
-            return '';
+        if (!stateVal) {
+            document.getElementById('state-error').textContent = 'State is required when filling address';
+            document.getElementById('state-error').style.display = 'block';
+            state.classList.add('error-field');
+            isValid = false;
         }
 
-        function validatePostcode(postcode) {
-            if (postcode.trim() === '') {
-                return 'Postcode is required';
-            }
-            if (!/^\d{5}$/.test(postcode)) {
-                return 'Postcode must be 5 digits';
-            }
-            return '';
+        // Validate postcode format
+        if (postcodeVal && !/^\d{5}$/.test(postcodeVal)) {
+            document.getElementById('postcode-error').textContent = 'Postcode must be 5 digits';
+            document.getElementById('postcode-error').style.display = 'block';
+            postcode.classList.add('error-field');
+            isValid = false;
         }
+    }
 
-        function validateCity(city) {
-            if (city.trim() === '') {
-                return 'City is required';
-            }
-            return '';
-        }
+    return isValid;
+}
 
-        function validateState(state) {
-            if (state.trim() === '') {
-                return 'State is required';
-            }
-            return '';
-        }
 
-        // Show/hide error functions
-        function showError(fieldId, errorId, message) {
-            const field = document.getElementById(fieldId);
-            if (field) {
-                field.classList.add('error-field');
-            }
-            const errorElement = document.getElementById(errorId);
-            if (errorElement) {
-                errorElement.textContent = message;
-                errorElement.style.display = 'block';
-            }
-        }
-
-        function clearError(fieldId, errorId) {
-            const field = document.getElementById(fieldId);
-            if (field) {
-                field.classList.remove('error-field');
-            }
-            const errorElement = document.getElementById(errorId);
-            if (errorElement) {
-                errorElement.style.display = 'none';
-            }
-        }
-
-        // Add event listeners when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            // Edit modal validation
-            const editName = document.getElementById('name');
-            const editEmail = document.getElementById('email');
-            const editPhone = document.getElementById('phone');
-            const editStreet = document.getElementById('street');
-            const editPostcode = document.getElementById('postcode');
-            const editCity = document.getElementById('city');
-            const editState = document.getElementById('state');
-
-            if (editName) editName.addEventListener('input', function() {
-                const error = validateName(this.value);
-                if (error) {
-                    showError('name', 'name-error', error);
-                } else {
-                    clearError('name', 'name-error');
-                }
-            });
-
-            if (editEmail) editEmail.addEventListener('input', function() {
-                const error = validateEmail(this.value);
-                if (error) {
-                    showError('email', 'email-error', error);
-                } else {
-                    clearError('email', 'email-error');
-                }
-            });
-
-            if (editPhone) editPhone.addEventListener('input', function() {
-                const error = validatePhone(this.value);
-                if (error) {
-                    showError('phone', 'phone-error', error);
-                } else {
-                    clearError('phone', 'phone-error');
-                }
-            });
-
-            if (editStreet) editStreet.addEventListener('input', function() {
-                const error = validateStreet(this.value);
-                if (error) {
-                    showError('street', 'street-error', error);
-                } else {
-                    clearError('street', 'street-error');
-                }
-            });
-
-            if (editPostcode) editPostcode.addEventListener('input', function() {
-                const error = validatePostcode(this.value);
-                if (error) {
-                    showError('postcode', 'postcode-error', error);
-                } else {
-                    clearError('postcode', 'postcode-error');
-                }
-            });
-
-            if (editCity) editCity.addEventListener('input', function() {
-                const error = validateCity(this.value);
-                if (error) {
-                    showError('city', 'city-error', error);
-                } else {
-                    clearError('city', 'city-error');
-                }
-            });
-
-            if (editState) editState.addEventListener('change', function() {
-                const error = validateState(this.value);
-                if (error) {
-                    showError('state', 'state-error', error);
-                } else {
-                    clearError('state', 'state-error');
-                }
-            });
-
-            // Form submission validation
-            document.querySelector('#editModal form').addEventListener('submit', function(e) {
-                let isValid = true;
+        // Modify the validateForm function to include address validation
+        function validateForm() {
+            let isValid = true;
+            const requiredFields = ['name', 'email', 'phone'];
+            
+            // Check basic required fields
+            requiredFields.forEach(field => {
+                const fieldValue = document.getElementById(field).value.trim();
+                const errorElement = document.getElementById(`${field}-error`);
+                const inputField = document.getElementById(field);
                 
-                const name = document.getElementById('name').value;
-                const nameError = validateName(name);
-                if (nameError) {
-                    showError('name', 'name-error', nameError);
+                if (!fieldValue) {
+                    errorElement.textContent = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
+                    errorElement.style.display = 'block';
+                    inputField.classList.add('error-field');
+                    inputField.classList.remove('valid-field');
                     isValid = false;
                 }
-                
-                const email = document.getElementById('email').value;
-                const emailError = validateEmail(email);
-                if (emailError) {
-                    showError('email', 'email-error', emailError);
-                    isValid = false;
-                }
-                
-                const phone = document.getElementById('phone').value;
-                const phoneError = validatePhone(phone);
-                if (phoneError) {
-                    showError('phone', 'phone-error', phoneError);
-                    isValid = false;
-                }
-                
-                const street = document.getElementById('street').value;
-                const streetError = validateStreet(street);
-                if (streetError) {
-                    showError('street', 'street-error', streetError);
-                    isValid = false;
-                }
-                
-                const postcode = document.getElementById('postcode').value;
-                const postcodeError = validatePostcode(postcode);
-                if (postcodeError) {
-                    showError('postcode', 'postcode-error', postcodeError);
-                    isValid = false;
-                }
-                
-                const city = document.getElementById('city').value;
-                const cityError = validateCity(city);
-                if (cityError) {
-                    showError('city', 'city-error', cityError);
-                    isValid = false;
-                }
-                
-                const state = document.getElementById('state').value;
-                const stateError = validateState(state);
-                if (stateError) {
-                    showError('state', 'state-error', stateError);
-                    isValid = false;
-                }
-                
-                if (!isValid) {
-                    e.preventDefault();
-                }
             });
+
+            // Validate email format
+            const email = document.getElementById('email').value.trim();
+            if (email && !/^[^\s@]+@[^\s@]+\.com$/.test(email)) {
+                document.getElementById('email-error').textContent = 'Invalid email format (must end with .com)';
+                document.getElementById('email-error').style.display = 'block';
+                document.getElementById('email').classList.add('error-field');
+                document.getElementById('email').classList.remove('valid-field');
+                isValid = false;
+            }
+
+            // Validate phone format
+            const phone = document.getElementById('phone').value.trim();
+            if (phone && !/^\d{3}-\d{3,4} \d{4}$/.test(phone)) {
+                document.getElementById('phone-error').textContent = 'Phone must be in XXX-XXX XXXX or XXX-XXXX XXXX format';
+                document.getElementById('phone-error').style.display = 'block';
+                document.getElementById('phone').classList.add('error-field');
+                document.getElementById('phone').classList.remove('valid-field');
+                isValid = false;
+            }
+
+            // Validate address fields
+            const addressValid = validateAddressFields();
+            if (!addressValid) {
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        // Add event listeners to address fields to validate when they change
+        document.getElementById('street').addEventListener('blur', function() {
+            validateAddressFields();
         });
 
-        // Modal functions
-        function editCustomer(id, name, email, phone, street, postcode, city, state, profile_picture, status) {
-            // Clear any previous errors
-            closeModal();
+        document.getElementById('postcode').addEventListener('blur', function() {
+            validateAddressFields();
+        });
+
+        document.getElementById('city').addEventListener('blur', function() {
+            validateAddressFields();
+        });
+
+        document.getElementById('state').addEventListener('change', function() {
+            validateAddressFields();
+        });
+
+        // Modify the form submission handler to use the updated validation
+        document.getElementById('editCustomerForm').addEventListener('submit', function(e) {
+            if (!validateForm()) {
+                e.preventDefault();
+                alert('Please fix all errors before submitting.');
+                return;
+            }
+
+            const errorMessages = document.querySelectorAll('.error-message');
+            let hasErrors = false;
             
-            // Set values
+            errorMessages.forEach(error => {
+                if (error.textContent && error.style.display !== 'none') {
+                    hasErrors = true;
+                }
+            });
+
+            if (hasErrors) {
+                e.preventDefault();
+                alert('Please fix all errors before submitting.');
+                return;
+            }
+        });
+
+        function checkAvailability(type, value) {
+            const custId = document.getElementById('cust_id')?.value;
+            const errorElement = document.getElementById(`${type}-error`);
+            const inputField = document.getElementById(type);
+            
+            errorElement.textContent = '';
+            errorElement.style.display = 'none';
+            inputField.classList.remove('error-field', 'valid-field');
+
+            if (!value.trim() && (type === 'name' || type === 'email' || type === 'phone')) {
+                errorElement.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} is required`;
+                errorElement.style.display = 'block';
+                inputField.classList.add('error-field');
+                return;
+            }
+
+            let isValidFormat = true;
+            let formatErrorMessage = '';
+            
+            if (type === 'email') {
+                if (!/^[^\s@]+@[^\s@]+\.com$/.test(value)) {
+                    isValidFormat = false;
+                    formatErrorMessage = "Invalid email format (must contain @ and end with .com)";
+                }
+            } else if (type === 'phone') {
+                if (!/^\d{3}-\d{3,4} \d{4}$/.test(value)) {
+                    isValidFormat = false;
+                    formatErrorMessage = "Phone must be in XXX-XXX XXXX or XXX-XXXX XXXX format";
+                }
+            }
+
+            if (!isValidFormat) {
+                errorElement.textContent = formatErrorMessage;
+                errorElement.style.display = 'block';
+                inputField.classList.add('error-field');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('check_availability', 'true');
+            formData.append('type', type);
+            formData.append('value', value);
+            formData.append('cust_id', custId);
+
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.valid_format) {
+                    errorElement.textContent = data.message;
+                    errorElement.style.display = 'block';
+                    inputField.classList.add('error-field');
+                } else if (data.exists) {
+                    errorElement.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} already exists`;
+                    errorElement.style.display = 'block';
+                    inputField.classList.add('error-field');
+                } else {
+                    errorElement.textContent = '';
+                    errorElement.style.display = 'none';
+                    inputField.classList.remove('error-field');
+                    inputField.classList.add('valid-field');
+                }
+            })
+            .catch(error => {
+                console.error('Error checking availability:', error);
+            });
+        }
+
+        function editCustomer(id, name, email, phone, street, postcode, city, state, profile_picture, status) {
+            document.querySelectorAll('.error-message').forEach(el => {
+                el.textContent = '';
+                el.style.display = 'none';
+            });
+            document.querySelectorAll('.error-field, .valid-field').forEach(el => {
+                el.classList.remove('error-field', 'valid-field');
+            });
+            
             document.getElementById('cust_id').value = id;
             document.getElementById('name').value = name;
             document.getElementById('email').value = email;
@@ -606,37 +667,42 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
             document.getElementById('city').value = city;
             document.getElementById('state').value = state;
             
-            // Show modal
+            if (!name.trim()) {
+                const errorElement = document.getElementById('name-error');
+                const inputField = document.getElementById('name');
+                errorElement.textContent = 'Name is required';
+                errorElement.style.display = 'block';
+                inputField.classList.add('error-field');
+            }
+            
             document.getElementById('editModal').style.display = 'block';
         }
 
         function closeModal() {
-            // Clear all errors
-            clearError('name', 'name-error');
-            clearError('email', 'email-error');
-            clearError('phone', 'phone-error');
-            clearError('street', 'street-error');
-            clearError('postcode', 'postcode-error');
-            clearError('city', 'city-error');
-            clearError('state', 'state-error');
+            document.querySelectorAll('.error-message').forEach(el => {
+                el.textContent = '';
+                el.style.display = 'none';
+            });
+            document.querySelectorAll('.error-field, .valid-field').forEach(el => {
+                el.classList.remove('error-field', 'valid-field');
+            });
             
-            // Hide modal
             document.getElementById('editModal').style.display = 'none';
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-                const searchInput = document.querySelector('input[name="search"]');
-                const searchForm = document.querySelector('.search');
-                
-                if (searchInput && searchForm) {
-                    searchInput.addEventListener('input', function() {
-                        // If search input is empty, submit the form to show all results
-                        if (this.value.trim() === '') {
-                            searchForm.submit();
-                        }
-                    });
-                }
-            });
+            const searchInput = document.querySelector('input[name="search"]');
+            const searchForm = document.querySelector('.search');
+            
+            if (searchInput && searchForm) {
+                searchInput.addEventListener('input', function() {
+                    if (this.value.trim() === '') {
+                        searchForm.submit();
+                    }
+                });
+            }
+        });
+
         window.onclick = function(event) {
             if (event.target == document.getElementById("editModal")) {
                 closeModal();

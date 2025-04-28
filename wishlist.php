@@ -48,7 +48,7 @@ unset($item); // Break the reference
     <link rel="stylesheet" href="wishlist.css">
 </head>
 <body>
-    <div class="wishlist-container">
+    <div class="wishlist-div">
         <h2>My Wishlist</h2>
 
         <?php if (empty($wishlistItems)): ?>

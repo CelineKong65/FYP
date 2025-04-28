@@ -84,7 +84,211 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
 <html>
 <head>
     <title>Verify OTP</title>
-    <link rel="stylesheet" type="text/css" href="OTPverify_admin.css">
+    <style>
+        * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+header {
+    background-color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 30px;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+.logo img {
+    width: 80px;
+    height: auto;
+}
+
+.return{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: row;
+}
+
+.return h2 {
+    transition: 0.5s;
+    font-size: medium;
+    color: #000000;
+    font-weight: 300;
+    font-size: 18px;
+}
+
+.return a {
+    transition: 0.5s;
+    text-decoration: none;
+}
+
+.return a:hover, h2:hover{
+    transition: color 0.5s;
+    color: #007BFF;
+    cursor: pointer;
+}
+
+.return i:hover{
+    transition: color 0.5s;
+    color: #007BFF;
+    cursor: pointer;
+}
+
+.return i {
+    transition: 0.5s;
+    font-size: 20pt;
+    color: black;
+    display: flex;
+    align-items: center;
+    gap: 6pt;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 15px;
+}
+
+.left-side {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: top;
+    
+}
+
+.left-side img {
+    max-width: 108.5%;
+    height: auto;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.right-side {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top: 120px;
+}
+
+.right-side-inner{
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+}
+
+.right-side-inner p{
+    font-weight: 500;
+    margin-bottom: 15px;
+}
+
+.right-side-inner h2 {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #000;
+}
+
+.frame {
+    max-width: 500px;
+    width: 100%;
+    padding-top: 30px;
+}
+
+.frame h4{
+    font-weight: 600;
+}
+
+.otp-inputs{
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.otp-inputs .otp{
+    transition: 0.3s;
+    width: 72px;
+    height: 50px;
+    background-color: rgb(233, 233, 233);
+    text-align: center;
+    font-size: 18px;
+    border: 1px solid #000;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.otp-inputs input:hover{
+    transition: 0.3s;
+    background-color: #007bffc4;
+    border-color: #4c5157;
+    outline: none;
+}
+
+.otp-inputs input:focus{
+    background-color: #007BFF;
+    border-color: #4c5157;
+    outline: none;
+}
+
+.btn{
+    display: flex;
+    flex-direction: column;
+    width: 500px;
+    padding: 8px;
+    margin-top: 20px;
+    gap: 10px;
+}
+
+.btn #verify_otp:hover, .btn #resend_otp:hover{
+    transition: 0.3s;
+    background-color: #006adc;
+    color: white;
+}
+
+.btn #verify_otp{
+    border: none;
+    color: white;
+    background-color: #007BFF;
+    font-weight: 500;
+    border-radius: 5px;
+    height: 40px;
+    font-size: 16px;
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+.btn #resend_otp{
+    border: none;
+    background-color: white;
+    color: #007BFF;
+    font-weight: 500;
+    border-radius: 5px;
+    height: 40px;
+    font-size: 16px;
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+.error{
+    color: red;
+    margin-top: 10px;
+}
+
+.success{
+    color: green;
+    margin-top: 10px;
+}
+    </style>
+    <script src="https://kit.fontawesome.com/c2f7d169d6.js" crossorigin="anonymous"></script>
     <script>
         // Automatic move to next box
         function move(current, next) {
@@ -99,13 +303,18 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
         <div class="logo">
             <img src="../image/logo.png" alt="Watersport Equipment Shop Logo">
         </div>
-        <div class="back_div">
-            <button name="back" class="back" onclick="window.location.href='admin_login.php'">BACK</button>
+        <div class="return">
+        <a onclick="history.back();"><i class="fa-solid fa-rotate-left"><h2>RETURN</h2></i></a>
         </div>
     </header>
 
     <section class="container">
-        <div class="main-content">
+        <div class="left-side">
+            <img src="../image/admin_back.png" alt="Side Picture">
+        </div>
+
+        <div class="right-side">
+        <div class="right-side-inner">
             <h2>Verify OTP</h2>
             <p>Please check your email for getting OTP.<br>If not, you can check in your SPAM message or press "SEND A NEW OTP" for a new OTP</p>
                 <div class="frame">
@@ -125,13 +334,12 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
                             <button type="submit" id="resend_otp" name="resend_otp">SEND A NEW OTP</button>
                         </div>
                     </form>
+                </div>
             <?php if ($error_message): ?>
                 <p class="error"><?php echo $error_message; ?></p>
             <?php elseif ($success_message): ?>
                 <p class="success"><?php echo $success_message; ?></p>
             <?php endif ?>
-            </div>
-        </div>
-    </section>
+    </div>
 </body>
 </html>
