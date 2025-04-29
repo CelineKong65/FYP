@@ -171,7 +171,10 @@ $reviewsStmt = $conn->prepare("
         pf.Rating,
         pf.Feedback,
         pf.FeedbackDate,
-        c.CustName,
+        CASE 
+            WHEN pf.IsAnonymous = 1 THEN 'Anonymous'
+            ELSE c.CustName 
+        END AS CustName,
         pf.Size
     FROM product_feedback pf
     JOIN customer c ON pf.CustID = c.CustID
