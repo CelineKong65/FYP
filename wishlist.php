@@ -55,34 +55,6 @@ unset($item); // Break the reference
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wishlist</title>
     <link rel="stylesheet" href="wishlist.css">
-    <script>
-        function updateStockStatus(wishId, sizeSelect) {
-            // Get the selected option
-            const selectedOption = sizeSelect.options[sizeSelect.selectedIndex];
-            
-            // Extract the stock value from the option text (assuming format "Size (stock)")
-            const stockMatch = selectedOption.text.match(/\((\d+)\)/);
-            const stock = stockMatch ? parseInt(stockMatch[1]) : 0;
-            
-            // Find the stock info element for this row
-            const stockInfo = document.querySelector(`#stock-info-${wishId}`);
-            
-            // Update the stock status
-            if (stock > 0) {
-                stockInfo.textContent = 'In Stock';
-                stockInfo.className = 'stock-info in-stock';
-            } else {
-                stockInfo.textContent = 'Out of Stock';
-                stockInfo.className = 'stock-info out-of-stock';
-            }
-            
-            // Also update the Add to Cart button status
-            const addToCartBtn = document.querySelector(`#add-to-cart-${wishId}`);
-            if (addToCartBtn) {
-                addToCartBtn.disabled = stock <= 0;
-            }
-        }
-    </script>
 </head>
 <body>
     <div class="wishlist-div">
@@ -158,6 +130,34 @@ unset($item); // Break the reference
             </table>
         <?php endif; ?>
     </div>
+    <script>
+        function updateStockStatus(wishId, sizeSelect) {
+            // Get the selected option
+            const selectedOption = sizeSelect.options[sizeSelect.selectedIndex];
+            
+            // Extract the stock value from the option text (assuming format "Size (stock)")
+            const stockMatch = selectedOption.text.match(/\((\d+)\)/);
+            const stock = stockMatch ? parseInt(stockMatch[1]) : 0;
+            
+            // Find the stock info element for this row
+            const stockInfo = document.querySelector(`#stock-info-${wishId}`);
+            
+            // Update the stock status
+            if (stock > 0) {
+                stockInfo.textContent = 'In Stock';
+                stockInfo.className = 'stock-info in-stock';
+            } else {
+                stockInfo.textContent = 'Out of Stock';
+                stockInfo.className = 'stock-info out-of-stock';
+            }
+            
+            // Also update the Add to Cart button status
+            const addToCartBtn = document.querySelector(`#add-to-cart-${wishId}`);
+            if (addToCartBtn) {
+                addToCartBtn.disabled = stock <= 0;
+            }
+        }
+    </script>
 </body>
 </html>
 
