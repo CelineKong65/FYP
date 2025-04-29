@@ -298,7 +298,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // For E-wallet, store the remaining balance after payment
             $remainingBalance = ($paymentMethod === 'E-wallet') ? ($eWalletBalance - $grandTotalWithDelivery) : NULL;
            
-            
             // Only bind card details if payment method is credit card or debit card
             $cardNameToBind = ($paymentMethod === 'Credit Card' || $paymentMethod === 'Debit Card') ? $cardName : NULL;
             $cardNumToBind = ($paymentMethod === 'Credit Card' || $paymentMethod === 'Debit Card') ? $cardNum : NULL;
@@ -362,11 +361,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 unset($_SESSION['cart_items']);
                 unset($_SESSION['subtotal']);
                 
+                // Store payment method and balance in session
+                $_SESSION['payment_method'] = $paymentMethod;
+                if ($paymentMethod === 'E-wallet') {
+                    $_SESSION['remaining_balance'] = $remainingBalance;
+                }
+                
                 // Commit transaction
                 $conn->commit();
                 
-                // Redirect to success page
-                header('Location: payment.php?payment=success');
+                // Redirect to success page with appropriate parameters
+                if ($paymentMethod === 'E-wallet') {
+                    header('Location: payment.php?payment=success&ewallet=true&balance=' . $remainingBalance);
+                } else {
+                    header('Location: payment.php?payment=success');
+                }
                 exit();
             } else {
                 throw new Exception("Error saving order information");
@@ -431,6 +440,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .text-danger {
             color: #dc3545;
+            font-weight: bold;
+        }
+        
+        /* Success Popup Styles */
+        .simple-popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .simple-popup {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .popup-icon {
+            font-size: 50px;
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+        
+        .simple-popup h2 {
+            margin-top: 0;
+            color: #4CAF50;
+        }
+        
+        .simple-popup-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .simple-popup-btn:hover {
+            background-color: #45a049;
+        }
+        
+        .remaining-balance {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f0f8ff;
+            border-radius: 5px;
             font-weight: bold;
         }
     </style>
@@ -840,18 +907,34 @@ document.getElementById('paymentForm').addEventListener('submit', function(e) {
 
 // Success Popup Functions
 function showSuccessPopup() {
-    const popupHTML = `
-        <div class="simple-popup-overlay">
-            <div class="simple-popup">
-                <div class="popup-icon">✓</div>
-                <h2>Payment Successful!</h2>
-                <p>Thank you for your purchase. Your order has been placed successfully.</p>
-                <button class="simple-popup-btn" onclick="closePopup()">OK</button>
+        // Check if this was an E-wallet payment
+        const urlParams = new URLSearchParams(window.location.search);
+        const isEWalletPayment = urlParams.get('ewallet') === 'true';
+        const remainingBalance = urlParams.get('balance');
+        
+        let balanceHTML = '';
+        if (isEWalletPayment && remainingBalance) {
+            balanceHTML = `
+                <div class="remaining-balance">
+                    Your current E-wallet balance: RM ${parseFloat(remainingBalance).toFixed(2)}
+                </div>
+            `;
+        }
+        
+        const popupHTML = `
+            <div class="simple-popup-overlay">
+                <div class="simple-popup">
+                    <div class="popup-icon">✓</div>
+                    <h2>Payment Successful!</h2>
+                    <p>Thank you for your purchase. Your order has been placed successfully.</p>
+                    ${balanceHTML}
+                    <button class="simple-popup-btn" onclick="closePopup()">OK</button>
+                </div>
             </div>
-        </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', popupHTML);
-}
+        `;
+        document.body.insertAdjacentHTML('beforeend', popupHTML);
+}   
+
 
 function closePopup() {
     const popup = document.querySelector('.simple-popup-overlay');
