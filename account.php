@@ -92,11 +92,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
     }
     
     if (!empty($custPhoneNum)) {
-        if (!preg_match("/^(\+?6?01)[-\s]\d{3}[-\s]\d{4}$/", $custPhoneNum)) {
-            $errors['custPhoneNum'] = "Invalid phone format (e.g., 017-510 0205)";
+        // Remove all formatting to check the actual digits
+        $cleanPhone = preg_replace('/[-\s]/', '', $custPhoneNum);
+        
+        if (!preg_match("/^(\+?6?01)[0-46-9][0-9]{7,8}$/", $cleanPhone)) {
+            $errors['custPhoneNum'] = "Invalid Malaysian phone format (e.g., 017-510 0205)";
         } else {
-            // Remove formatting to check uniqueness
-            $cleanPhone = preg_replace('/[-\s]/', '', $custPhoneNum);
             $stmt = $conn->prepare("SELECT CustID FROM customer WHERE REPLACE(REPLACE(CustPhoneNum, '-', ''), ' ', '') = ? AND CustID != ?");
             $stmt->execute([$cleanPhone, $user_id]);
             if ($stmt->rowCount() > 0) {
@@ -107,7 +108,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
     
     if (!empty($postcode)) {
         if (!preg_match("/^\d{5}$/", $postcode)) {
-            $errors['postcode'] = "Please enter a valid 5-digit postcode (numbers only)";
+            $errors['postcode'] = "Postcode must be exactly 5 digits (numbers only)";
         }
     }
     
@@ -135,37 +136,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
     }
 }
 
-// Password Update
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
-    $currentPassword = $_POST['currentPassword'];
+   // Password Update
+   if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
     $newPassword = $_POST['newPassword'];
     $confirmPassword = $_POST['confirmPassword'];
     
-    // Validate current password
-    if (!password_verify($currentPassword, $customer['CustPassword'])) {
-        $errors['currentPassword'] = "Current password is incorrect";
-    }
-    
-    // Validate new password
+    // Validate new password meets requirements
     if (empty($newPassword)) {
         $errors['newPassword'] = "New password is required";
     } elseif (!preg_match("/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])\S{8,}$/", $newPassword)) {
-        $errors['newPassword'] = "Password must follow requirements";
-    } elseif ($newPassword === $currentPassword) {
-        $errors['newPassword'] = "New password cannot be the same as current password";
+        $errors['newPassword'] = "Password must be at least 8 characters with letters, numbers and special chars";
     }
     
-    // Check password confirmation
+    // Check if passwords match
     if ($newPassword !== $confirmPassword) {
         $errors['confirmPassword'] = "Passwords do not match";
     }
     
     if (empty($errors)) {
         try {
-            $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
             $sql = "UPDATE customer SET CustPassword = ? WHERE CustID = ?";
             $stmt = $conn->prepare($sql);
-            $stmt->execute([$hashedPassword, $user_id]);
+            $stmt->execute([$newPassword, $user_id]);
             
             $success = "Password updated successfully!";
         } catch (PDOException $e) {
@@ -202,9 +194,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
         <ul class="sidebar-menu">
             <li class="active"><a href="#"><i class="fas fa-user"></i> Profile</a></li>
             <li><a href="order_history.php"><i class="fas fa-history"></i> Order History</a></li>
-            <?php if ($isLoggedIn): ?>
-                    <li><a href="rate_products.php">Rate</a></li>
-            <?php endif; ?>
+            <li><a href="rate_products.php"><i class="fa fa-star" style="color: white;"></i>Rate</a></li>
+            <li><a href="topup.php"><i class="fa-solid fa-money-bill" style="color: white;"></i>Top Up</a></li>
         </ul>
         <div class="sidebar-footer">
             <button class="logout-btn" onclick="window.location.href='logout.php'"><i class="fas fa-sign-out-alt"></i> LOG OUT</button>
@@ -303,23 +294,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
                     </div>
                     
                     <div class="form-row">
-                        <div class="form-group">
-                            <label>Postcode</label>
-                            <input type="text" name="postcode" 
-                                value="<?= htmlspecialchars($customer['Postcode'] ?? '') ?>" 
-                                pattern="\d{5}" 
-                                title="5-digit postcode"
-                                maxlength="5"
-                                class="<?= isset($errors['postcode']) ? 'error-field' : '' ?>">
-                            <?php if (isset($errors['postcode'])): ?>
-                                <div class="error-message"><?= htmlspecialchars($errors['postcode']) ?></div>
-                            <?php endif; ?>
-                        </div>
-                        <div class="form-group">
-                            <label>Phone Number</label>
+                    <div class="form-group">
+                        <label>Postcode</label>
+                        <input type="text" name="postcode" 
+                            value="<?= htmlspecialchars($customer['Postcode'] ?? '') ?>" 
+                            pattern="\d{5}" 
+                            title="5-digit postcode"
+                            maxlength="5"
+                            oninput="this.value = this.value.replace(/\D/g, '')"
+                            class="<?= isset($errors['postcode']) ? 'error-field' : '' ?>">
+                        <?php if (isset($errors['postcode'])): ?>
+                            <div class="error-message"><?= htmlspecialchars($errors['postcode']) ?></div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
                             <input type="text" name="custPhoneNum" 
                                 value="<?= htmlspecialchars($customer['CustPhoneNum'] ?? '') ?>" 
                                 placeholder="017-510 0205"
+                                maxlength="12"
+                                oninput="formatPhoneNumber(this)"
                                 class="<?= isset($errors['custPhoneNum']) ? 'error-field' : '' ?>">
                             <?php if (isset($errors['custPhoneNum'])): ?>
                                 <div class="error-message"><?= htmlspecialchars($errors['custPhoneNum']) ?></div>
@@ -418,193 +412,125 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
         setupPasswordToggle('confirmPassword', 'show-confirm-password');
         
         const passwordInput = document.getElementById('newPassword');
-const passwordRequirements = document.getElementById('passwordRequirements');
-
-if (passwordInput && passwordRequirements) {
-    const requirementList = document.querySelectorAll('.password-req li');
-    const requirements = [
-        {regex: /\S{8,}/, index: 0},
-        {regex: /[A-Z]/, index: 1},
-        {regex: /[a-z]/, index: 2},
-        {regex: /\d/, index: 3},
-        {regex: /[@$!%*#?&]/, index: 4},
-        {regex: /^\S*$/, index: 5}
-    ];
-    
-    // Show requirements when password field gets focus
-    passwordInput.addEventListener('focus', () => {
-        passwordRequirements.style.display = 'block';
-    });
-    
-    // Hide requirements when password field loses focus
-    passwordInput.addEventListener('blur', () => {
-        setTimeout(() => {
-            if (!passwordRequirements.contains(document.activeElement)) {
-                passwordRequirements.style.display = 'none';
-            }
-        }, 200);
-    });
-    
-    // Validate password as user types
-    passwordInput.addEventListener('input', (e) => {
-        const currentPassword = document.getElementById('currentPassword')?.value;
-        const errorElement = this.nextElementSibling?.nextElementSibling;
+        const passwordRequirements = document.getElementById('passwordRequirements');
         
-        // Clear error if field is empty
-        if (!e.target.value) {
-            e.target.classList.remove('error-field');
-            if (errorElement && errorElement.textContent === 'New password cannot be the same as current password') {
-                errorElement.remove();
-            }
-            return;
-        }
-        
-        // Check if matches current password
-        if (currentPassword && e.target.value === currentPassword) {
-            e.target.classList.add('error-field');
-            if (!errorElement || !errorElement.classList.contains('error-message')) {
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'error-message';
-                errorDiv.textContent = 'New password cannot be the same as current password';
-                e.target.parentNode.insertBefore(errorDiv, e.target.nextSibling);
-            } else {
-                errorElement.textContent = 'New password cannot be the same as current password';
-            }
-        } else {
-            e.target.classList.remove('error-field');
-            if (errorElement && errorElement.classList.contains('error-message') && 
-                errorElement.textContent === 'New password cannot be the same as current password') {
-                errorElement.remove();
-            }
-        }
-        
-        // Update requirement indicators
-        requirements.forEach(item => {
-            const isValid = item.regex.test(e.target.value);
-            const requirementItem = requirementList[item.index];
+        if (passwordInput && passwordRequirements) {
+            const requirementList = document.querySelectorAll('.password-req li');
+            const requirements = [
+                {regex: /\S{8,}/, index: 0},
+                {regex: /[A-Z]/, index: 1},
+                {regex: /[a-z]/, index: 2},
+                {regex: /\d/, index: 3},
+                {regex: /[@$!%*#?&]/, index: 4},
+                {regex: /^\S*$/, index: 5}
+            ];
             
-            requirementItem.firstElementChild.className = isValid ? 
-                "fas fa-check-circle" : "fas fa-circle";
-            requirementItem.classList.toggle('valid', isValid);
+            // Show requirements when password field gets focus
+            passwordInput.addEventListener('focus', () => {
+                passwordRequirements.style.display = 'block';
             });
-        });
-        
-        // Also hide requirements when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!passwordInput.contains(e.target) && !passwordRequirements.contains(e.target)) {
-                passwordRequirements.style.display = 'none';
-            }
+            
+            // Hide requirements when password field loses focus
+            passwordInput.addEventListener('blur', () => {
+                setTimeout(() => {
+                    if (!passwordRequirements.contains(document.activeElement)) {
+                        passwordRequirements.style.display = 'none';
+                    }
+                }, 200);
             });
-        }
+            
+            // Validate password as user types
+            passwordInput.addEventListener('input', function(e) {
+                const currentPassword = document.querySelector('input[name="currentPassword"]')?.value;
+                const errorMessages = this.parentNode.querySelectorAll('.error-message');
                 
-            // Also hide when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!passwordInput.contains(e.target) && !passwordRequirements.contains(e.target)) {
-                    passwordRequirements.style.display = 'none';
-                }
-            });
-        
-        // Real-time validation for email and phone
-        function validateEmail(emailInput) {
-            const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
-            const errorElement = emailInput.nextElementSibling;
-            
-            if (!emailRegex.test(emailInput.value)) {
-                emailInput.classList.add('error-field');
-                if (!errorElement || !errorElement.classList.contains('error-message')) {
-                    const errorDiv = document.createElement('div');
-                    errorDiv.className = 'error-message';
-                    errorDiv.textContent = 'Invalid Gmail format';
-                    emailInput.parentNode.insertBefore(errorDiv, emailInput.nextSibling);
-                } else {
-                    errorElement.textContent = 'Invalid Gmail format';
-                }
-                return false;
-            } else {
-                emailInput.classList.remove('error-field');
-                if (errorElement && errorElement.classList.contains('error-message')) {
-                    errorElement.remove();
-                }
-                return true;
-            }
-        }
-        
-        function validatePhone(phoneInput) {
-            const phoneRegex = /^(\+?6?01)[0-46-9]-*[0-9]{7,8}$/;
-            const errorElement = phoneInput.nextElementSibling;
-            
-            if (phoneInput.value && !phoneRegex.test(phoneInput.value)) {
-                phoneInput.classList.add('error-field');
-                if (!errorElement || !errorElement.classList.contains('error-message')) {
-                    const errorDiv = document.createElement('div');
-                    errorDiv.className = 'error-message';
-                    errorDiv.textContent = 'Invalid Malaysian phone number (e.g., 012-3456789)';
-                    phoneInput.parentNode.insertBefore(errorDiv, phoneInput.nextSibling);
-                } else {
-                    errorElement.textContent = 'Invalid Malaysian phone number (e.g., 012-3456789)';
-                }
-                return false;
-            } else {
-                phoneInput.classList.remove('error-field');
-                if (errorElement && errorElement.classList.contains('error-message')) {
-                    errorElement.remove();
-                }
-                return true;
-            }
-        }
-        
-        // Set up validation on blur
-        document.querySelector('input[name="custEmail"]').addEventListener('blur', function() {
-            validateEmail(this);
-        });
-        
-        document.querySelector('input[name="custPhoneNum"]')?.addEventListener('input', function(e) {
-            // Remove all non-digit characters
-            let phone = this.value.replace(/\D/g, '');
-            
-            // Format as 017-510 0205
-            if (phone.length > 3) {
-                phone = phone.substring(0, 3) + '-' + phone.substring(3);
-            }
-            if (phone.length > 7) {
-                phone = phone.substring(0, 7) + ' ' + phone.substring(7);
-            }
-            
-            // Limit to 11 digits (3+7+1 for formatting)
-            if (phone.length > 11) {
-                phone = phone.substring(0, 11);
-            }
-            
-            this.value = phone;
-        });
-        
-        // Check if new password matches current password
-        document.getElementById('newPassword')?.addEventListener('input', function() {
-            const currentPassword = document.querySelector('input[name="currentPassword"]')?.value;
-            const errorElement = this.nextElementSibling?.nextElementSibling; // Skip the eye icon
-            
-            if (currentPassword && this.value === currentPassword) {
-                this.classList.add('error-field');
-                if (!errorElement || !errorElement.classList.contains('error-message')) {
+                // Remove any existing "same as current password" errors
+                errorMessages.forEach(msg => {
+                    if (msg.textContent === 'New password cannot be the same as current password') {
+                        msg.remove();
+                    }
+                });
+                
+                // Check if matches current password
+                if (currentPassword && this.value === currentPassword) {
+                    this.classList.add('error-field');
                     const errorDiv = document.createElement('div');
                     errorDiv.className = 'error-message';
                     errorDiv.textContent = 'New password cannot be the same as current password';
                     this.parentNode.insertBefore(errorDiv, this.nextSibling);
                 } else {
-                    errorElement.textContent = 'New password cannot be the same as current password';
+                    this.classList.remove('error-field');
+                }
+                
+                // Update requirement indicators
+                requirements.forEach(item => {
+                    const isValid = item.regex.test(e.target.value);
+                    const requirementItem = requirementList[item.index];
+                    
+                    requirementItem.firstElementChild.className = isValid ? 
+                        "fas fa-check-circle" : "fas fa-circle";
+                    requirementItem.classList.toggle('valid', isValid);
+                });
+            });
+            
+            // Also hide requirements when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!passwordInput.contains(e.target) && !passwordRequirements.contains(e.target)) {
+                    passwordRequirements.style.display = 'none';
+                }
+            });
+        }
+        
+        // Phone number formatting function
+        function formatPhoneNumber(input) {
+            // Remove all non-digit characters
+            let phone = input.value.replace(/\D/g, '');
+            
+            // Limit to 11 digits (Malaysian phone numbers are typically 10-11 digits)
+            if (phone.length > 11) {
+                phone = phone.substring(0, 11);
+            }
+            
+            // Format as 017-510 0205
+            let formatted = '';
+            if (phone.length > 0) {
+                formatted = phone.substring(0, 3);
+                if (phone.length > 3) {
+                    formatted += '-' + phone.substring(3, 6);
+                    if (phone.length > 6) {
+                        formatted += ' ' + phone.substring(6);
+                    }
+                }
+            }
+            
+            input.value = formatted;
+        }
+        
+        // Postcode validation - allow only numbers
+        document.querySelector('input[name="postcode"]')?.addEventListener('input', function(e) {
+            this.value = this.value.replace(/\D/g, '').substring(0, 5);
+        });
+        
+        // Email validation on blur
+        document.querySelector('input[name="custEmail"]')?.addEventListener('blur', function() {
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+            const errorElement = this.nextElementSibling;
+            
+            if (!emailRegex.test(this.value)) {
+                this.classList.add('error-field');
+                if (!errorElement || !errorElement.classList.contains('error-message')) {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'error-message';
+                    errorDiv.textContent = 'Invalid Gmail format';
+                    this.parentNode.insertBefore(errorDiv, this.nextSibling);
                 }
             } else {
                 this.classList.remove('error-field');
                 if (errorElement && errorElement.classList.contains('error-message') && 
-                    errorElement.textContent === 'New password cannot be the same as current password') {
+                    errorElement.textContent === 'Invalid Gmail format') {
                     errorElement.remove();
                 }
             }
-        });
-
-        // Postcode validation - allow only numbers
-        document.querySelector('input[name="postcode"]')?.addEventListener('input', function(e) {
-            this.value = this.value.replace(/\D/g, '').substring(0, 5);
         });
     </script>
 </body>

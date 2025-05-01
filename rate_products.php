@@ -18,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $size = trim($_POST['size'] ?? '');
     $rating = (int)($_POST['rating'] ?? 0);
     $feedback = trim($_POST['feedback'] ?? '');
+    $isAnonymous = isset($_POST['is_anonymous']) ? 1 : 0;
 
     // Validate input
     if ($productId <= 0 || $orderId <= 0) {
@@ -56,13 +57,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Insert new feedback
             $insertSql = "
                 INSERT INTO product_feedback
-                  (OrderID, ProductID, Size, CustID, Rating, Feedback, FeedbackDate)
-                VALUES (?, ?, ?, ?, ?, ?, NOW())
+                  (OrderID, ProductID, Size, CustID, Rating, Feedback, FeedbackDate, IsAnonymous)
+                VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)
             ";
             
             $stmt = $conn->prepare($insertSql);
-            if ($stmt->execute([$orderId, $productId, $size, $user_id, $rating, $feedback])) {
-                $success = 'Thank you for your feedback!';
+            if ($stmt->execute([$orderId, $productId, $size, $user_id, $rating, $feedback, $isAnonymous])) {
+                $success = 'Thank you for your feedback!' . ($isAnonymous ? ' Your review will be shown anonymously.' : '');
             } else {
                 $error = 'Failed to submit feedback. Please try again.';
             }
@@ -103,7 +104,17 @@ $ordersResult = $stmt->fetchAll(PDO::FETCH_ASSOC);
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rate Your Purchases</title>
-  <link rel="stylesheet" href= "rate_products.css">
+  <link rel="stylesheet" href="rate_products.css">
+  <style>
+    .anonymous-checkbox {
+      margin: 10px 0;
+      display: flex;
+      align-items: center;
+    }
+    .anonymous-checkbox input {
+      margin-right: 8px;
+    }
+  </style>
 </head>
 <body>
   <h2>Rate Your Purchases</h2>
@@ -152,13 +163,18 @@ $ordersResult = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <label class="rating-label">Your Rating:</label>
             <div class="rating-stars">
               <?php for ($i = 1; $i <= 5; $i++): ?>
-                <input type="radio" name="rating" class="d-none" id="<?= $uniquePrefix . '_star' . $i ?>" value="<?= $i ?>">
+                <input type="radio" name="rating" class="d-none" id="<?= $uniquePrefix . '_star' . $i ?>" value="<?= $i ?>" required>
                 <label for="<?= $uniquePrefix . '_star' . $i ?>" class="rating-star">★</label>
               <?php endfor; ?>
             </div>
 
             <label class="feedback-label">Your Feedback (optional):</label>
             <textarea name="feedback" placeholder="Share your experience..."></textarea>
+            
+            <div class="anonymous-checkbox">
+              <input type="checkbox" id="<?= $uniquePrefix . '_anonymous' ?>" name="is_anonymous" value="1">
+              <label for="<?= $uniquePrefix . '_anonymous' ?>">Post anonymously</label>
+            </div>
 
             <button type="submit" class="submit-btn">Submit Review</button>
           </form>
