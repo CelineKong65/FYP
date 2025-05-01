@@ -52,7 +52,9 @@ h2 {
 form.search {
     display: flex;
     justify-content: flex-end;
-    gap:10px
+    gap:10px;
+    width: 60%;
+    margin: 0 auto;
 }
 
 .search input {
@@ -67,6 +69,8 @@ form.search {
 .add-category-form{
     display: flex;
     justify-content: flex-end;
+    width: 60%;
+    margin: 0 auto;
 }
 
 .add_btn{

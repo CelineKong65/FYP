@@ -273,6 +273,10 @@ input::placeholder{
     border: 1px solid red !important;
 }
 
+.valid-field{
+    border: 1px solid rgb(0, 255, 0) !important;
+}
+
 .btn-disabled {
     background-color: #cccccc !important;
     color: #666666 !important;
