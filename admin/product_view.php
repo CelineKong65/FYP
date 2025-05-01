@@ -9,6 +9,19 @@ if (!isset($_SESSION['AdminID'])) {
 
 include 'db_connection.php';
 
+function validateProductName($name) {
+    if (trim($name) === '') {
+        return 'Product name is required';
+    }
+    if (strlen($name) > 100) {
+        return 'Product name must be 100 characters or less';
+    }
+    if (!preg_match('/^[a-zA-Z0-9\s\-.,\'"()&]+$/', $name)) {
+        return 'Only letters, numbers, spaces, and basic punctuation allowed';
+    }
+    return '';
+}
+
 $category_query = "SELECT * FROM category";
 $category_result = $conn->query($category_query);
 
@@ -73,8 +86,7 @@ if (!empty($where_clauses)) {
     $count_query .= " WHERE " . implode(" AND ", $where_clauses);
 }
 
-// Add this line to sort by status (active first)
-$product_query .= " ORDER BY CASE WHEN p.ProductStatus = 'active' THEN 0 ELSE 1 END, p.ProductID";
+$product_query .= " ORDER BY CASE WHEN p.ProductStatus = 'Active' THEN 0 ELSE 1 END, p.ProductID";
 
 // Then add your existing LIMIT clause
 $product_query .= " LIMIT ? OFFSET ?";
@@ -139,22 +151,17 @@ if (isset($_POST['update_product'])) {
         }
     }
 
-    $check_query = "SELECT COUNT(*) FROM product WHERE ProductName = ? AND ProductID != ?";
-    $stmt = $conn->prepare($check_query);
-    $stmt->bind_param("si", $name, $product_id);
-    $stmt->execute();
-    $stmt->bind_result($count);
-    $stmt->fetch();
-    $stmt->close();
-
-    if ($count > 0) {
-        echo "<script>alert('Product name already exists. Please use a different name.'); window.location.href='product_view.php';</script>";
+    $name = trim($_POST['name']);
+    $error = validateProductName($name);
+    if ($error !== '') {
+        echo "<script>alert('$error'); window.location.href='product_view.php';</script>";
         exit();
     }
 
     $existing_image = $_POST['existing_image'];
 
     if (!empty($image)) {
+        // Handle new image upload
         $image_extension = strtolower(pathinfo($image, PATHINFO_EXTENSION));
         $allowed_types = ['jpg', 'jpeg', 'png'];
     
@@ -326,16 +333,10 @@ if (isset($_POST['add_product'])) {
         }
     }
 
-    $check_query = "SELECT COUNT(*) FROM product WHERE ProductName = ?";
-    $stmt = $conn->prepare($check_query);
-    $stmt->bind_param("s", $name);
-    $stmt->execute();
-    $stmt->bind_result($count);
-    $stmt->fetch();
-    $stmt->close();
-
-    if ($count > 0) {
-        echo "<script>alert('Product name already exists. Please use a different name.'); window.location.href='product_view.php';</script>";
+    $name = trim($_POST['name']);
+    $error = validateProductName($name);
+    if ($error !== '') {
+        echo "<script>alert('$error'); window.location.href='product_view.php';</script>";
         exit();
     }
 
@@ -392,7 +393,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     $productID = (int)$_POST['product_id'];
     $currentStatus = strtolower($_POST['current_status']);
 
-    $newStatus = ($currentStatus == 'active') ? 'inactive' : 'active';
+    $newStatus = ($currentStatus == 'Active') ? 'Inactive' : 'Active';
 
     $stmt = $conn->prepare("UPDATE product SET ProductStatus = ? WHERE productID = ?");
     $stmt->bind_param("si", $newStatus, $productID);
@@ -406,6 +407,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     $stmt->close();
 }
 
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name'])) {
+    $name = trim($_POST['name']);
+    $product_id = isset($_POST['product_id']) ? (int)$_POST['product_id'] : 0;
+    
+    $stmt = $conn->prepare("SELECT ProductID FROM product WHERE ProductName = ? AND ProductID != ?");
+    $stmt->bind_param("si", $name, $product_id);
+    $stmt->execute();
+    $stmt->store_result();
+    
+    header('Content-Type: application/json');
+    echo json_encode(['exists' => $stmt->num_rows > 0]);
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
@@ -415,35 +429,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product List</title>
     <link rel='stylesheet' href='product_view.css'>
-
-    <style>
-        .pagination {
-            text-align: center;
-            margin-top: 20px;
-            padding: 20px;
-        }
-
-        .pagination .page {
-            display: inline-block;
-            padding: 8px 12px;
-            margin: 0 5px;
-            text-decoration: none;
-            color: #333;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-
-        .pagination .page:hover {
-            background-color: #007BFF;
-            color: #fff;
-        }
-
-        .pagination .page.active {
-            background-color: #333;
-            color: #fff;
-            border-color: #333;
-        }
-    </style>
 </head>
 <body>
     <div class="header">
@@ -496,16 +481,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                                 <td style="text-align: center;"><?php echo $product['ProductID']; ?></td>
                                 <td style="display: grid; place-items: center;">
                                     <?php
-                                    $imageName = $product['ProductPicture'];
+                                    $imageName = $product['ProductPicture'] ?? '';
                                     $imagePath = "../image/" . $imageName;
 
-                                    if (file_exists($imagePath) && !empty($imageName)) {
-                                        echo "<img src='{$imagePath}' alt='{$product['ProductName']}' width='150'>";
+                                    // Check if the file exists and the filename is not empty
+                                    if (!empty($imageName) && file_exists($imagePath)) {
+                                        echo "<img src='$imagePath' alt='Product Image' width='150'>";
                                     } else {
                                         echo "<img src='../image/placeholder.jpg' alt='Image not available' width='150'>";
                                     }
                                     ?>
                                 </td>
+
                                 <td><?php echo $product['ProductName']; ?></td>
                                 <td style="text-align: center;"><?php echo number_format($product['ProductPrice'], 2); ?></td>
                                 <td><?php echo $product['ProductDesc']; ?></td>
@@ -524,7 +511,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                                     }
                                     ?>
                                 </td>
-                                <td style="text-align: center;" class="<?php echo ($product['ProductStatus'] === 'active') ? 'status-active' : 'status-inactive'; ?>">
+                                <td style="text-align: center;" class="<?php echo ($product['ProductStatus'] === 'Active') ? 'status-active' : 'status-inactive'; ?>">
                                     <?php echo $product['ProductStatus']; ?>
                                 </td>
                                 <td>
@@ -546,8 +533,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                                         <input type="hidden" name="toggle_status" value="1">
                                         <input type="hidden" name="product_id" value="<?php echo $product['ProductID']; ?>">
                                         <input type="hidden" name="current_status" value="<?php echo $product['ProductStatus']; ?>">
-                                        <button type="submit" class="btn-status <?php echo ($product['ProductStatus'] === 'active') ? 'btn-inactive' : 'btn-active'; ?>">
-                                            <?php echo ($product['ProductStatus'] === 'active') ? 'Deactivate' : 'Activate'; ?>
+                                        <button type="submit" class="btn-status <?php echo ($product['ProductStatus'] === 'Active') ? 'btn-inactive' : 'btn-active'; ?>">
+                                            <?php echo ($product['ProductStatus'] === 'Active') ? 'Deactivate' : 'Activate'; ?>
                                         </button>
                                     </form>
                                 </td>
@@ -580,7 +567,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         <div class="edit-content">
             <span class="close" onclick="closeModal()">&times;</span>
             <h3>Edit Product</h3>
-            <form method="POST" action="" enctype="multipart/form-data" class="edit">
+            <form id="edit_product_form" method="POST" action="" enctype="multipart/form-data" class="edit">
                 <input type="hidden" name="product_id" id="product_id">
                 <input type="hidden" name="existing_image" id="existing_image">
                 <div class="edit-form">
@@ -588,7 +575,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                         <label>Image:<span> (.jpg,.jpeg or .png only)</span></label>
                         <input type="file" name="image" accept=".jpg,.jpeg,.png">
                         <label>Name:</label>
-                        <input type="text" name="name" id="name" required>
+                        <input type="text" name="name" id="name" required oninput="validateProductNameInRealTime(this.value, true)">
+                        <div id="edit-name-error" class="error-message" style="display: none; color: red;"></div>
                         <label>Price:</label>
                         <input type="number" min="1.00" step="1.00" name="price" id="price" required>
                         <label>Category:</label>
@@ -635,14 +623,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     <div class="add-content">
         <span class="close" onclick="closeAddModal()">&times;</span>
         <h3>Add New Product</h3>
-        <form method="POST" action="" enctype="multipart/form-data">
+        <form id="add_product_form" method="POST" action="" enctype="multipart/form-data">
             <input type="hidden" name="product_id" id="product_id">
             <div class="add-form">
                 <div class="left">
                     <label>Image:<span> (.jpg,.jpeg or .png only)</span></label>
                     <input type="file" name="image" accept=".jpg,.jpeg,.png" required>
                     <label>Name:</label>
-                    <input type="text" name="name" id="add_name" required>
+                    <input type="text" name="name" id="add_name" required oninput="validateProductNameInRealTime(this.value, false)">
+                    <div id="add-name-error" class="error-message" style="display: none; color: red;"></div>
                     <label>Price:</label>
                     <input type="number" min="1.00" step="1.00" name="price" id="add_price" required>
                     <label>Category:</label>
@@ -685,7 +674,102 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     </div>
 </div>
 
-    <script>
+<script>
+        let isProductNameValid = false;
+
+        function validateProductNameInRealTime(value, isEdit = false) {
+            const prefix = isEdit ? 'edit-' : 'add-';
+            const errorElement = document.getElementById(`${prefix}name-error`);
+            const inputField = document.getElementById(isEdit ? 'name' : 'add_name');
+            const submitButton = document.getElementById(isEdit ? 'update_product' : 'add_product');
+            
+            errorElement.textContent = '';
+            errorElement.style.display = 'none';
+            inputField.classList.remove('error-field', 'valid-field');
+            
+            if (value.trim() === '') {
+                errorElement.textContent = 'Product name is required';
+                errorElement.style.display = 'block';
+                inputField.classList.add('error-field');
+                isProductNameValid = false;
+                return;
+            }
+            
+            if (value.length > 100) {
+                errorElement.textContent = 'Product name must be 100 characters or less';
+                errorElement.style.display = 'block';
+                inputField.classList.add('error-field');
+                isProductNameValid = false;
+                return;
+            }
+            
+            if (!/^[a-zA-Z0-9\s\-.,'"()&]+$/.test(value)) {
+                errorElement.textContent = 'Only letters, numbers, spaces, and basic punctuation allowed';
+                errorElement.style.display = 'block';
+                inputField.classList.add('error-field');
+                isProductNameValid = false;
+                return;
+            }
+            
+            // Check for duplicate name via AJAX
+            checkProductNameAvailability(value, isEdit ? document.getElementById('product_id').value : 0, isEdit)
+                .then(isAvailable => {
+                    isProductNameValid = isAvailable;
+                    if (isAvailable) {
+                        inputField.classList.add('valid-field');
+                    } else {
+                        errorElement.textContent = 'Product name already exists';
+                        errorElement.style.display = 'block';
+                        inputField.classList.add('error-field');
+                    }
+                    updateProductSubmitButton(isEdit);
+                });
+        }
+
+        function checkProductNameAvailability(name, productId = 0, isEdit = false) {
+            return new Promise((resolve) => {
+                const formData = new FormData();
+                formData.append('check_product_name', 'true');
+                formData.append('name', name);
+                formData.append('product_id', productId);
+                
+                fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData,
+                })
+                .then(response => response.json())
+                .then(data => {
+                    resolve(!data.exists);
+                })
+                .catch(error => {
+                    console.error('Error checking product name:', error);
+                    resolve(false);
+                });
+            });
+        }
+
+        function updateProductSubmitButton(isEdit) {
+            const submitButton = isEdit ? document.querySelector('button[name="update_product"]') : 
+                                        document.querySelector('button[name="add_product"]');
+            submitButton.disabled = !isProductNameValid;
+        }
+
+        // For add form
+        document.getElementById('add_product_form').addEventListener('submit', function(e) {
+            if (!isProductNameValid) {
+                e.preventDefault();
+                alert('Please fix the product name errors before submitting');
+            }
+        });
+
+        // For edit form
+        document.getElementById('edit_product_form').addEventListener('submit', function(e) {
+            if (!isProductNameValid) {
+                e.preventDefault();
+                alert('Please fix the product name errors before submitting');
+            }
+        });
+
         function toggleSizeFields() {
             var hasSizes = document.getElementById('has_sizes').checked;
             document.getElementById('size_fields').style.display = hasSizes ? 'block' : 'none';
@@ -693,12 +777,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         }
 
         function editProduct(id, name, price, description, stock_S, stock_M, stock_L, stock_XL, category_id, hasNoSize, noSizeStock, productPicture) {
+            // Clear any existing errors
+            clearAllErrors();
+            
             document.getElementById('product_id').value = id;
             document.getElementById('name').value = name;
             document.getElementById('price').value = price;
             document.getElementById('description').value = description;
             document.getElementById('category_id').value = category_id;
-            document.getElementById('existing_image').value = productPicture; // Set the existing image name
+            document.getElementById('existing_image').value = productPicture;
             
             if (hasNoSize) {
                 document.getElementById('has_sizes').checked = false;
@@ -710,6 +797,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                 document.getElementById('stock_L').value = stock_L;
                 document.getElementById('stock_XL').value = stock_XL;
             }
+            
             toggleSizeFields();
             document.getElementById('editModal').style.display = "block";
 
@@ -720,10 +808,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                     break;
                 }
             }
+            
+            // Reset validation state
+            isProductNameValid = true;
         }
 
         function closeModal() {
+            clearAllErrors();
             document.getElementById('editModal').style.display = 'none';
+            // Reset validation state
+            isProductNameValid = false;
         }
 
         function toggleAddSizeFields() {
@@ -740,14 +834,47 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         }
 
         function openAddModal() {
+            // Clear any existing errors
+            clearAllErrors();
+            
             // Reset the form when opening
             document.getElementById('add_has_sizes').checked = false;
             toggleAddSizeFields();
             document.getElementById('addModal').style.display = 'block';
+            
+            // Reset validation state
+            isProductNameValid = false;
         }
 
         function closeAddModal() {
+            clearAllErrors();
             document.getElementById('addModal').style.display = 'none';
+            // Reset validation state
+            isProductNameValid = false;
+        }
+
+        function clearAllErrors() {
+            // Clear edit modal errors
+            const editError = document.getElementById('edit-name-error');
+            if (editError) {
+                editError.textContent = '';
+                editError.style.display = 'none';
+            }
+            const editInput = document.getElementById('name');
+            if (editInput) {
+                editInput.classList.remove('error-field', 'valid-field');
+            }
+            
+            // Clear add modal errors
+            const addError = document.getElementById('add-name-error');
+            if (addError) {
+                addError.textContent = '';
+                addError.style.display = 'none';
+            }
+            const addInput = document.getElementById('add_name');
+            if (addInput) {
+                addInput.classList.remove('error-field', 'valid-field');
+            }
         }
 
         window.onclick = function(event) {
@@ -758,13 +885,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                 closeAddModal();
             }
         };
+
         document.addEventListener('DOMContentLoaded', function() {
             const searchInput = document.querySelector('input[name="search"]');
             const searchForm = document.querySelector('.search');
             
             if (searchInput && searchForm) {
                 searchInput.addEventListener('input', function() {
-                    // If search input is empty, submit the form to show all results
                     if (this.value.trim() === '') {
                         searchForm.submit();
                     }
@@ -777,10 +904,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
 
             pages.forEach(page => {
                 page.addEventListener("click", function () {
-                    // Remove 'active' class from all pages
                     pages.forEach(p => p.classList.remove("active"));
-
-                    // Add 'active' class to the clicked page
                     this.classList.add("active");
                 });
             });

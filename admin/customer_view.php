@@ -371,7 +371,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 <div class="edit-form">
                     <div class="left">
                         <label>Profile Picture:<span> (.jpp,.jpeg or .png only)</span></label>
-                        <input class="img" type="file" name="profile_picture" id="profile_picture">
+                        <input class="img" type="file" name="profile_picture" id="profile_picture" accept=".jpg,.jpeg,.png">
                         <label>Name:</label>
                         <input type="text" name="name" id="name" required onblur="checkAvailability('name', this.value)">
                         <div id="name-error" class="error-message"></div>
