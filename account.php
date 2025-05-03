@@ -207,7 +207,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
             <img src="<?= htmlspecialchars($customer['CustProfilePicture'] ?? 'image/user/default-profile.jpg') ?>" 
                  alt="Profile Picture" 
                  class="profile-picture"
-                 onerror="this.src='image/user/default-profile.jpg'">
+                 onerror="this.src='image/user/user.png'">
             <h1 class="profile-title">Welcome, <?= htmlspecialchars($customer['CustName']) ?></h1>
             <div class="account-number">Account ID: <?= htmlspecialchars($customer['CustID']) ?></div>
             
