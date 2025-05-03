@@ -265,15 +265,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
                     <div class="form-row">
                         <div class="form-group">
                             <label>City</label>
-                            <input type="text" name="city" value="<?= htmlspecialchars($customer['City'] ?? 'Not provided') ?>"
-                                   class="<?= isset($errors['city']) ? 'error-field' : '' ?>">
+                            <input type="text" name="city" value="<?= htmlspecialchars($customer['City'] ?? 'Not provided') ?>" required class="<?= isset($errors['city']) ? 'error-field' : '' ?>">
                             <?php if (isset($errors['city'])): ?>
                                 <div class="error-message"><?= htmlspecialchars($errors['city']) ?></div>
                             <?php endif; ?>
                         </div>
                         <div class="form-group">
                             <label>State</label>
-                            <select name="state" class="state <?= isset($errors['state']) ? 'error-field' : '' ?>">
+                            <select name="state" required class="state <?= isset($errors['state']) ? 'error-field' : '' ?>">
                                 <option value="">Select State</option>
                                 <?php
                                 $states = [
@@ -296,7 +295,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
                     <div class="form-row">
                     <div class="form-group">
                         <label>Postcode</label>
-                        <input type="text" name="postcode" 
+                        <input type="text" name="postcode" required
                             value="<?= htmlspecialchars($customer['Postcode'] ?? '') ?>" 
                             pattern="\d{5}" 
                             title="5-digit postcode"
@@ -309,7 +308,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
                     </div>
                     <div class="form-group">
                         <label>Phone Number</label>
-                            <input type="text" name="custPhoneNum" 
+                            <input type="text" name="custPhoneNum" required
                                 value="<?= htmlspecialchars($customer['CustPhoneNum'] ?? '') ?>" 
                                 placeholder="017-510 0205"
                                 maxlength="12"
@@ -383,15 +382,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
         </div>
     </div>
 
-    <script>
-        // Auto-submit form when profile picture is selected
-        document.getElementById('profile_picture').addEventListener('change', function() {
-            if (this.files && this.files[0]) {
-                document.getElementById('upload_submit').click();
-            }
-        });
-        
-        // Password visibility toggle functions
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // ================== PASSWORD FEATURES ================== //
+        // Password visibility toggle
         function setupPasswordToggle(passwordInputId, eyeIconId) {
             const eyeIcon = document.getElementById(eyeIconId);
             const passwordInput = document.getElementById(passwordInputId) || 
@@ -405,32 +399,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
                 });
             }
         }
-        
+
         // Initialize password toggles
         setupPasswordToggle('currentPassword', 'show-current-password');
         setupPasswordToggle('newPassword', 'show-new-password');
         setupPasswordToggle('confirmPassword', 'show-confirm-password');
-        
+
+        // Password strength meter
         const passwordInput = document.getElementById('newPassword');
         const passwordRequirements = document.getElementById('passwordRequirements');
-        
         if (passwordInput && passwordRequirements) {
             const requirementList = document.querySelectorAll('.password-req li');
             const requirements = [
-                {regex: /\S{8,}/, index: 0},
-                {regex: /[A-Z]/, index: 1},
-                {regex: /[a-z]/, index: 2},
-                {regex: /\d/, index: 3},
-                {regex: /[@$!%*#?&]/, index: 4},
-                {regex: /^\S*$/, index: 5}
+                {regex: /\S{8,}/, index: 0},        // At least 8 characters
+                {regex: /[A-Z]/, index: 1},         // Uppercase letter
+                {regex: /[a-z]/, index: 2},         // Lowercase letter
+                {regex: /\d/, index: 3},            // Number
+                {regex: /[@$!%*#?&]/, index: 4},    // Special character
+                {regex: /^\S*$/, index: 5}          // No spaces
             ];
-            
-            // Show requirements when password field gets focus
+
+            // Show requirements on focus
             passwordInput.addEventListener('focus', () => {
                 passwordRequirements.style.display = 'block';
             });
-            
-            // Hide requirements when password field loses focus
+
+            // Hide requirements on blur
             passwordInput.addEventListener('blur', () => {
                 setTimeout(() => {
                     if (!passwordRequirements.contains(document.activeElement)) {
@@ -438,101 +432,180 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
                     }
                 }, 200);
             });
-            
-            // Validate password as user types
+
+            // Real-time password validation
             passwordInput.addEventListener('input', function(e) {
                 const currentPassword = document.querySelector('input[name="currentPassword"]')?.value;
-                const errorMessages = this.parentNode.querySelectorAll('.error-message');
                 
-                // Remove any existing "same as current password" errors
-                errorMessages.forEach(msg => {
+                // Clear previous same-password errors
+                this.parentNode.querySelectorAll('.error-message').forEach(msg => {
                     if (msg.textContent === 'New password cannot be the same as current password') {
                         msg.remove();
                     }
                 });
-                
-                // Check if matches current password
+
+                // Check password match
                 if (currentPassword && this.value === currentPassword) {
-                    this.classList.add('error-field');
-                    const errorDiv = document.createElement('div');
-                    errorDiv.className = 'error-message';
-                    errorDiv.textContent = 'New password cannot be the same as current password';
-                    this.parentNode.insertBefore(errorDiv, this.nextSibling);
-                } else {
-                    this.classList.remove('error-field');
+                    showError(this, 'New password cannot be the same as current password');
                 }
-                
+
                 // Update requirement indicators
                 requirements.forEach(item => {
                     const isValid = item.regex.test(e.target.value);
                     const requirementItem = requirementList[item.index];
-                    
                     requirementItem.firstElementChild.className = isValid ? 
                         "fas fa-check-circle" : "fas fa-circle";
                     requirementItem.classList.toggle('valid', isValid);
                 });
             });
-            
-            // Also hide requirements when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!passwordInput.contains(e.target) && !passwordRequirements.contains(e.target)) {
-                    passwordRequirements.style.display = 'none';
+        }
+
+        // ================== VALIDATION SYSTEM ================== //
+        // Initialize validation
+        initValidation();
+
+        function initValidation() {
+            // Form submission handling
+            document.querySelectorAll('form').forEach(form => {
+                form.addEventListener('submit', handleFormSubmit);
+            });
+
+            // Real-time field validation
+            document.querySelectorAll('input[required], select[required]').forEach(field => {
+                field.addEventListener('blur', validateField);
+                field.addEventListener('input', validateField);
+            });
+
+            // Special field validations
+            document.querySelector('input[name="custEmail"]')?.addEventListener('blur', validateEmail);
+            document.querySelector('input[name="custPhoneNum"]')?.addEventListener('input', validatePhoneNumber);
+            document.querySelector('input[name="postcode"]')?.addEventListener('input', validatePostcode);
+            document.querySelector('select[name="state"]')?.addEventListener('change', validateState);
+            document.querySelector('input[name="city"]')?.addEventListener('blur', validateCity);
+        }
+
+        function handleFormSubmit(e) {
+            let isValid = true;
+            let firstError = null;
+
+            // Validate all required fields
+            this.querySelectorAll('input[required], select[required]').forEach(field => {
+                if (!validateField({ target: field })) {
+                    isValid = false;
+                    if (!firstError) firstError = field;
                 }
             });
+
+            if (!isValid) {
+                e.preventDefault();
+                firstError?.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center',
+                    inline: 'nearest'
+                });
+            }
         }
-        
-        // Phone number formatting function
-        function formatPhoneNumber(input) {
-            // Remove all non-digit characters
-            let phone = input.value.replace(/\D/g, '');
+
+        function validateField(e) {
+            const field = e.target;
+            const value = field.tagName === 'SELECT' ? field.value : field.value.trim();
             
-            // Limit to 11 digits (Malaysian phone numbers are typically 10-11 digits)
-            if (phone.length > 11) {
-                phone = phone.substring(0, 11);
+            // Required field validation
+            if (field.required && value === '') {
+                const fieldName = field.name;
+                let message = 'Cannot be empty';
+                
+                // Custom messages
+                if (fieldName === 'state') message = 'Please select a state';
+                if (fieldName === 'postcode') message = 'Postcode is required';
+                if (fieldName === 'city') message = 'City is required';
+                if (fieldName === 'custPhoneNum') message = 'Phone number is required';
+                
+                showError(field, message);
+                return false;
             }
             
-            // Format as 017-510 0205
+            clearError(field);
+            return true;
+        }
+
+        function validateEmail() {
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+            if (!emailRegex.test(this.value)) {
+                showError(this, 'Invalid Gmail format');
+            }
+        }
+
+        function validatePhoneNumber() {
+            // Format to XXX-XXX XXXX or XXX-XXXX XXXX
+            let phone = this.value.replace(/[-\s]/g, '');
+            if (phone.length > 11) phone = phone.substring(0, 11);
+            
             let formatted = '';
             if (phone.length > 0) {
                 formatted = phone.substring(0, 3);
-                if (phone.length > 3) {
-                    formatted += '-' + phone.substring(3, 6);
-                    if (phone.length > 6) {
-                        formatted += ' ' + phone.substring(6);
-                    }
-                }
+                if (phone.length > 3) formatted += '-' + phone.substring(3, 6);
+                if (phone.length > 6) formatted += ' ' + phone.substring(6);
             }
-            
-            input.value = formatted;
+            this.value = formatted;
+
+            // Validate format
+            if (phone && !/^(\+?6?01)[0-46-9][0-9]{7,8}$/.test(phone)) {
+                showError(this, 'Invalid Malaysian phone format');
+            }
         }
-        
-        // Postcode validation - allow only numbers
-        document.querySelector('input[name="postcode"]')?.addEventListener('input', function(e) {
+
+        function validatePostcode() {
+            // Restrict to 5 digits
             this.value = this.value.replace(/\D/g, '').substring(0, 5);
-        });
-        
-        // Email validation on blur
-        document.querySelector('input[name="custEmail"]')?.addEventListener('blur', function() {
-            const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
-            const errorElement = this.nextElementSibling;
             
-            if (!emailRegex.test(this.value)) {
-                this.classList.add('error-field');
-                if (!errorElement || !errorElement.classList.contains('error-message')) {
-                    const errorDiv = document.createElement('div');
-                    errorDiv.className = 'error-message';
-                    errorDiv.textContent = 'Invalid Gmail format';
-                    this.parentNode.insertBefore(errorDiv, this.nextSibling);
-                }
-            } else {
-                this.classList.remove('error-field');
-                if (errorElement && errorElement.classList.contains('error-message') && 
-                    errorElement.textContent === 'Invalid Gmail format') {
-                    errorElement.remove();
-                }
+            // Validate length
+            if (this.value.length !== 5 && this.value.length > 0) {
+                showError(this, 'Must be 5 digits');
+            }
+        }
+
+        function validateState() {
+            if (this.value === '') {
+                showError(this, 'Please select a state');
+            }
+        }
+
+        function validateCity() {
+            if (this.value.trim() === '') {
+                showError(this, 'City is required');
+            }
+        }
+
+        function showError(field, message) {
+            field.classList.add('error-field');
+            let errorElement = field.nextElementSibling;
+            
+            if (!errorElement || !errorElement.classList.contains('error-message')) {
+                errorElement = document.createElement('div');
+                errorElement.className = 'error-message';
+                field.parentNode.insertBefore(errorElement, field.nextSibling);
+            }
+            
+            errorElement.textContent = message;
+        }
+
+        function clearError(field) {
+            field.classList.remove('error-field');
+            const errorElement = field.nextElementSibling;
+            if (errorElement?.classList.contains('error-message')) {
+                errorElement.remove();
+            }
+        }
+
+        // ================== PROFILE PHOTO UPLOAD ================== //
+        document.getElementById('profile_picture').addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                document.getElementById('upload_submit').click();
             }
         });
-    </script>
+    });
+</script>
 </body>
 </html>
 

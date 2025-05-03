@@ -368,201 +368,231 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         </div>
     </div>
 
-<script>
-let isAddNameValid = false;
-let isEditNameValid = false;
-let originalEditName = '';
+    <script>
+    let isAddNameValid = false;
+    let isEditNameValid = false;
+    let originalEditName = '';
 
-async function validateNameInRealTime(value, prefix) {
-    const errorElement = document.getElementById(`${prefix}-name-error`);
-    const inputField = document.getElementById(`${prefix}-name`);
+    // ================== SHARED FUNCTIONS ==================
+    async function validateNameInRealTime(value, prefix) {
+        const errorElement = document.getElementById(`${prefix}-name-error`);
+        const inputField = document.getElementById(`${prefix}-name`);
 
-    errorElement.textContent = '';
-    errorElement.style.display = 'none';
-    inputField.classList.remove('error-field', 'valid-field');
+        errorElement.textContent = '';
+        errorElement.style.display = 'none';
+        inputField.classList.remove('error-field', 'valid-field');
 
-    const error = validateCategoryName(value);
-    if (error) {
-        errorElement.textContent = error;
-        errorElement.style.display = 'block';
-        inputField.classList.add('error-field');
-        if (prefix === 'add') isAddNameValid = false;
-        else isEditNameValid = false;
-    } else {
-        inputField.classList.add('valid-field');
-        const isAvailable = await checkAvailability('name', value,
-            prefix === 'edit' ? document.getElementById('editCategoryID').value : 0,
-            prefix === 'add'
-        );
-
-        if (prefix === 'add') isAddNameValid = isAvailable;
-        else isEditNameValid = isAvailable;
-    }
-
-    updateSubmitButton(prefix);
-}
-
-function updateSubmitButton(prefix) {
-    const submitButton = document.getElementById(`${prefix}-submit-btn`);
-    if (prefix === 'add') {
-        submitButton.disabled = !isAddNameValid;
-    } else {
-        submitButton.disabled = !isEditNameValid;
-    }
-}
-
-function checkAvailability(type, value, categoryId = 0, isAddModal = false) {
-    const prefix = isAddModal ? 'add-' : 'edit-';
-    const errorElement = document.getElementById(`${prefix}${type}-error`);
-    const inputField = document.getElementById(`${prefix}${type}`);
-
-    return new Promise((resolve) => {
         const error = validateCategoryName(value);
         if (error) {
             errorElement.textContent = error;
             errorElement.style.display = 'block';
             inputField.classList.add('error-field');
-            resolve(false);
-            return;
+            if (prefix === 'add') isAddNameValid = false;
+            else isEditNameValid = false;
+        } else {
+            inputField.classList.add('valid-field');
+            const isAvailable = await checkAvailability('name', value,
+                prefix === 'edit' ? document.getElementById('editCategoryID').value : 0,
+                prefix === 'add'
+            );
+
+            if (prefix === 'add') isAddNameValid = isAvailable;
+            else isEditNameValid = isAvailable;
         }
 
-        const formData = new FormData();
-        formData.append('check_availability', 'true');
-        formData.append('type', type);
-        formData.append('value', value);
-        formData.append('category_id', categoryId);
+        updateSubmitButton(prefix);
+    }
 
-        fetch(window.location.href, {
-            method: 'POST',
-            body: formData,
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.exists) {
-                errorElement.textContent = 'Category name already exists';
+    function updateSubmitButton(prefix) {
+        const submitButton = document.getElementById(`${prefix}-submit-btn`);
+        if (prefix === 'add') {
+            submitButton.disabled = !isAddNameValid;
+        } else {
+            submitButton.disabled = !isEditNameValid;
+        }
+    }
+
+    function checkAvailability(type, value, categoryId = 0, isAddModal = false) {
+        const prefix = isAddModal ? 'add-' : 'edit-';
+        const errorElement = document.getElementById(`${prefix}${type}-error`);
+        const inputField = document.getElementById(`${prefix}${type}`);
+
+        return new Promise((resolve) => {
+            const error = validateCategoryName(value);
+            if (error) {
+                errorElement.textContent = error;
                 errorElement.style.display = 'block';
                 inputField.classList.add('error-field');
                 resolve(false);
-            } else if (!data.valid_format) {
-                errorElement.textContent = data.message;
-                errorElement.style.display = 'block';
-                inputField.classList.add('error-field');
-                resolve(false);
-            } else {
-                inputField.classList.add('valid-field');
-                resolve(true);
+                return;
             }
-        })
-        .catch(error => {
-            console.error('Error checking availability:', error);
-            resolve(false);
+
+            const formData = new FormData();
+            formData.append('check_availability', 'true');
+            formData.append('type', type);
+            formData.append('value', value);
+            formData.append('category_id', categoryId);
+
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.exists) {
+                    errorElement.textContent = 'Category name already exists';
+                    errorElement.style.display = 'block';
+                    inputField.classList.add('error-field');
+                    resolve(false);
+                } else if (!data.valid_format) {
+                    errorElement.textContent = data.message;
+                    errorElement.style.display = 'block';
+                    inputField.classList.add('error-field');
+                    resolve(false);
+                } else {
+                    inputField.classList.add('valid-field');
+                    resolve(true);
+                }
+            })
+            .catch(error => {
+                console.error('Error checking availability:', error);
+                resolve(false);
+            });
         });
-    });
-}
+    }
 
-function validateCategoryName(name) {
-    if (name.trim() === '') return 'Category name is required';
-    if (name.length > 50) return 'Category name must be 50 characters or less';
-    if (!/^[a-zA-Z0-9\s\/\-]+$/.test(name)) return 'Only letters, numbers, spaces, slashes and hyphens allowed';
-    return '';
-}
+    function validateCategoryName(name) {
+        if (name.trim() === '') return 'Category name is required';
+        if (name.length > 50) return 'Category name must be 50 characters or less';
+        if (!/^[a-zA-Z0-9\s\/\-]+$/.test(name)) return 'Only letters, numbers, spaces, slashes and hyphens allowed';
+        return '';
+    }
 
-function openAddModal() {
-    document.getElementById("addModal").style.display = "block";
-    isAddNameValid = false;
-    updateSubmitButton('add');
-    document.getElementById('add-profile-picture').value = '';
-}
+    function clearErrors(prefix) {
+        const elements = ['name', 'image'];
+        elements.forEach(element => {
+            const errorElement = document.getElementById(`${prefix}-${element}-error`);
+            const inputElement = document.getElementById(`${prefix}-${element === 'name' ? 'name' : 'profile-picture'}`);
+            if (errorElement) {
+                errorElement.textContent = '';
+                errorElement.style.display = 'none';
+            }
+            if (inputElement) {
+                inputElement.classList.remove('error-field', 'valid-field');
+            }
+        });
+    }
 
-function closeAddModal() {
-    document.getElementById("addModal").style.display = "none";
-    document.getElementById("addCategoryForm").reset();
-    clearErrors('add');
-}
-
-function editCategory(id, name) {
-    document.getElementById("editModal").style.display = "block";
-    document.getElementById("editCategoryID").value = id;
-    document.getElementById("edit-name").value = name;
-    originalEditName = name;
-    clearErrors('edit');
-    isEditNameValid = true;
-    updateSubmitButton('edit');
-}
-
-function closeEditModal() {
-    document.getElementById("editModal").style.display = "none";
-    clearErrors('edit');
-}
-
-function clearErrors(prefix) {
-    const elements = ['name', 'image'];
-    elements.forEach(element => {
-        const errorElement = document.getElementById(`${prefix}-${element}-error`);
-        const inputElement = document.getElementById(`${prefix}-${element === 'name' ? 'name' : 'profile-picture'}`);
-        if (errorElement) {
-            errorElement.textContent = '';
-            errorElement.style.display = 'none';
-        }
-        if (inputElement) {
-            inputElement.classList.remove('error-field', 'valid-field');
-        }
-    });
-}
-
-document.addEventListener('DOMContentLoaded', function () {
-    document.getElementById('add-profile-picture').addEventListener('change', function () {
-        updateSubmitButton('add'); // image is optional
-    });
-
-    document.getElementById('addCategoryForm').addEventListener('submit', async function (e) {
-        e.preventDefault();
-        const nameInput = document.getElementById('add-name');
-        await validateNameInRealTime(nameInput.value, 'add');
-        console.log('isAddNameValid:', isAddNameValid);
-
-        if (!isAddNameValid) {
-            alert('Please fix all errors before submitting.');
-            return;
-        }
-
-        this.submit();
-    });
-
-    document.getElementById('editCategoryForm').addEventListener('submit', async function (e) {
-        e.preventDefault();
+    // ================== EDIT CATEGORY SPECIFIC ==================
+    function validateEditForm() {
         const nameInput = document.getElementById('edit-name');
-        await validateNameInRealTime(nameInput.value, 'edit');
-        console.log('isEditNameValid:', isEditNameValid);
+        const name = nameInput.value.trim();
+        const imageInput = document.getElementById('edit-profile-picture');
+        let isValid = true;
 
-        if (!isEditNameValid) {
-            alert('Please fix all errors before submitting.');
-            return;
+        // Clear previous errors
+        document.getElementById('edit-name-error').textContent = '';
+        nameInput.classList.remove('error-field');
+
+        // Validate name
+        const nameError = validateCategoryName(name);
+        if (nameError) {
+            document.getElementById('edit-name-error').textContent = nameError;
+            nameInput.classList.add('error-field');
+            isValid = false;
         }
 
-        this.submit();
+        // Validate image if changed
+        if (imageInput.files.length > 0) {
+            const file = imageInput.files[0];
+            const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+            
+            if (!validTypes.includes(file.type)) {
+                alert('Please upload only JPG, JPEG, or PNG files');
+                isValid = false;
+            }
+        }
+
+        return isValid;
+    }
+
+    function editCategory(id, name) {
+        document.getElementById("editModal").style.display = "block";
+        document.getElementById("editCategoryID").value = id;
+        document.getElementById("edit-name").value = name;
+        originalEditName = name;
+        clearErrors('edit');
+        isEditNameValid = true;
+        updateSubmitButton('edit');
+    }
+
+    function closeEditModal() {
+        document.getElementById("editModal").style.display = "none";
+    }
+
+    // ================== ADD CATEGORY SPECIFIC ==================
+    function openAddModal() {
+        document.getElementById("addModal").style.display = "block";
+        isAddNameValid = false;
+        updateSubmitButton('add');
+        document.getElementById('add-profile-picture').value = '';
+    }
+
+    function closeAddModal() {
+        document.getElementById("addModal").style.display = "none";
+        document.getElementById("addCategoryForm").reset();
+        clearErrors('add');
+    }
+
+    // ================== EVENT LISTENERS ==================
+    document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('add-profile-picture').addEventListener('change', function () {
+            updateSubmitButton('add');
+        });
+
+        document.getElementById('addCategoryForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('add-name');
+            await validateNameInRealTime(nameInput.value, 'add');
+            console.log('isAddNameValid:', isAddNameValid);
+
+            if (!isAddNameValid) {
+                alert('Please fix all errors before submitting.');
+                return;
+            }
+
+            this.submit();
+        });
+
+        document.getElementById('editCategoryForm')?.addEventListener('submit', function (e) {
+            if (!validateEditForm()) {
+                e.preventDefault();
+                alert('Please fix all errors before submitting.');
+                return;
+            }
+            // If valid, form will submit normally
+        });
+
+        const searchInput = document.querySelector('input[name="search"]');
+        const searchForm = document.querySelector('.search');
+
+        if (searchInput && searchForm) {
+            searchInput.addEventListener('input', function () {
+                if (this.value.trim() === '') {
+                    searchForm.submit();
+                }
+            });
+        }
     });
 
-    const searchInput = document.querySelector('input[name="search"]');
-    const searchForm = document.querySelector('.search');
-
-    if (searchInput && searchForm) {
-        searchInput.addEventListener('input', function () {
-            if (this.value.trim() === '') {
-                searchForm.submit();
-            }
-        });
+    window.onclick = function (event) {
+        if (event.target == document.getElementById("addModal")) {
+            closeAddModal();
+        }
+        if (event.target == document.getElementById("editModal")) {
+            closeEditModal();
+        }
     }
-});
-
-window.onclick = function (event) {
-    if (event.target == document.getElementById("addModal")) {
-        closeAddModal();
-    }
-    if (event.target == document.getElementById("editModal")) {
-        closeEditModal();
-    }
-}
 </script>
 
 </body>

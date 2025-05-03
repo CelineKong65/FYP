@@ -492,15 +492,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
     </div>
 
     <script>
-function checkAvailability(type, value, adminId = 0, isAddModal = false) {
-    const prefix = isAddModal ? 'add-' : '';
+function validateField(type, value, prefix = '') {
     const errorElement = document.getElementById(`${prefix}${type}-error`);
     const inputField = document.getElementById(`${prefix}${type}`);
 
+    // Clear previous states
     errorElement.textContent = '';
     errorElement.style.display = 'none';
     inputField?.classList.remove('error-field', 'valid-field');
 
+    // Required field check
     if (!value.trim()) {
         errorElement.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} is required`;
         errorElement.style.display = 'block';
@@ -508,237 +509,155 @@ function checkAvailability(type, value, adminId = 0, isAddModal = false) {
         return false;
     }
 
-    let isValidFormat = true;
-    let formatErrorMessage = '';
-
     // Format validation
-    if (type === 'email') {
-        if (!/^[^\s@]+@[^\s@]+\.com$/.test(value)) {
-            isValidFormat = false;
-            formatErrorMessage = "Invalid email format (must contain @ and end with .com)";
-        }
-    } else if (type === 'phone') {
-        if (!/^\d{3}-\d{3,4} \d{4}$/.test(value)) {
-            isValidFormat = false;
-            formatErrorMessage = "Phone must be in XXX-XXX XXXX or XXX-XXXX XXXX format";
-        }
+    let isValid = true;
+    switch(type) {
+        case 'email':
+            isValid = /^[^\s@]+@[^\s@]+\.com$/.test(value);
+            if (!isValid) {
+                errorElement.textContent = "Invalid email format (must contain @ and end with .com)";
+            }
+            break;
+        case 'phone':
+            isValid = /^\d{3}-\d{3,4} \d{4}$/.test(value);
+            if (!isValid) {
+                errorElement.textContent = "Phone must be in XXX-XXX XXXX or XXX-XXXX XXXX format";
+            }
+            break;
     }
 
-    if (!isValidFormat) {
-        errorElement.textContent = formatErrorMessage;
+    if (!isValid) {
         errorElement.style.display = 'block';
         inputField?.classList.add('error-field');
         return false;
     }
 
-    // If format is valid, check availability via AJAX
-    const formData = new FormData();
-    formData.append('check_availability', 'true');
-    formData.append('type', type);
-    formData.append('value', value);
-    formData.append('admin_id', adminId);
-
-    return fetch(window.location.href, {
-        method: 'POST',
-        body: formData,
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.exists) {
-            errorElement.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} already exists`;
-            errorElement.style.display = 'block';
-            inputField?.classList.add('error-field');
-            return false;
-        } else if (!data.valid_format) {
-            errorElement.textContent = data.message;
-            errorElement.style.display = 'block';
-            inputField?.classList.add('error-field');
-            return false;
-        } else {
-            inputField?.classList.add('valid-field');
-            return true;
-        }
-    })
-    .catch(error => {
-        console.error('Error checking availability:', error);
-        return false;
-    });
+    inputField?.classList.add('valid-field');
+    return true;
 }
 
+// Field validation handlers
+function setupValidationHandlers() {
+    // Edit modal fields
     document.getElementById('name')?.addEventListener('blur', function() {
-        const adminId = document.getElementById('admin_id').value || 0;
-        checkAvailability('name', this.value, adminId);
+        validateField('name', this.value);
     });
 
     document.getElementById('email')?.addEventListener('blur', function() {
-        const adminId = document.getElementById('admin_id').value || 0;
-        checkAvailability('email', this.value, adminId);
+        validateField('email', this.value);
     });
 
     document.getElementById('phone')?.addEventListener('blur', function() {
-        const adminId = document.getElementById('admin_id').value || 0;
-        checkAvailability('phone', this.value, adminId);
+        validateField('phone', this.value);
     });
 
-    // Add modal field listeners
+    // Add modal fields
     document.getElementById('add-name')?.addEventListener('blur', function() {
-        checkAvailability('name', this.value, 0, true);
+        validateField('name', this.value, 'add-');
     });
 
     document.getElementById('add-email')?.addEventListener('blur', function() {
-        checkAvailability('email', this.value, 0, true);
+        validateField('email', this.value, 'add-');
     });
 
     document.getElementById('add-phone')?.addEventListener('blur', function() {
-        checkAvailability('phone', this.value, 0, true);
-
-});
-
-function hasErrors(prefix = '') {
-    const errorMessages = document.querySelectorAll(`#${prefix}modal .error`);
-    for (const error of errorMessages) {
-        if (error.style.display === 'block' && error.textContent.trim() !== '') {
-            return true;
-        }
-    }
-    const errorFields = document.querySelectorAll(`#${prefix}modal .error-field`);
-    return errorFields.length > 0;
+        validateField('phone', this.value, 'add-');
+    });
 }
 
-// Add form submission
-document.querySelector('#addModal form')?.addEventListener('submit', async function(e) {
-    e.preventDefault(); // Always prevent default to handle validation
-    
-    // Validate all fields
-    const nameValid = await checkAvailability('name', document.getElementById('add-name').value, 0, true);
-    const emailValid = await checkAvailability('email', document.getElementById('add-email').value, 0, true);
-    const phoneValid = await checkAvailability('phone', document.getElementById('add-phone').value, 0, true);
-    
-    if (nameValid && emailValid && phoneValid) {
-        // All validations passed, submit the form
-        this.submit();
-    } else {
-        alert('Please fix all errors before submitting.');
-    }
-});
+// Form submission handling
+function initializeFormSubmissions() {
+    // Add form submission
+    document.querySelector('#addModal form')?.addEventListener('submit', function(e) {
+        const isValid = [
+            validateField('name', document.getElementById('add-name').value, 'add-'),
+            validateField('email', document.getElementById('add-email').value, 'add-'),
+            validateField('phone', document.getElementById('add-phone').value, 'add-')
+        ].every(result => result);
 
-// Edit form submission
-document.querySelector('#editModal form')?.addEventListener('submit', async function(e) {
-    e.preventDefault(); // Always prevent default to handle validation
-    
-    const adminId = document.getElementById('admin_id').value || 0;
-    
-    // Validate all fields
-    const nameValid = await checkAvailability('name', document.getElementById('name').value, adminId);
-    const emailValid = await checkAvailability('email', document.getElementById('email').value, adminId);
-    const phoneValid = await checkAvailability('phone', document.getElementById('phone').value, adminId);
-    
-    if (nameValid && emailValid && phoneValid) {
-        // All validations passed, submit the form
-        this.submit();
-    } else {
-        alert('Please fix all errors before submitting.');
-    }
-});
+        if (!isValid) {
+            e.preventDefault();
+            alert('Please fix all errors before submitting.');
+        }
+    });
 
-function editAdmin(admin_id, name, email, phone, position, password) {
-    // Clear all errors before opening
+    // Edit form submission
+    document.querySelector('#editModal form')?.addEventListener('submit', function(e) {
+        const isValid = [
+            validateField('name', document.getElementById('name').value),
+            validateField('email', document.getElementById('email').value),
+            validateField('phone', document.getElementById('phone').value)
+        ].every(result => result);
+
+        if (!isValid) {
+            e.preventDefault();
+            alert('Please fix all errors before submitting.');
+        }
+    });
+}
+
+// Modal management functions
+function editAdmin(admin_id, name, email, phone, position) {
     clearAllErrors();
-    
     document.getElementById('admin_id').value = admin_id;
     document.getElementById('name').value = name;
     document.getElementById('email').value = email;
     document.getElementById('phone').value = phone;
-    
+
     const positionContainer = document.getElementById('position-container');
-    if (position === 'superadmin') {
-        positionContainer.innerHTML = `
-            <div class="position-display">${position}</div>
-            <input type="hidden" name="position" value="superadmin">
-        `;
-    } else {
-        positionContainer.innerHTML = `
-            <select name="position" id="position" required>
-                <option value="admin" ${position === 'admin' ? 'selected' : ''}>admin</option>
-                <option value="superadmin" ${position === 'superadmin' ? 'selected' : ''}>superadmin</option>
-            </select>
-        `;
-    }
-    
-    // Close add modal if open
+    positionContainer.innerHTML = position === 'superadmin' ? 
+        `<div class="position-display">${position}</div>
+         <input type="hidden" name="position" value="superadmin">` :
+        `<select name="position" id="position" required>
+            <option value="admin" ${position === 'admin' ? 'selected' : ''}>admin</option>
+            <option value="superadmin" ${position === 'superadmin' ? 'selected' : ''}>superadmin</option>
+         </select>`;
+
     document.getElementById('addModal').style.display = 'none';
     document.getElementById('editModal').style.display = 'block';
 }
 
 function openAddModal() {
-    // Clear all errors before opening
     clearAllErrors();
-    
-    // Close edit modal if open
     document.getElementById('editModal').style.display = 'none';
     document.getElementById('addModal').style.display = 'block';
-    
-    // Reset the form
     document.querySelector('#addModal form').reset();
 }
 
-function closeModal() {
-    clearAllErrors();
-    document.getElementById('editModal').style.display = 'none';
-}
-
-function closeAddModal() {
-    clearAllErrors();
-    document.querySelector('#addModal form').reset();
-    document.getElementById('addModal').style.display = 'none';
-}
-
-function clearError(inputId, errorId) {
-    const inputElement = document.getElementById(inputId);
-    const errorElement = document.getElementById(errorId);
-    
-    if (inputElement) {
-        inputElement.classList.remove('error-field', 'valid-field');
-    }
-    if (errorElement) {
-        errorElement.textContent = '';
-        errorElement.style.display = 'none';
-    }
-}
-
+// UI helpers
 function clearAllErrors() {
-    // Edit modal errors
-    clearError('name', 'name-error');
-    clearError('email', 'email-error');
-    clearError('phone', 'phone-error');
-    
-    // Add modal errors
-    clearError('add-name', 'add-name-error');
-    clearError('add-email', 'add-email-error');
-    clearError('add-phone', 'add-phone-error');
+    ['', 'add-'].forEach(prefix => {
+        ['name', 'email', 'phone'].forEach(type => {
+            const input = document.getElementById(`${prefix}${type}`);
+            const error = document.getElementById(`${prefix}${type}-error`);
+            input?.classList.remove('error-field', 'valid-field');
+            error.textContent = '';
+            error.style.display = 'none';
+        });
+    });
 }
 
-
+// Initial setup
 document.addEventListener('DOMContentLoaded', function() {
+    setupValidationHandlers();
+    initializeFormSubmissions();
+    
+    // Search functionality
     const searchInput = document.querySelector('input[name="search"]');
-    const searchForm = document.querySelector('.search');
-    if (searchInput && searchForm) {
-        searchInput.addEventListener('input', function() {
-            if (this.value.trim() === '') {
-                searchForm.submit();
-            }
-        });
-    }
+    searchInput?.addEventListener('input', function() {
+        if (this.value.trim() === '') {
+            this.closest('form').submit();
+        }
+    });
 });
 
+// Modal close handlers
 window.onclick = function(event) {
-    if (event.target == document.getElementById("addModal")) {
-        closeAddModal();
+    if (event.target.matches('.modal')) {
+        event.target.style.display = 'none';
+        clearAllErrors();
     }
-    if (event.target == document.getElementById("editModal")) {
-        closeModal();
-    }
-}
+};
 </script>
 </body>
 </html>

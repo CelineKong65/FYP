@@ -319,4 +319,8 @@ body {
 }
 .error-field {
     border-color: #e74c3c !important;
+    box-shadow: 0 0 0 1px #e74c3c;
+}
+select.error-field {
+    border: 1px solid #e74c3c !important;
 }
