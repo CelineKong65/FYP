@@ -658,6 +658,14 @@ window.onclick = function(event) {
         clearAllErrors();
     }
 };
+
+function closeModal() {
+        document.getElementById('editModal').style.display = 'none';
+    }
+
+    function closeAddModal() {
+        document.getElementById('addModal').style.display = 'none';
+    }
 </script>
 </body>
 </html>
