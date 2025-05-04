@@ -46,31 +46,49 @@ body {
     border-radius: 10px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     text-align: center;
-    width: 80%;
-    margin: 0 auto;
     margin-bottom: 30px;
 }
 
-.profile-table {
-    border-collapse: collapse;
-    margin: 0 auto;
-    width: 90%;
+.profile-picture {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 5px solid #f1f1f1;
+    margin-bottom: 20px;
 }
 
-.profile-table th, .profile-table td {
-    padding: 12px 15px;
-    text-align: left;
-    border-bottom: 1px solid #e0e0e0;
+.profile-title {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.8rem;
 }
 
-.profile-table th {
-    width: 30%;
-    font-weight: bold;
-    color: #555;
+.account-number {
+    color: #7f8c8d;
+    margin: 10px 0 20px;
 }
 
-.profile-table td {
-    color: #333;
+.upload-form {
+    margin-top: 20px;
+}
+
+.upload-form input[type="file"] {
+    display: none;
+}
+
+.upload-form label {
+    background-color: #007BFF;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    display: inline-block;
+    transition: background-color 0.3s;
+}
+
+.upload-form label:hover {
+    background-color: #0163cb;
 }
 
 /* Profile Container Styles */
@@ -79,18 +97,13 @@ body {
     padding: 30px;
     border-radius: 10px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    width: 80%;
-    margin: 0 auto;
-    height: 900px;
 }
 
-.form-section, .form-section-pass {
-    width: 90%;
-    margin: 0 auto;
+.form-section, .form-section-pass{
     margin-bottom: 40px;
 }
 
-.form-section h3, .form-section-pass h3 {
+.form-section h3, .form-section-pass h3{
     color: #2c3e50;
     margin-bottom: 20px;
     font-size: 1.3rem;
@@ -98,8 +111,9 @@ body {
     padding-bottom: 10px;
 }
 
-.form-section-pass h3{
-    margin-top: 80px;
+.form-section-pass{
+    width: 100%;
+    margin-bottom: 40px;
 }
 
 .form-row {
@@ -158,15 +172,11 @@ body {
     background-color: #f5f5f5;
     border: 1px solid #ddd;
     border-radius: 4px;
-    font-size: 13px;
+    width: 98%;
 }
 
 .pass-field {
     position: relative;
-}
-
-.pass-field input {
-    padding-right: 35px; /* Make space for the eye icon */
 }
 
 .pass-field i {
@@ -176,11 +186,6 @@ body {
     transform: translateY(-50%);
     cursor: pointer;
     color: #7f8c8d;
-}
-
-.upd_div {
-    float: right;
-    margin-top: 20px;
 }
 
 .update-btn {
@@ -197,6 +202,26 @@ body {
 
 .update-btn:hover {
     background-color: #0163cb;
+}
+
+/* Message Styles */
+.message {
+    padding: 15px;
+    margin: 20px 0;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+.message.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.message.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
 }
 
 /* Password Requirements */
