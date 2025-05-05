@@ -636,6 +636,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name']))
                     <input type="number" min="1.00" step="1.00" name="price" id="add_price" required>
                     <label>Category:<span class="required">*</span></label>
                     <select name="category_id" id="add_category_id" required>
+                        <option value="" disabled selected>--- Select a category ---</option>
                         <?php $category_result->data_seek(0); ?>
                         <?php while ($row = $category_result->fetch_assoc()): ?>
                             <option value="<?php echo $row['CategoryID']; ?>">

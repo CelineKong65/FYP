@@ -394,7 +394,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                         <div id="city-error" class="error-message"></div>
                         <label>State:<span class="required">*</span></label>
                         <select name="state" id="state">
-                            <option value="">-- Select City/State --</option>
+                            <option value="" disabled selected>-- Select City/State --</option>
                             <option value="Johor">Johor</option>
                             <option value="Kedah">Kedah</option>
                             <option value="Kelantan">Kelantan</option>
