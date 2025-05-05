@@ -300,3 +300,7 @@ input::placeholder{
     border: 1px solid #ccc;
     cursor: not-allowed;
 }
+
+.required{
+    color: red;
+}

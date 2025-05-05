@@ -492,25 +492,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 <input type="hidden" name="admin_id" id="admin_id">
                 
                 <div class="edit-form">
-                    <div class="left">
+                    <div>
                         <label>Profile Picture:<span> (.jpg,.jpeg or .png only)</span></label>
                         <input class="img" type="file" name="profile_picture" id="profile_picture" accept=".jpg,.jpeg,.png">
                         
-                        <label>Name:</label>
+                        <label>Name:<span class="required">*</span></label>
                         <input type="text" name="name" id="name" required onblur="checkAvailability('name', this.value, document.getElementById('admin_id').value)">
                         <div id="name-error" class="error-message"></div>
 
-                        <label>Email:</label>
+                        <label>Email:<span class="required">*</span></label>
                         <input type="email" name="email" id="email" placeholder="example@gmail.com" required onblur="checkAvailability('email', this.value, document.getElementById('admin_id').value)">
                         <div id="email-error" class="error-message"></div>
-                    </div>
-                    
-                    <div class="right">
-                        <label>Phone:</label>
+
+                        <label>Phone:<span class="required">*</span></label>
                         <input type="text" name="phone" id="phone" placeholder="XXX-XXX XXXX or XXX-XXXX XXXX format" required onblur="checkAvailability('phone', this.value, document.getElementById('admin_id').value)">
                         <div id="phone-error" class="error-message"></div>
 
-                        <label>Position:</label>
+                        <label>Position:<span class="required">*</span></label>
                         <div id="position-container" class="readonly-field"></div>
                     </div>
                 </div>
@@ -528,25 +526,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
             <h3>Add Admin</h3>
             <form method="POST" action="" enctype="multipart/form-data" id="addAdminForm">
                 <div class="edit-form">
-                    <div class="left">
+                    <div>
                         <label>Profile Picture:<span> (.jpg,.jpeg or .png only)</span></label>
                         <input class="img" type="file" name="profile_picture" id="add-profile_picture" accept=".jpg,.jpeg,.png">
                         
-                        <label>Name:</label>
+                        <label>Name:<span class="required">*</span></label>
                         <input type="text" name="name" id="add-name" required onblur="checkAvailability('name', this.value)">
                         <div id="add-name-error" class="error-message"></div>
                         
-                        <label>Email:</label>
+                        <label>Email:<span class="required">*</span></label>
                         <input type="email" name="email" id="add-email" placeholder="example@gmail.com" required onblur="checkAvailability('email', this.value)">
                         <div id="add-email-error" class="error-message"></div>
-                    </div>
-                    
-                    <div class="right">
-                        <label>Phone:</label>
+
+                        <label>Phone:<span class="required">*</span></label>
                         <input type="text" name="phone" id="add-phone" placeholder="XXX-XXX XXXX or XXX-XXXX XXXX format" required onblur="checkAvailability('phone', this.value)">
                         <div id="add-phone-error" class="error-message"></div>
                         
-                        <label>Position:</label>
+                        <label>Position:<span class="required">*</span></label>
                         <select name="position" id="add-position" required>
                             <option value="admin">admin</option>
                             <option value="superadmin">superadmin</option>

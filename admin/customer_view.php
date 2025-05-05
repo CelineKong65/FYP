@@ -372,27 +372,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                     <div class="left">
                         <label>Profile Picture:<span> (.jpp,.jpeg or .png only)</span></label>
                         <input class="img" type="file" name="profile_picture" id="profile_picture" accept=".jpg,.jpeg,.png">
-                        <label>Name:</label>
+                        <label>Name:<span class="required">*</span></label>
                         <input type="text" name="name" id="name" required onblur="checkAvailability('name', this.value)">
                         <div id="name-error" class="error-message"></div>
-                        <label>Email:</label>
+                        <label>Email:<span class="required">*</span></label>
                         <input type="email" name="email" id="email" placeholder="example@gmail.com" required onblur="checkAvailability('email', this.value)">
                         <div id="email-error" class="error-message"></div>
-                        <label>Phone:</label>
+                        <label>Phone:<span class="required">*</span></label>
                         <input type="text" name="phone" id="phone" placeholder="XXX-XXX XXXX or XXX-XXXX XXXX format" required onblur="checkAvailability('phone', this.value)">
                         <div id="phone-error" class="error-message"></div>
                     </div>
                     <div class="right">
-                        <label>Street Address:</label>
+                        <label>Street Address:<span class="required">*</span></label>
                         <input type="text" name="street" id="street">
                         <div id="street-error" class="error-message"></div>
-                        <label>Postcode:</label>
+                        <label>Postcode:<span class="required">*</span></label>
                         <input type="text" name="postcode" id="postcode">
                         <div id="postcode-error" class="error-message"></div>
-                        <label>City:</label>
+                        <label>City:<span class="required">*</span></label>
                         <input type="text" name="city" id="city">
                         <div id="city-error" class="error-message"></div>
-                        <label>State:</label>
+                        <label>State:<span class="required">*</span></label>
                         <select name="state" id="state">
                             <option value="">-- Select City/State --</option>
                             <option value="Johor">Johor</option>

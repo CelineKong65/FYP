@@ -574,12 +574,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name']))
                     <div class="left">
                         <label>Image:<span> (.jpg,.jpeg or .png only)</span></label>
                         <input type="file" name="image" accept=".jpg,.jpeg,.png">
-                        <label>Name:</label>
+                        <label>Name:<span class="required">*</span></label>
                         <input type="text" name="name" id="name" required oninput="validateProductNameInRealTime(this.value, true)">
                         <div id="edit-name-error" class="error-message" style="display: none; color: red;"></div>
-                        <label>Price:</label>
+                        <label>Price:<span class="required">*</span></label>
                         <input type="number" min="1.00" step="1.00" name="price" id="price" required>
-                        <label>Category:</label>
+                        <label>Category:<span class="required">*</span></label>
                         <select name="category_id" id="category_id" required>
                             <?php $category_result->data_seek(0); ?>
                             <?php while ($row = $category_result->fetch_assoc()): ?>
@@ -588,7 +588,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name']))
                                 </option>
                             <?php endwhile; ?>
                         </select>
-                        <label>Description:</label>
+                        <label>Description:<span class="required">*</span></label>
                         <textarea name="description" id="description" required></textarea>
                     </div>
                     <div class="right">
@@ -597,17 +597,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name']))
                             <label for="has_sizes">This product has sizes</label>
                         </div>
                         <div id="size_fields">
-                            <label for="stock_S">S:</label>
+                            <label for="stock_S">S:<span class="required">*</span></label>
                             <input type="number" name="stock_S" id="stock_S" min="0" step="1.00" value="0">
-                            <label for="stock_M">M:</label>
+                            <label for="stock_M">M:<span class="required">*</span></label>
                             <input type="number" name="stock_M" id="stock_M" min="0" step="1.00" value="0">
-                            <label for="stock_L">L:</label>
+                            <label for="stock_L">L:<span class="required">*</span></label>
                             <input type="number" name="stock_L" id="stock_L" min="0" step="1.00" value="0">
-                            <label for="stock_XL">XL:</label>
+                            <label for="stock_XL">XL:<span class="required">*</span></label>
                             <input type="number" name="stock_XL" id="stock_XL" min="0" step="1.00" value="0">
                         </div>
                         <div id="no_size_field">
-                            <label for="stock">Stock:</label>
+                            <label for="stock">Stock:<span class="required">*</span></label>
                             <input type="number" name="stock" id="stock" min="0" step="1.00" value="0">
                         </div>
                     </div>
@@ -627,14 +627,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name']))
             <input type="hidden" name="product_id" id="product_id">
             <div class="add-form">
                 <div class="left">
-                    <label>Image:<span> (.jpg,.jpeg or .png only)</span></label>
+                    <label>Image:<span class="required">*</span><span> (.jpg,.jpeg or .png only)</span></label>
                     <input type="file" name="image" accept=".jpg,.jpeg,.png" required>
-                    <label>Name:</label>
+                    <label>Name:<span class="required">*</span></label>
                     <input type="text" name="name" id="add_name" required oninput="validateProductNameInRealTime(this.value, false)">
                     <div id="add-name-error" class="error-message" style="display: none; color: red;"></div>
-                    <label>Price:</label>
+                    <label>Price:<span class="required">*</span></label>
                     <input type="number" min="1.00" step="1.00" name="price" id="add_price" required>
-                    <label>Category:</label>
+                    <label>Category:<span class="required">*</span></label>
                     <select name="category_id" id="add_category_id" required>
                         <?php $category_result->data_seek(0); ?>
                         <?php while ($row = $category_result->fetch_assoc()): ?>
@@ -643,7 +643,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name']))
                             </option>
                         <?php endwhile; ?>
                     </select>
-                    <label>Description:</label>
+                    <label>Description:<span class="required">*</span></label>
                     <textarea name="description" id="add_description" required></textarea>
                 </div>
                 <div class="right">
@@ -652,17 +652,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name']))
                         <label for="add_has_sizes">This product has sizes</label>
                     </div>
                     <div id="add_size_fields" style="display:none;">
-                        <label for="add_stock_S">S:</label>
+                        <label for="add_stock_S">S:<span class="required">*</span></label>
                         <input type="number" name="stock_S" id="add_stock_S" min="0" step="1.00" value="0">
-                        <label for="add_stock_M">M:</label>
+                        <label for="add_stock_M">M:<span class="required">*</span></label>
                         <input type="number" name="stock_M" id="add_stock_M" min="0" step="1.00" value="0">
-                        <label for="add_stock_L">L:</label>
+                        <label for="add_stock_L">L:<span class="required">*</span></label>
                         <input type="number" name="stock_L" id="add_stock_L" min="0" step="1.00" value="0">
-                        <label for="add_stock_XL">XL:</label>
+                        <label for="add_stock_XL">XL:<span class="required">*</span></label>
                         <input type="number" name="stock_XL" id="add_stock_XL" min="0" step="1.00" value="0">
                     </div>
                     <div id="add_no_size_field">
-                        <label for="add_stock">Stock:</label>
+                        <label for="add_stock">Stock:<span class="required">*</span></label>
                         <input type="number" name="stock" id="add_stock" min="0" step="1.00" value="0" required>
                     </div>
                 </div>
