@@ -412,7 +412,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
         </div>
     </div>
 
-<script>
+    <script>
     document.addEventListener('DOMContentLoaded', function() {
         // ================== PASSWORD FEATURES ================== //
         // Password visibility toggle
@@ -468,11 +468,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
                 const currentPassword = document.querySelector('input[name="currentPassword"]')?.value;
                 
                 // Clear previous same-password errors
-                this.parentNode.querySelectorAll('.error-message').forEach(msg => {
-                    if (msg.textContent === 'New password cannot be the same as current password') {
-                        msg.remove();
-                    }
-                });
+                clearSpecificError(this, 'New password cannot be the same as current password');
 
                 // Check password match
                 if (currentPassword && this.value === currentPassword) {
@@ -516,101 +512,120 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
         }
 
         // ================== REAL-TIME DATABASE CHECKS ================== //
-        async function checkFieldAvailability(fieldName, fieldValue, userId) {
-            return new Promise((resolve) => {
-                if (!fieldValue) {
-                    resolve(true); // Skip empty fields
-                    return;
-                }
+        let typingTimers = {}; // Track timers for each field
 
+        async function checkFieldAvailability(fieldName, fieldValue, userId) {
+            try {
                 const formData = new FormData();
                 formData.append('ajax_check', '1');
                 formData.append('field', fieldName);
                 formData.append('value', fieldValue);
                 formData.append('user_id', userId);
 
-                fetch(window.location.href, {
+                const response = await fetch(window.location.href, {
                     method: 'POST',
                     body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    resolve(data.available);
-                })
-                .catch(() => {
-                    resolve(true); // Assume available if error occurs
                 });
-            });
+                
+                if (!response.ok) throw new Error('Network error');
+                const data = await response.json();
+                return data.available;
+            } catch (error) {
+                console.error('Validation error:', error);
+                return true; // Assume available on error
+            }
         }
 
         function setupRealTimeValidation() {
             const userId = <?= json_encode($user_id) ?>;
-            const DEBOUNCE_DELAY = 500; // 0.5 second delay after typing stops
             
-            // Fields to validate in real-time
             const fieldsToValidate = {
                 'custName': {
-                    errorMsg: 'Name already exists',
-                    validate: async (value) => await checkFieldAvailability('CustName', value, userId)
+                    dbField: 'CustName',
+                    errorMsg: 'Username already exists',
+                    minLength: 2,
+                    formatCheck: (value) => {
+                        if (value.length < 2) return 'Username must be at least 2 characters';
+                        return null;
+                    }
                 },
                 'custEmail': {
-                    errorMsg: 'Email already exists',
-                    validate: async (value) => {
+                    dbField: 'CustEmail',
+                    errorMsg: 'Email already registered',
+                    formatCheck: (value) => {
                         const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
-                        if (!emailRegex.test(value)) return true; // Let other validation handle format
-                        return await checkFieldAvailability('CustEmail', value, userId);
+                        if (!emailRegex.test(value)) return 'Invalid Gmail format';
+                        return null;
                     }
                 },
                 'custPhoneNum': {
-                    errorMsg: 'Phone number already exists',
-                    validate: async (value) => {
+                    dbField: 'CustPhoneNum',
+                    errorMsg: 'Phone number already in use',
+                    preProcess: (value) => value.replace(/[-\s]/g, ''),
+                    formatCheck: (value) => {
                         const cleanPhone = value.replace(/[-\s]/g, '');
-                        if (!/^(\+?6?01)[0-46-9][0-9]{7,8}$/.test(cleanPhone)) return true;
-                        return await checkFieldAvailability('CustPhoneNum', cleanPhone, userId);
-                    }
-                },
-                'newPassword': {
-                    errorMsg: 'New password cannot match current password',
-                    validate: async (value) => {
-                        const currentPassword = document.querySelector('input[name="currentPassword"]')?.value;
-                        return value !== currentPassword;
+                        if (!/^(\+?6?01)[0-46-9][0-9]{7,8}$/.test(cleanPhone)) {
+                            return 'Invalid Malaysian phone format';
+                        }
+                        return null;
                     }
                 }
             };
-            
-            // Setup real-time validation for all fields
+
             Object.entries(fieldsToValidate).forEach(([fieldName, config]) => {
                 const input = document.querySelector(`input[name="${fieldName}"]`);
-                let debounceTimer;
-                
-                if (input) {
-                    input.addEventListener('input', () => {
-                        clearTimeout(debounceTimer);
-                        debounceTimer = setTimeout(async () => {
-                            const value = input.value.trim();
-                            if (value.length < 2) return; // Don't check short values
-                            
-                            const isValid = await config.validate(value);
-                            
-                            if (!isValid) {
-                                showError(input, config.errorMsg);
-                            } else {
-                                clearError(input);
-                            }
-                        }, DEBOUNCE_DELAY);
-                    });
+                if (!input) return;
+
+                // Validate on input (debounced)
+                input.addEventListener('input', () => {
+                    clearTimeout(typingTimers[fieldName]);
                     
-                    // Also validate when leaving the field
-                    input.addEventListener('blur', async () => {
+                    typingTimers[fieldName] = setTimeout(async () => {
                         const value = input.value.trim();
-                        const isValid = await config.validate(value);
-                        
-                        if (!isValid) {
-                            showError(input, config.errorMsg);
-                        }
-                    });
+                        await validateFieldRealTime(input, value, config, userId);
+                    }, 500);
+                });
+
+                // Validate on blur
+                input.addEventListener('blur', async () => {
+                    const value = input.value.trim();
+                    await validateFieldRealTime(input, value, config, userId);
+                });
+
+                // Initial validation for prefilled values
+                if (input.value.trim()) {
+                    validateFieldRealTime(input, input.value.trim(), config, userId);
                 }
             });
+        }
+
+        async function validateFieldRealTime(input, value, config, userId) {
+            // Clear all existing errors first
+            clearAllErrors(input);
+            
+            // Check format errors
+            if (config.formatCheck) {
+                const formatError = config.formatCheck(value);
+                if (formatError) {
+                    showError(input, formatError);
+                    return; // Don't check existence if format is invalid
+                }
+            }
+
+            // Skip empty or too short values
+            if (!value || (config.minLength && value.length < config.minLength)) {
+                return;
+            }
+
+            // Check database existence
+            if (config.dbField) {
+                const processedValue = config.preProcess ? config.preProcess(value) : value;
+                const isAvailable = await checkFieldAvailability(config.dbField, processedValue, userId);
+                
+                if (!isAvailable) {
+                    showError(input, config.errorMsg);
+                }
+            }
         }
 
         function handleFormSubmit(e) {
@@ -646,6 +661,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
             }
         }
 
+        // ================== HELPER FUNCTIONS ================== //
         function validateField(e) {
             const field = e.target;
             const value = field.tagName === 'SELECT' ? field.value : field.value.trim();
@@ -653,7 +669,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
             // Required field validation
             if (field.required && value === '') {
                 const fieldName = field.name;
-                let message = 'Cannot be empty';
+                let message = 'This field is required';
                 
                 // Custom messages
                 if (fieldName === 'state') message = 'Please select a state';
@@ -731,6 +747,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
         }
 
         function clearError(field) {
+            field.classList.remove('error-field');
+            const errorElement = field.nextElementSibling;
+            if (errorElement?.classList.contains('error-message')) {
+                errorElement.remove();
+            }
+        }
+
+        function clearSpecificError(field, messageText) {
+            const errorElement = field.nextElementSibling;
+            if (errorElement?.classList.contains('error-message') && 
+                errorElement.textContent === messageText) {
+                errorElement.remove();
+                field.classList.remove('error-field');
+            }
+        }
+
+        function clearAllErrors(field) {
             field.classList.remove('error-field');
             const errorElement = field.nextElementSibling;
             if (errorElement?.classList.contains('error-message')) {
