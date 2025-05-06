@@ -279,3 +279,7 @@ span{
     color:gray;
     font-size: 12px;
 }
+
+.required{
+    color: red;
+}

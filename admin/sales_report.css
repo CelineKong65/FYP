@@ -49,32 +49,58 @@ h2 {
     margin-bottom: 50px;
 }
 
-/*new*/
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 30px 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin: 0 auto;
+    width: 65%;
+
+}
+
+form label {
+    font-weight: bold;
+    color: #333;
+    font-size: 15px;
+}
+
 .bcm-dropdown, .bcm-input {
-    padding: 8px 12px;
-    margin-bottom: 12px;
+    padding: 10px 14px;
     border: 1px solid #ccc;
     border-radius: 6px;
-    font-size: 16px;
-    background-color: #f8f9fc;
-    color: #333;
-    width: 100%;
-    max-width: 300px;
-    display: block;
-  }
-  
-  .bcm-button {
-    background-color: #007bff;
-    color: #fff;
-    padding: 10px 18px;
+    font-size: 14px;
+    background-color: #fff;
+    transition: border 0.3s ease;
+}
+
+.bcm-dropdown:focus, .bcm-input:focus {
+    border-color: #0077b6;
+    outline: none;
+}
+
+.bcm-button {
+    padding: 12px;
+    background-color: #007BFF;
+    color: white;
     border: none;
     border-radius: 6px;
-    cursor: pointer;
     font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
     margin-top: 10px;
-  }
-  
-  .bcm-button:hover {
-    background-color: #0056b3;
-  }
-  
+}
+
+.bcm-button:hover {
+    background-color: #005f87;
+}
+
+.error-message {
+    color: #e63946;
+    font-size: 13px;
+    margin-top: -8px;
+    margin-bottom: 5px;
+    display: none;
+}

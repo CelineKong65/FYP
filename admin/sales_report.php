@@ -37,13 +37,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $filename = 'rating_feedback';
         $title = 'Customer Rating Feedback';
     } elseif ($dataType === 'sales_report') {
-        $query = "SELECT * FROM (SELECT DATE_FORMAT(OrderDate, '%Y-%m') AS month, SUM(TotalPrice) AS monthly_sales FROM orderpayment WHERE OrderDate BETWEEN ? AND ? GROUP BY DATE_FORMAT(OrderDate, '%Y-%m') ORDER BY month DESC LIMIT 6) AS recent_months ORDER BY month ASC";
+        $query = "SELECT * FROM (SELECT DATE_FORMAT(OrderDate, '%Y-%m') AS month, SUM(TotalPrice) AS monthly_sales FROM orderpayment WHERE OrderDate BETWEEN ? AND ? GROUP BY DATE_FORMAT(OrderDate, '%Y-%m') ORDER BY month DESC) AS recent_months ORDER BY month ASC";
         $filename = 'sales_report';
-        $title = 'Monthly Sales Report (Last 6 Months)';        
+        $title = 'Monthly Sales Report';        
     } elseif ($dataType === 'top_selling') {
-        $query = "SELECT p.ProductName, SUM(od.Quantity) AS total_quantity_sold, SUM(od.Quantity * od.ProductPrice) AS total_sales_value FROM orderdetails od JOIN orderpayment op ON od.OrderID = op.OrderID JOIN product p ON od.ProductName = p.ProductName WHERE op.OrderDate BETWEEN ? AND ? GROUP BY p.ProductID, p.ProductName ORDER BY total_quantity_sold DESC LIMIT 5";
+        $query = "SELECT p.ProductName, SUM(od.Quantity) AS total_quantity_sold, SUM(od.Quantity * od.ProductPrice) AS total_sales_value FROM orderdetails od JOIN orderpayment op ON od.OrderID = op.OrderID JOIN product p ON od.ProductName = p.ProductName WHERE op.OrderDate BETWEEN ? AND ? GROUP BY p.ProductID, p.ProductName ORDER BY total_quantity_sold DESC";
         $filename = 'top_selling_products';
-        $title = 'Top 5 Best Selling Products';    
+        $title = 'Best Selling Products';    
     }
     if ($exportFormat === 'pdf') {
         require('fpdf/fpdf.php');
@@ -173,10 +173,132 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $pdf->Output('D', $filename.'.pdf');
         exit();
+    } elseif ($exportFormat === 'excel') {
+        $stmt = $conn->prepare($query);
+        if ($dataType !== 'rating_feedback') {
+            $stmt->bind_param("ss", $startDateTime, $endDateTime);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+    
+        if (!$result || $result->num_rows === 0) {
+            echo "<script>alert('No records found for the selected date range'); window.location.href = window.location.href;</script>";
+            exit();
+        }
+    
+        // Define columns with widths (same as PDF version)
+        if ($dataType === 'orders') {
+            $columns = [
+                'OrderID' => ['width' => 15, 'title' => 'ID'],
+                'CustName' => ['width' => 40, 'title' => 'Customer Name'],
+                'ReceiverInfo' => ['width' => 50, 'title' => 'Receiver Info'],
+                'FullAddress' => ['width' => 70, 'title' => 'Address'],
+                'OrderDate' => ['width' => 35, 'title' => 'Order Date'],
+                'OrderStatus' => ['width' => 20, 'title' => 'Status'],
+                'TotalPrice' => ['width' => 20, 'title' => 'Total (RM)'],
+                'PaymentMethod' => ['width' => 25, 'title' => 'Payment']
+            ];
+        } elseif ($dataType === 'contacts') {
+            $columns = [
+                'Contact_id' => ['width' => 15, 'title' => 'ID'],
+                'CustName' => ['width' => 40, 'title' => 'Name'],
+                'CustEmail' => ['width' => 50, 'title' => 'Email'],
+                'Subject' => ['width' => 50, 'title' => 'Subject'],
+                'Message' => ['width' => 80, 'title' => 'Message'],
+                'Submission_date' => ['width' => 35, 'title' => 'Date']
+            ];
+        } elseif ($dataType === 'product_feedback') {
+            $columns = [
+                'ProductFeedbackID' => ['width' => 15, 'title' => 'ID'],
+                'CustName' => ['width' => 40, 'title' => 'Customer Name'],
+                'ProductID' => ['width' => 20, 'title' => 'Prod_ID'],
+                'ProductName' => ['width' => 60, 'title' => 'Product Name'],
+                'Rating' => ['width' => 20, 'title' => 'Rating'],
+                'Feedback' => ['width' => 80, 'title' => 'Feedback'],
+                'FeedbackDate' => ['width' => 35, 'title' => 'Date']
+            ];           
+        } elseif ($dataType === 'rating_feedback') {
+            $columns = [
+                'FeedbackID' => ['width' => 15, 'title' => 'ID'],
+                'CustName' => ['width' => 50, 'title' => 'Customer Name'],
+                'Rating' => ['width' => 15, 'title' => 'Rating'],
+                'Feedback' => ['width' => 100, 'title' => 'Comment'],
+                'FeedbackDate' => ['width' => 35, 'title' => 'Date']
+            ];
+        } elseif ($dataType === 'sales_report') {
+            $columns = [
+                'month' => ['width' => 50, 'title' => 'Month'],
+                'monthly_sales' => ['width' => 50, 'title' => 'Total Sales (RM)']
+            ];        
+        } elseif ($dataType === 'top_selling') {
+            $columns = [
+                'ProductName' => ['width' => 80, 'title' => 'Product Name'],
+                'total_quantity_sold' => ['width' => 40, 'title' => 'Quantity Sold'],
+                'total_sales_value' => ['width' => 50, 'title' => 'Sales Value (RM)']
+            ];
+        }
+    
+        // Prepare headers for HTML table to be opened in Excel
+        header("Content-Type: application/vnd.ms-excel");
+        header("Content-Disposition: attachment; filename=\"$filename.xls\"");
+        header("Pragma: no-cache");
+        header("Expires: 0");
+    
+        echo "<html>";
+        echo "<head>";
+        echo "<meta charset='UTF-8'>";
+        echo "<style>";
+        echo "td { vertical-align: top; }";
+        echo "</style>";
+        echo "</head>";
+        echo "<body>";
+        echo "<table border='1' style='border-collapse: collapse; font-family: Arial, sans-serif; width: 100%;'>";
+    
+        // Report Title
+        echo "<tr><td colspan='" . count($columns) . "' style='font-weight: bold; font-size: 16px; text-align: center;'>$title</td></tr>";
+        echo "<tr><td colspan='" . count($columns) . "' style='text-align: center;'>Date Range: $startDate to $endDate</td></tr>";
+        echo "<tr><td colspan='" . count($columns) . "'>&nbsp;</td></tr>";
+    
+        // Column Headers
+        echo "<tr>";
+        foreach ($columns as $field => $col) {
+            $width = $col['width'] * 5; // Convert to approximate pixels
+            echo "<th style='background-color: #d9d9d9; font-weight: bold; text-align: center; padding: 5px; width: {$width}px;'>{$col['title']}</th>";
+        }
+        echo "</tr>";
+    
+        // Data Rows
+        while ($row = $result->fetch_assoc()) {
+            echo "<tr>";
+            foreach ($columns as $field => $col) {
+                // Handle special fields
+                if ($dataType === 'orders' && $field === 'ReceiverInfo') {
+                    $value = $row['ReceiverName']."\n".$row['ReceiverContact']."\n".$row['ReceiverEmail'];
+                } elseif ($dataType === 'orders' && $field === 'FullAddress') {
+                    $value = $row['StreetAddress'].", ".$row['Postcode']." ".$row['City'].", ".$row['State'];
+                } else {
+                    $value = $row[$field] ?? '';
+                }
+    
+                // Format numeric values
+                if (in_array($field, ['TotalPrice', 'monthly_sales', 'total_sales_value'])) {
+                    $value = number_format((float)$value, 2);
+                }
+    
+                // Convert newlines to <br> for Excel
+                $value = nl2br(htmlspecialchars($value));
+                echo "<td style='padding: 5px;'>{$value}</td>";
+            }
+            echo "</tr>";
+        }
+    
+        echo "</table>";
+        echo "</body>";
+        echo "</html>";
+        exit();
     }
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -185,32 +307,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sales Report</title>
     <link rel='stylesheet' href='sales_report.css'>
-    <style>
-        .bcm-dropdown, .bcm-input, .bcm-button {
-            padding: 8px 12px;
-            margin: 5px 0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            width: 100%;
-            max-width: 300px;
-        }
-        .bcm-button {
-            background-color: #4CAF50;
-            color: white;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .bcm-button:hover {
-            background-color: #45a049;
-        }
-        .error-message {
-            color: red;
-            font-size: 12px;
-            margin-top: -5px;
-            margin-bottom: 10px;
-            display: none;
-        }
-    </style>
 </head>
 <body>
     <div class="header">
@@ -226,9 +322,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h2>Sales Report</h2>
         
             <form action="" method="POST" id="exportForm">
-                <label for="dataType">Select List Type:</label>
+                <label for="dataType">List Type:</label>
                 <select name="dataType" id="dataType" class="bcm-dropdown" required>
-                    <option value="" disabled selected>Select a list</option>
+                    <option value="" disabled selected>--- Select a list ---</option>
                     <option value="orders">Order List</option>
                     <option value="contacts">Contact Records</option>
                     <option value="product_feedback">Product Feedback</option>
@@ -247,7 +343,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <label for="exportFormat">Export Format:</label>
                 <select name="export_format" id="exportFormat" class="bcm-dropdown" required>
-                    <option value="" disabled selected>Select format</option>
+                    <option value="" disabled selected>--- Select format ---</option>
                     <option value="pdf">PDF</option>
                     <option value="excel">Excel</option>
                 </select>
@@ -320,11 +416,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
-        // Restrict end date to today
-window.addEventListener('DOMContentLoaded', function() {
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('endDate').setAttribute('max', today);
-});
+        // Restrict both start and end dates to today
+        window.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('startDate').setAttribute('max', today);
+            document.getElementById('endDate').setAttribute('max', today);
+        });
 
     </script>
 </body>

@@ -330,10 +330,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
             <h2>Add Categories</h2>
             <form method="POST" action="" enctype="multipart/form-data" id="addCategoryForm">
                 <input type="hidden" name="add_category" value="1">
-                <label>Category Image:<span> (.jpg, .jpeg or .png only)</span></label>
+                <label>Category Image:<span class="required">*</span><span> (.jpg, .jpeg or .png only)</span></label>
                 <input class="img" type="file" name="profile_picture" id="add-profile-picture" accept=".jpg,.jpeg,.png" required>
                 
-                <label>Category Name:</label>
+                <label>Category Name:<span class="required">*</span></label>
                 <input type="text" name="category_name" id="add-name" required 
                        oninput="validateNameInRealTime(this.value, 'add')"
                        onblur="checkAvailability('name', this.value, 0, true)">
@@ -354,7 +354,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                 <label>Category Image:<span> (.jpg, .jpeg or .png only)</span></label>
                 <input class="img" type="file" name="profile_picture" id="edit-profile-picture" accept=".jpg,.jpeg,.png">
                 
-                <label>New name:</label>
+                <label>New name:<span class="required">*</span></label>
                 <input type="hidden" name="category_id" id="editCategoryID">
                 <input type="text" name="new_category_name" id="edit-name" required 
                        oninput="validateNameInRealTime(this.value, 'edit')"

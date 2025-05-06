@@ -11,7 +11,7 @@ include 'db_connection.php';
 $rating_filter = isset($_GET['rating']) ? trim($_GET['rating']) : '';
 
 $feedback_query = "
-    SELECT f.FeedbackID, f.Rating, f.Feedback, c.CustName
+    SELECT f.FeedbackID, f.Rating, f.Feedback, f.FeedbackDate, c.CustName
     FROM feedback_rating f
     INNER JOIN customer c ON f.CustID = c.CustID
 ";
@@ -65,6 +65,7 @@ $feedback_result = $conn->query($feedback_query);
                         <th>Name</th>
                         <th style="text-align: center;">Rating</th>
                         <th>Message</th>
+                        <th>Date</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -75,11 +76,12 @@ $feedback_result = $conn->query($feedback_query);
                                 <td><?php echo htmlspecialchars($feedback['CustName']); ?></td>
                                 <td style="text-align: center;"><?php echo htmlspecialchars($feedback['Rating']); ?></td>
                                 <td><?php echo htmlspecialchars($feedback['Feedback']); ?></td>
+                                <td><?php echo date('Y-m-d', strtotime($feedback['FeedbackDate'])); ?></td>
                             </tr>
                         <?php endwhile; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="4" style="text-align: center; color: red;"><b>No feedback records found.</b></td>
+                            <td colspan="5" style="text-align: center; color: red;"><b>No feedback records found.</b></td>
                         </tr>
                     <?php endif; ?>
                 </tbody>

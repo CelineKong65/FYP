@@ -1,5 +1,4 @@
 <?php
-
 session_start();
 
 require '../PHPMailer/src/Exception.php';
@@ -72,6 +71,46 @@ if (isset($_POST['update_admin'])) {
     $phone = trim($_POST['phone']);
     $position = trim($_POST['position']);
 
+    // Handle profile picture upload
+    $image_name = null;
+    if (!empty($_FILES['profile_picture']['name'])) {
+        $profile_picture = $_FILES['profile_picture'];
+        $image_extension = strtolower(pathinfo($profile_picture['name'], PATHINFO_EXTENSION));
+        $allowed_types = ['jpg', 'jpeg', 'png'];
+
+        if (!in_array($image_extension, $allowed_types)) {
+            echo json_encode(['success' => false, 'message' => 'Invalid file format. Only JPG, JPEG, and PNG allowed.']);
+            exit();
+        }
+
+        $stmt = $conn->prepare("SELECT AdminProfilePicture FROM admin WHERE AdminID = ?");
+        $stmt->bind_param("i", $admin_id);
+        $stmt->execute();
+        $stmt->bind_result($existing_picture);
+        $stmt->fetch();
+        $stmt->close();
+
+        $target_dir = "../image/admin/";
+        if (!empty($existing_picture) && file_exists($target_dir . $existing_picture)) {
+            unlink($target_dir . $existing_picture);
+        }
+
+        $image_name = "admin_" . $admin_id . "." . $image_extension;
+        $target_file = $target_dir . $image_name;
+
+        if (!move_uploaded_file($profile_picture['tmp_name'], $target_file)) {
+            echo json_encode(['success' => false, 'message' => 'Failed to upload image.']);
+            exit();
+        }
+    } else {
+        $stmt = $conn->prepare("SELECT AdminProfilePicture FROM admin WHERE AdminID = ?");
+        $stmt->bind_param("i", $admin_id);
+        $stmt->execute();
+        $stmt->bind_result($image_name);
+        $stmt->fetch();
+        $stmt->close();
+    }
+
     $check_name_query = "SELECT AdminID FROM admin WHERE AdminName = ? AND AdminID != ?";
     $stmt = $conn->prepare($check_name_query);
     $stmt->bind_param("si", $name, $admin_id);
@@ -79,7 +118,7 @@ if (isset($_POST['update_admin'])) {
     $stmt->store_result();
     
     if ($stmt->num_rows > 0) {
-        echo "<script>alert('Admin name already exists. Please use a different name.'); window.location.href='admin_view.php';</script>";
+        echo json_encode(['success' => false, 'message' => 'Admin name already exists. Please use a different name.']);
         exit();
     }
     $stmt->close();  
@@ -90,9 +129,8 @@ if (isset($_POST['update_admin'])) {
     $stmt->execute();
     $stmt->store_result();
 
-    
     if ($stmt->num_rows > 0) {
-        echo "<script>alert('Email already exists. Please use a different email.'); window.location.href='admin_view.php';</script>";
+        echo json_encode(['success' => false, 'message' => 'Email already exists. Please use a different email.']);
         exit();
     }
     $stmt->close();
@@ -103,52 +141,32 @@ if (isset($_POST['update_admin'])) {
     $stmt->execute();
     $stmt->store_result();
     if ($stmt->num_rows > 0) {
-        echo "<script>alert('Phone number already exists. Please use a different phone number.'); window.location.href='admin_view.php';</script>";
+        echo json_encode(['success' => false, 'message' => 'Phone number already exists. Please use a different phone number.']);
         exit();
     }
     $stmt->close();
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/\.com$/', $email)) {
-        echo "<script>alert('Invalid email format (must end with .com)'); window.location.href='admin_view.php';</script>";
+        echo json_encode(['success' => false, 'message' => 'Invalid email format (must end with .com)']);
         exit();
     }
 
     if (!preg_match('/^\d{3}-\d{3,4} \d{4}$/', $phone)) {
-        echo "<script>alert('Contact number must be in XXX-XXX XXXX or XXX-XXXX XXXX format'); window.location.href='admin_view.php';</script>";
+        echo json_encode(['success' => false, 'message' => 'Contact number must be in XXX-XXX XXXX or XXX-XXXX XXXX format']);
         exit();
     }
+
+    $update_query = "UPDATE admin SET AdminName = ?, AdminEmail = ?, AdminPhoneNum = ?, AdminProfilePicture = ? WHERE AdminID = ?";
+    $stmt = $conn->prepare($update_query);
+    $stmt->bind_param("ssssi", $name, $email, $phone, $image_name, $admin_id);
     
-    $original_query = "SELECT * FROM admin WHERE AdminID = ?";
-    $stmt = $conn->prepare($original_query);
-    $stmt->bind_param("i", $admin_id);
-    $stmt->execute();
-    $original_result = $stmt->get_result();
-    $original_data = $original_result->fetch_assoc();
-    $stmt->close();
-
-    $has_changes = (
-        $name !== $original_data['AdminName'] ||
-        $email !== $original_data['AdminEmail'] ||
-        $phone !== $original_data['AdminPhoneNum'] ||
-        $position !== $original_data['AdminPosition']
-    );
-
-    if (!$has_changes) {
-        echo "<script>alert('No changes detected.'); window.location.href='admin_view.php';</script>";
-        exit();
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true, 'message' => 'Admin updated successfully!']);
     } else {
-            $update_query = "UPDATE admin SET AdminName = ?, AdminEmail = ?, AdminPhoneNum = ?, AdminPosition = ? WHERE AdminID = ?";
-            $stmt = $conn->prepare($update_query);
-            $stmt->bind_param("ssssi", $name, $email, $phone, $position, $admin_id);
-        }
-    
-        if ($stmt->execute()) {
-            echo "<script>alert('Admin updated successfully!'); window.location.href='admin_view.php';</script>";
-        } else {
-            echo "<script>alert('Failed to update admin.'); window.location.href='admin_view.php';</script>";
-        }
-        $stmt->close();
-        exit();
+        echo json_encode(['success' => false, 'message' => 'Failed to update admin.']);
+    }
+    $stmt->close();
+    exit();
 }
 
 if (isset($_POST['add_admin'])) {
@@ -168,7 +186,7 @@ if (isset($_POST['add_admin'])) {
     $stmt->store_result();
 
     if ($stmt->num_rows > 0) {
-        echo "<script>alert('Admin name already exists. Please use a different name.'); window.location.href='admin_view.php';</script>";
+        echo json_encode(['success' => false, 'message' => 'Admin name already exists. Please use a different name.']);
         exit();
     }
     $stmt->close();
@@ -180,10 +198,7 @@ if (isset($_POST['add_admin'])) {
     $stmt->store_result();
     
     if ($stmt->num_rows > 0) {
-        echo json_encode([
-            'error' => 'Email already exists. Please use a different email.',
-            'field' => 'email'
-        ]);
+        echo json_encode(['success' => false, 'message' => 'Email already exists. Please use a different email.']);
         exit();
     }
     $stmt->close();
@@ -194,18 +209,18 @@ if (isset($_POST['add_admin'])) {
     $stmt->execute();
     $stmt->store_result();
     if ($stmt->num_rows > 0) {
-        echo "<script>alert('Phone number already exists. Please use a different phone number.'); window.location.href='admin_view.php';</script>";
+        echo json_encode(['success' => false, 'message' => 'Phone number already exists. Please use a different phone number.']);
         exit();
     }
     $stmt->close();
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/\.com$/', $email)) {
-        echo "<script>alert('Invalid email format (must end with .com)'); window.location.href='admin_view.php';</script>";
+        echo json_encode(['success' => false, 'message' => 'Invalid email format (must end with .com)']);
         exit();
     }
 
     if (!preg_match('/^\d{3}-\d{3,4} \d{4}$/', $phone)) {
-        echo "<script>alert('Contact number must be in XXX-XXX XXXX or XXX-XXXX XXXX format'); window.location.href='admin_view.php';</script>";
+        echo json_encode(['success' => false, 'message' => 'Contact number must be in XXX-XXX XXXX or XXX-XXXX XXXX format']);
         exit();
     }
 
@@ -215,6 +230,28 @@ if (isset($_POST['add_admin'])) {
 
     if ($stmt->execute()) {
         $new_admin_id = $conn->insert_id;
+        
+        // Handle profile picture upload for new admin
+        if (!empty($_FILES['profile_picture']['name'])) {
+            $profile_picture = $_FILES['profile_picture'];
+            $image_extension = strtolower(pathinfo($profile_picture['name'], PATHINFO_EXTENSION));
+            $allowed_types = ['jpg', 'jpeg', 'png'];
+
+            if (in_array($image_extension, $allowed_types)) {
+                $target_dir = "../image/admin/";
+                $image_name = "admin_" . $new_admin_id . "." . $image_extension;
+                $target_file = $target_dir . $image_name;
+
+                if (move_uploaded_file($profile_picture['tmp_name'], $target_file)) {
+                    $update_pic_query = "UPDATE admin SET AdminProfilePicture = ? WHERE AdminID = ?";
+                    $stmt2 = $conn->prepare($update_pic_query);
+                    $stmt2->bind_param("si", $image_name, $new_admin_id);
+                    $stmt2->execute();
+                    $stmt2->close();
+                }
+            }
+        }
+
         $mail = new PHPMailer(true);
         
         try {
@@ -243,15 +280,12 @@ if (isset($_POST['add_admin'])) {
             ";
 
             $mail->send();
-            echo "<script>alert('Admin added successfully! Password has been sent to the admin\'s email.); window.location.href='admin_view.php';</script>";
+            echo json_encode(['success' => true, 'message' => 'Admin added successfully! Password has been sent to the admin\'s email.']);
         } catch (Exception $e) {
-            echo "<script>alert('Admin added successfully but failed to send password email. ); window.location.href='admin_view.php';</script>";
+            echo json_encode(['success' => true, 'message' => 'Admin added successfully but failed to send password email.']);
         }
-        
-        header("Location: admin_view.php");
-        exit();
     } else {
-        echo "<script>alert('Failed to add admin.'); window.location.href='admin_view.php';</script>";
+        echo json_encode(['success' => false, 'message' => 'Failed to add admin.']);
     }
     $stmt->close();
     exit();
@@ -372,6 +406,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 <thead>
                     <tr>
                         <th style="text-align: center;">ID</th>
+                        <th>Profile Picture</th>
                         <th>Name</th>
                         <th>Email</th>
                         <th>Phone</th>
@@ -385,8 +420,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 <tbody>
                     <?php if ($admin_result && $admin_result->num_rows > 0): ?>
                         <?php while ($admin = $admin_result->fetch_assoc()): ?>
+                            <?php
+                            $admin_id = $admin['AdminID'];
+                            $jpgPath = "../image/admin/admin_" . $admin_id . ".jpg";
+                            $jpegPath = "../image/admin/admin_" . $admin_id . ".jpeg";
+                            $pngPath = "../image/admin/admin_" . $admin_id . ".png";
+                            $defaultPath = "../image/admin/admin.jpg";
+
+                            if (file_exists($jpgPath)) {
+                                $profile_pic_path = $jpgPath;
+                            } elseif (file_exists($jpegPath)) {
+                                $profile_pic_path = $jpegPath;
+                            } elseif (file_exists($pngPath)) {
+                                $profile_pic_path = $pngPath;
+                            } else {
+                                $profile_pic_path = $defaultPath;
+                            }
+                            ?>
                             <tr>
                                 <td style="text-align: center;"><?php echo $admin['AdminID']; ?></td>
+                                <td><img src="<?php echo $profile_pic_path; ?>" alt="Profile Picture" class="profile-pic"></td>
                                 <td><?php echo $admin['AdminName']; ?></td>
                                 <td><?php echo $admin['AdminEmail']; ?></td>
                                 <td><?php echo $admin['AdminPhoneNum']; ?></td>
@@ -396,14 +449,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                                         <?php echo $admin['AdminStatus']; ?>
                                     </td>
                                     <td>
-                                        <button name="edit_admin" onclick='editAdmin(
-                                                <?php echo json_encode($admin["AdminID"]); ?>,
-                                                <?php echo json_encode($admin["AdminName"]); ?>,
-                                                <?php echo json_encode($admin["AdminEmail"]); ?>,
-                                                <?php echo json_encode($admin["AdminPhoneNum"]); ?>,
-                                                <?php echo json_encode($admin["AdminPosition"]); ?>,
-                                                <?php echo json_encode($admin["AdminPassword"]); ?>)'>Edit
-                                        </button>
+                                    <button name="edit_admin" onclick='openEditModal({
+                                        id: <?php echo json_encode($admin["AdminID"]); ?>,
+                                        name: <?php echo json_encode($admin["AdminName"]); ?>,
+                                        email: <?php echo json_encode($admin["AdminEmail"]); ?>,
+                                        phone: <?php echo json_encode($admin["AdminPhoneNum"]); ?>,
+                                        position: <?php echo json_encode($admin["AdminPosition"]); ?>
+                                    })'>Edit</button>
                                         <?php if ($admin['AdminPosition'] === 'superadmin'): ?>
                                             <button type="button" class="btn-disabled" title="Cannot modify superadmin status">
                                                 <?php echo ($admin['AdminStatus'] == 'Active') ? 'Deactivate' : 'Activate'; ?>
@@ -436,24 +488,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
         <div class="edit-content">
             <span class="close" onclick="closeModal()">&times;</span>
             <h3>Edit Admin</h3>
-            <form method="POST" action="" enctype="multipart/form-data">
+            <form method="POST" action="" enctype="multipart/form-data" id="editAdminForm">
                 <input type="hidden" name="admin_id" id="admin_id">
-                <label>Name:</label>
-                <input type="text" name="name" id="name" required onblur="checkAvailability('name', this.value, document.getElementById('admin_id').value)">
-                <div id="name-error" class="error"></div>
+                
+                <div class="edit-form">
+                    <div>
+                        <label>Profile Picture:<span> (.jpg,.jpeg or .png only)</span></label>
+                        <input class="img" type="file" name="profile_picture" id="profile_picture" accept=".jpg,.jpeg,.png">
+                        
+                        <label>Name:<span class="required">*</span></label>
+                        <input type="text" name="name" id="name" required onblur="checkAvailability('name', this.value, document.getElementById('admin_id').value)">
+                        <div id="name-error" class="error-message"></div>
 
-                <label>Email:</label>
-                <input type="email" name="email" id="email" placeholder="example@gmail.com" required onblur="checkAvailability('email', this.value, document.getElementById('admin_id').value)">
-                <div id="email-error" class="error"></div>
+                        <label>Email:<span class="required">*</span></label>
+                        <input type="email" name="email" id="email" placeholder="example@gmail.com" required onblur="checkAvailability('email', this.value, document.getElementById('admin_id').value)">
+                        <div id="email-error" class="error-message"></div>
 
-                <label>Phone:</label>
-                <input type="text" name="phone" id="phone" placeholder="XXX-XXX XXXX or XXX-XXXX XXXX format" required onblur="checkAvailability('phone', this.value, document.getElementById('admin_id').value)">
-                <div id="phone-error" class="error"></div>
+                        <label>Phone:<span class="required">*</span></label>
+                        <input type="text" name="phone" id="phone" placeholder="XXX-XXX XXXX or XXX-XXXX XXXX format" required onblur="checkAvailability('phone', this.value, document.getElementById('admin_id').value)">
+                        <div id="phone-error" class="error-message"></div>
 
-                <label>Position:</label>
-                <div id="position-container">
-
+                        <label>Position:<span class="required">*</span></label>
+                        <div id="position-container" class="readonly-field"></div>
+                    </div>
                 </div>
+                
                 <div class="upd_div">
                     <button type="submit" name="update_admin">Update</button>
                 </div>
@@ -465,24 +524,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
         <div class="add-content">
             <span class="close" onclick="closeAddModal()">&times;</span>
             <h3>Add Admin</h3>
-            <form method="POST" action="" enctype="multipart/form-data">
-                <label>Name:</label>
-                <input type="text" name="name" id="add-name" required onblur="checkAvailability('name', this.value)">
-                <div id="add-name-error" class="error"></div>
-                
-                <label>Email:</label>
-                <input type="email" name="email" id="add-email" placeholder="example@gmail.com" required onblur="checkAvailability('email', this.value)">
-                <div id="add-email-error" class="error"></div>
-                
-                <label>Phone:</label>
-                <input type="text" name="phone" id="add-phone" placeholder="XXX-XXX XXXX or XXX-XXXX XXXX format" required onblur="checkAvailability('phone', this.value)">
-                <div id="add-phone-error" class="error"></div>
-                
-                <label>Position:</label>
-                <select name="position" id="add-position" required>
-                    <option value="admin">admin</option>
-                    <option value="superadmin">superadmin</option>
-                </select>
+            <form method="POST" action="" enctype="multipart/form-data" id="addAdminForm">
+                <div class="edit-form">
+                    <div>
+                        <label>Profile Picture:<span> (.jpg,.jpeg or .png only)</span></label>
+                        <input class="img" type="file" name="profile_picture" id="add-profile_picture" accept=".jpg,.jpeg,.png">
+                        
+                        <label>Name:<span class="required">*</span></label>
+                        <input type="text" name="name" id="add-name" required onblur="checkAvailability('name', this.value)">
+                        <div id="add-name-error" class="error-message"></div>
+                        
+                        <label>Email:<span class="required">*</span></label>
+                        <input type="email" name="email" id="add-email" placeholder="example@gmail.com" required onblur="checkAvailability('email', this.value)">
+                        <div id="add-email-error" class="error-message"></div>
+
+                        <label>Phone:<span class="required">*</span></label>
+                        <input type="text" name="phone" id="add-phone" placeholder="XXX-XXX XXXX or XXX-XXXX XXXX format" required onblur="checkAvailability('phone', this.value)">
+                        <div id="add-phone-error" class="error-message"></div>
+                        
+                        <label>Position:<span class="required">*</span></label>
+                        <select name="position" id="add-position" required>
+                            <option value="admin">admin</option>
+                            <option value="superadmin">superadmin</option>
+                        </select>
+                    </div>
+                </div>
                 
                 <div class="add_div">
                     <button type="submit" name="add_admin">Add</button>
@@ -492,180 +558,256 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
     </div>
 
     <script>
-function validateField(type, value, prefix = '') {
-    const errorElement = document.getElementById(`${prefix}${type}-error`);
-    const inputField = document.getElementById(`${prefix}${type}`);
-
-    // Clear previous states
-    errorElement.textContent = '';
-    errorElement.style.display = 'none';
-    inputField?.classList.remove('error-field', 'valid-field');
-
-    // Required field check
-    if (!value.trim()) {
-        errorElement.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} is required`;
-        errorElement.style.display = 'block';
-        inputField?.classList.add('error-field');
-        return false;
-    }
-
-    // Format validation
-    let isValid = true;
-    switch(type) {
-        case 'email':
-            isValid = /^[^\s@]+@[^\s@]+\.com$/.test(value);
-            if (!isValid) {
-                errorElement.textContent = "Invalid email format (must contain @ and end with .com)";
-            }
-            break;
-        case 'phone':
-            isValid = /^\d{3}-\d{3,4} \d{4}$/.test(value);
-            if (!isValid) {
-                errorElement.textContent = "Phone must be in XXX-XXX XXXX or XXX-XXXX XXXX format";
-            }
-            break;
-    }
-
-    if (!isValid) {
-        errorElement.style.display = 'block';
-        inputField?.classList.add('error-field');
-        return false;
-    }
-
-    inputField?.classList.add('valid-field');
-    return true;
-}
-
-// Field validation handlers
-function setupValidationHandlers() {
-    // Edit modal fields
-    document.getElementById('name')?.addEventListener('blur', function() {
-        validateField('name', this.value);
-    });
-
-    document.getElementById('email')?.addEventListener('blur', function() {
-        validateField('email', this.value);
-    });
-
-    document.getElementById('phone')?.addEventListener('blur', function() {
-        validateField('phone', this.value);
-    });
-
-    // Add modal fields
-    document.getElementById('add-name')?.addEventListener('blur', function() {
-        validateField('name', this.value, 'add-');
-    });
-
-    document.getElementById('add-email')?.addEventListener('blur', function() {
-        validateField('email', this.value, 'add-');
-    });
-
-    document.getElementById('add-phone')?.addEventListener('blur', function() {
-        validateField('phone', this.value, 'add-');
-    });
-}
-
-// Form submission handling
-function initializeFormSubmissions() {
-    // Add form submission
-    document.querySelector('#addModal form')?.addEventListener('submit', function(e) {
-        const isValid = [
-            validateField('name', document.getElementById('add-name').value, 'add-'),
-            validateField('email', document.getElementById('add-email').value, 'add-'),
-            validateField('phone', document.getElementById('add-phone').value, 'add-')
-        ].every(result => result);
-
-        if (!isValid) {
-            e.preventDefault();
-            alert('Please fix all errors before submitting.');
+        // Function to clear all error messages
+        function clearAllErrors() {
+            document.querySelectorAll('.error-message').forEach(el => {
+                el.textContent = '';
+                el.style.display = 'none';
+            });
+            document.querySelectorAll('.error-field, .valid-field').forEach(el => {
+                el.classList.remove('error-field', 'valid-field');
+            });
         }
-    });
 
-    // Edit form submission
-    document.querySelector('#editModal form')?.addEventListener('submit', function(e) {
-        const isValid = [
-            validateField('name', document.getElementById('name').value),
-            validateField('email', document.getElementById('email').value),
-            validateField('phone', document.getElementById('phone').value)
-        ].every(result => result);
+        // Function to validate form
+        function validateForm(formType) {
+            let isValid = true;
+            const requiredFields = ['name', 'email', 'phone'];
+            const prefix = formType === 'edit' ? '' : 'add-';
+            
+            // Check basic required fields
+            requiredFields.forEach(field => {
+                const fieldId = prefix + field;
+                const fieldValue = document.getElementById(fieldId).value.trim();
+                const errorElement = document.getElementById(fieldId + '-error');
+                const inputField = document.getElementById(fieldId);
+                
+                if (!fieldValue) {
+                    errorElement.textContent = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
+                    errorElement.style.display = 'block';
+                    inputField.classList.add('error-field');
+                    inputField.classList.remove('valid-field');
+                    isValid = false;
+                }
+            });
 
-        if (!isValid) {
-            e.preventDefault();
-            alert('Please fix all errors before submitting.');
+            // Validate email format
+            const email = document.getElementById(prefix + 'email').value.trim();
+            if (email && !/^[^\s@]+@[^\s@]+\.com$/.test(email)) {
+                document.getElementById(prefix + 'email-error').textContent = 'Invalid email format (must end with .com)';
+                document.getElementById(prefix + 'email-error').style.display = 'block';
+                document.getElementById(prefix + 'email').classList.add('error-field');
+                document.getElementById(prefix + 'email').classList.remove('valid-field');
+                isValid = false;
+            }
+
+            // Validate phone format
+            const phone = document.getElementById(prefix + 'phone').value.trim();
+            if (phone && !/^\d{3}-\d{3,4} \d{4}$/.test(phone)) {
+                document.getElementById(prefix + 'phone-error').textContent = 'Phone must be in XXX-XXX XXXX or XXX-XXXX XXXX format';
+                document.getElementById(prefix + 'phone-error').style.display = 'block';
+                document.getElementById(prefix + 'phone').classList.add('error-field');
+                document.getElementById(prefix + 'phone').classList.remove('valid-field');
+                isValid = false;
+            }
+
+            return isValid;
         }
-    });
-}
 
-// Modal management functions
-function editAdmin(admin_id, name, email, phone, position) {
-    clearAllErrors();
-    document.getElementById('admin_id').value = admin_id;
-    document.getElementById('name').value = name;
-    document.getElementById('email').value = email;
-    document.getElementById('phone').value = phone;
+        // Function to check availability of name, email, phone
+        function checkAvailability(type, value, adminId = 0) {
+            const prefix = adminId === 0 ? 'add-' : '';
+            const errorElement = document.getElementById(prefix + type + '-error');
+            const inputField = document.getElementById(prefix + type);
+            
+            errorElement.textContent = '';
+            errorElement.style.display = 'none';
+            inputField.classList.remove('error-field', 'valid-field');
 
-    const positionContainer = document.getElementById('position-container');
-    positionContainer.innerHTML = position === 'superadmin' ? 
-        `<div class="position-display">${position}</div>
-         <input type="hidden" name="position" value="superadmin">` :
-        `<select name="position" id="position" required>
-            <option value="admin" ${position === 'admin' ? 'selected' : ''}>admin</option>
-            <option value="superadmin" ${position === 'superadmin' ? 'selected' : ''}>superadmin</option>
-         </select>`;
+            if (!value.trim() && (type === 'name' || type === 'email' || type === 'phone')) {
+                errorElement.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} is required`;
+                errorElement.style.display = 'block';
+                inputField.classList.add('error-field');
+                return;
+            }
 
-    document.getElementById('addModal').style.display = 'none';
-    document.getElementById('editModal').style.display = 'block';
-}
+            let isValidFormat = true;
+            let formatErrorMessage = '';
+            
+            if (type === 'email') {
+                if (!/^[^\s@]+@[^\s@]+\.com$/.test(value)) {
+                    isValidFormat = false;
+                    formatErrorMessage = "Invalid email format (must contain @ and end with .com)";
+                }
+            } else if (type === 'phone') {
+                if (!/^\d{3}-\d{3,4} \d{4}$/.test(value)) {
+                    isValidFormat = false;
+                    formatErrorMessage = "Phone must be in XXX-XXX XXXX or XXX-XXXX XXXX format";
+                }
+            }
 
-function openAddModal() {
-    clearAllErrors();
-    document.getElementById('editModal').style.display = 'none';
-    document.getElementById('addModal').style.display = 'block';
-    document.querySelector('#addModal form').reset();
-}
+            if (!isValidFormat) {
+                errorElement.textContent = formatErrorMessage;
+                errorElement.style.display = 'block';
+                inputField.classList.add('error-field');
+                return;
+            }
 
-// UI helpers
-function clearAllErrors() {
-    ['', 'add-'].forEach(prefix => {
-        ['name', 'email', 'phone'].forEach(type => {
-            const input = document.getElementById(`${prefix}${type}`);
-            const error = document.getElementById(`${prefix}${type}-error`);
-            input?.classList.remove('error-field', 'valid-field');
-            error.textContent = '';
-            error.style.display = 'none';
+            const formData = new FormData();
+            formData.append('check_availability', 'true');
+            formData.append('type', type);
+            formData.append('value', value);
+            formData.append('admin_id', adminId);
+
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.valid_format) {
+                    errorElement.textContent = data.message;
+                    errorElement.style.display = 'block';
+                    inputField.classList.add('error-field');
+                } else if (data.exists) {
+                    errorElement.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} already exists`;
+                    errorElement.style.display = 'block';
+                    inputField.classList.add('error-field');
+                } else {
+                    errorElement.textContent = '';
+                    errorElement.style.display = 'none';
+                    inputField.classList.remove('error-field');
+                    inputField.classList.add('valid-field');
+                }
+            })
+            .catch(error => {
+                console.error('Error checking availability:', error);
+            });
+        }
+
+        // Handle form submissions with AJAX
+        document.getElementById('editAdminForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!validateForm('edit')) {
+                return;
+            }
+
+            const formData = new FormData(this);
+            formData.append('update_admin', 'true');
+
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while updating admin.');
+            });
         });
-    });
-}
 
-// Initial setup
-document.addEventListener('DOMContentLoaded', function() {
-    setupValidationHandlers();
-    initializeFormSubmissions();
-    
-    // Search functionality
-    const searchInput = document.querySelector('input[name="search"]');
-    searchInput?.addEventListener('input', function() {
-        if (this.value.trim() === '') {
-            this.closest('form').submit();
+        document.getElementById('addAdminForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!validateForm('add')) {
+                return;
+            }
+
+            const formData = new FormData(this);
+            formData.append('add_admin', 'true');
+
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while adding admin.');
+            });
+        });
+
+        // In the openEditModal function in JavaScript (which is called when clicking Edit):
+        function openEditModal(adminData) {
+            clearAllErrors();
+
+            document.getElementById('admin_id').value = adminData.id;
+            document.getElementById('name').value = adminData.name;
+            document.getElementById('email').value = adminData.email;
+            document.getElementById('phone').value = adminData.phone;
+
+            // Display position as text instead of editable dropdown
+            const positionHTML = `
+                <input type="text" value="${adminData.position}" readonly class="readonly-input">
+                <input type="hidden" name="position" value="${adminData.position}">
+            `;
+            document.getElementById('position-container').innerHTML = positionHTML;
+
+            document.getElementById('editModal').style.display = 'block';
         }
-    });
-});
 
-// Modal close handlers
-window.onclick = function(event) {
-    if (event.target.matches('.modal')) {
-        event.target.style.display = 'none';
-        clearAllErrors();
-    }
-};
+        // Close Edit Modal
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+            document.getElementById('editAdminForm').reset();
+            clearAllErrors();
+        }
 
-function closeModal() {
-        document.getElementById('editModal').style.display = 'none';
-    }
+        // Open Add Modal
+        function openAddModal() {
+            clearAllErrors();
+            document.getElementById('addAdminForm').reset();
+            document.getElementById('addModal').style.display = 'block';
+        }
 
-    function closeAddModal() {
-        document.getElementById('addModal').style.display = 'none';
-    }
-</script>
+        // Close Add Modal
+        function closeAddModal() {
+            document.getElementById('addModal').style.display = 'none';
+            document.getElementById('addAdminForm').reset();
+            clearAllErrors();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.querySelector('input[name="search"]');
+            const searchForm = document.querySelector('.search');
+            
+            if (searchInput && searchForm) {
+                searchInput.addEventListener('input', function() {
+                    if (this.value.trim() === '') {
+                        searchForm.submit();
+                    }
+                });
+            }
+        });
+
+        // Optional: close modal when clicking outside the modal box
+        window.onclick = function(event) {
+            const editModal = document.getElementById('editModal');
+            const addModal = document.getElementById('addModal');
+            if (event.target === editModal) {
+                closeModal();
+            }
+            if (event.target === addModal) {
+                closeAddModal();
+            }
+        };
+    </script>
 </body>
 </html>

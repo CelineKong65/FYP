@@ -1,3 +1,8 @@
+img {
+    width: 80px;
+    height: auto;
+    display: flex;
+}
 body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -262,7 +267,7 @@ input::placeholder{
     font-style: italic;
 }
 
-.error {
+.error-message {
     color: red;
     font-size: 12px;
     display: block;
@@ -287,4 +292,15 @@ input::placeholder{
 .btn-disabled:hover {
     background-color: #cccccc !important;
     color: #666666 !important;
+}
+
+.readonly-input {
+    background-color: #f0f0f0;
+    color: #666;
+    border: 1px solid #ccc;
+    cursor: not-allowed;
+}
+
+.required{
+    color: red;
 }
