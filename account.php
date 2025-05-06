@@ -8,6 +8,36 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+if (isset($_POST['ajax_check'])) {
+    header('Content-Type: application/json');
+    $response = ['available' => true];
+    
+    $field = $_POST['field'] ?? '';
+    $value = $_POST['value'] ?? '';
+    $userId = $_SESSION['user_id'] ?? 0;
+
+    if (!empty($field) && !empty($value)) {
+        try {
+            // Special handling for phone number
+            if ($field === 'CustPhoneNum') {
+                $cleanValue = preg_replace('/[-\s]/', '', $value);
+                $stmt = $conn->prepare("SELECT CustID FROM customer WHERE REPLACE(REPLACE(CustPhoneNum, '-', ''), ' ', '') = ? AND CustID != ?");
+                $stmt->execute([$cleanValue, $userId]);
+            } else {
+                $stmt = $conn->prepare("SELECT CustID FROM customer WHERE $field = ? AND CustID != ?");
+                $stmt->execute([$value, $userId]);
+            }
+            
+            $response['available'] = ($stmt->rowCount() === 0);
+        } catch (PDOException $e) {
+            // Keep available=true on error
+        }
+    }
+    
+    echo json_encode($response);
+    exit();
+}
+
 // Get customer data
 $user_id = $_SESSION['user_id'];
 $stmt = $conn->prepare("SELECT * FROM customer WHERE CustID = ?");
@@ -37,7 +67,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES['profile_picture'])) {
         }
         
         $file_ext = pathinfo($_FILES['profile_picture']['name'], PATHINFO_EXTENSION);
-        $new_filename = "user_" . $user_id . "_" . time() . "." . $file_ext;
+        $new_filename = "user_" . $user_id . "." . $file_ext;
         $target_file = $target_dir . $new_filename;
         
         if (move_uploaded_file($_FILES['profile_picture']['tmp_name'], $target_file)) {
@@ -463,6 +493,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
         // ================== VALIDATION SYSTEM ================== //
         // Initialize validation
         initValidation();
+        setupRealTimeValidation();
 
         function initValidation() {
             // Form submission handling
@@ -484,6 +515,104 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
             document.querySelector('input[name="city"]')?.addEventListener('blur', validateCity);
         }
 
+        // ================== REAL-TIME DATABASE CHECKS ================== //
+        async function checkFieldAvailability(fieldName, fieldValue, userId) {
+            return new Promise((resolve) => {
+                if (!fieldValue) {
+                    resolve(true); // Skip empty fields
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('ajax_check', '1');
+                formData.append('field', fieldName);
+                formData.append('value', fieldValue);
+                formData.append('user_id', userId);
+
+                fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    resolve(data.available);
+                })
+                .catch(() => {
+                    resolve(true); // Assume available if error occurs
+                });
+            });
+        }
+
+        function setupRealTimeValidation() {
+            const userId = <?= json_encode($user_id) ?>;
+            const DEBOUNCE_DELAY = 500; // 0.5 second delay after typing stops
+            
+            // Fields to validate in real-time
+            const fieldsToValidate = {
+                'custName': {
+                    errorMsg: 'Name already exists',
+                    validate: async (value) => await checkFieldAvailability('CustName', value, userId)
+                },
+                'custEmail': {
+                    errorMsg: 'Email already exists',
+                    validate: async (value) => {
+                        const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+                        if (!emailRegex.test(value)) return true; // Let other validation handle format
+                        return await checkFieldAvailability('CustEmail', value, userId);
+                    }
+                },
+                'custPhoneNum': {
+                    errorMsg: 'Phone number already exists',
+                    validate: async (value) => {
+                        const cleanPhone = value.replace(/[-\s]/g, '');
+                        if (!/^(\+?6?01)[0-46-9][0-9]{7,8}$/.test(cleanPhone)) return true;
+                        return await checkFieldAvailability('CustPhoneNum', cleanPhone, userId);
+                    }
+                },
+                'newPassword': {
+                    errorMsg: 'New password cannot match current password',
+                    validate: async (value) => {
+                        const currentPassword = document.querySelector('input[name="currentPassword"]')?.value;
+                        return value !== currentPassword;
+                    }
+                }
+            };
+            
+            // Setup real-time validation for all fields
+            Object.entries(fieldsToValidate).forEach(([fieldName, config]) => {
+                const input = document.querySelector(`input[name="${fieldName}"]`);
+                let debounceTimer;
+                
+                if (input) {
+                    input.addEventListener('input', () => {
+                        clearTimeout(debounceTimer);
+                        debounceTimer = setTimeout(async () => {
+                            const value = input.value.trim();
+                            if (value.length < 2) return; // Don't check short values
+                            
+                            const isValid = await config.validate(value);
+                            
+                            if (!isValid) {
+                                showError(input, config.errorMsg);
+                            } else {
+                                clearError(input);
+                            }
+                        }, DEBOUNCE_DELAY);
+                    });
+                    
+                    // Also validate when leaving the field
+                    input.addEventListener('blur', async () => {
+                        const value = input.value.trim();
+                        const isValid = await config.validate(value);
+                        
+                        if (!isValid) {
+                            showError(input, config.errorMsg);
+                        }
+                    });
+                }
+            });
+        }
+
         function handleFormSubmit(e) {
             let isValid = true;
             let firstError = null;
@@ -493,6 +622,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
                 if (!validateField({ target: field })) {
                     isValid = false;
                     if (!firstError) firstError = field;
+                }
+            });
+
+            // Check for any remaining error messages
+            this.querySelectorAll('.error-message').forEach(errorElement => {
+                if (errorElement.textContent.trim() !== '') {
+                    isValid = false;
+                    if (!firstError) {
+                        firstError = errorElement.previousElementSibling || 
+                                    errorElement.parentElement.querySelector('input, select');
+                    }
                 }
             });
 
