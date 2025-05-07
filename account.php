@@ -190,6 +190,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
             $stmt->execute([$newPassword, $user_id]);
             
             $success = "Password updated successfully!";
+            $stmt = $conn->prepare("SELECT * FROM customer WHERE CustID = ?");
+            $stmt->execute([$user_id]);
+            $customer = $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             $errors['general'] = "Error updating password: " . $e->getMessage();
         }

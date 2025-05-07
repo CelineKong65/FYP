@@ -206,6 +206,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
             if ($stmt->execute()) {
                 $success = 'Password updated successfully!';
+                $stmt = $conn->prepare($admin_query);
+                $stmt->bind_param("i", $admin_id);
+                $stmt->execute();
+                $admin_result = $stmt->get_result();
+                $admin = $admin_result->fetch_assoc();
             } else {
                 $errors['general'] = 'Error updating password';
             }
@@ -381,389 +386,389 @@ select.error-field {
 
     </div>
     <script>
-document.addEventListener('DOMContentLoaded', function () {
-    // ========== CONSTANTS AND CONFIG ==========
-    const DEBOUNCE_DELAY = 500;
-    const PASSWORD_REQ_TIMEOUT = 2000;
-    const ADMIN_ID = <?= json_encode($admin_id) ?>;
+        document.addEventListener('DOMContentLoaded', function () {
+            // ========== CONSTANTS AND CONFIG ==========
+            const DEBOUNCE_DELAY = 500;
+            const PASSWORD_REQ_TIMEOUT = 2000;
+            const ADMIN_ID = <?= json_encode($admin_id) ?>;
 
-    // ========== DOM ELEMENTS ==========
-    const forms = {
-        profile: document.getElementById('profileForm'),
-        password: document.getElementById('passwordForm'),
-        upload: document.querySelector('.upload-form')
-    };
+            // ========== DOM ELEMENTS ==========
+            const forms = {
+                profile: document.getElementById('profileForm'),
+                password: document.getElementById('passwordForm'),
+                upload: document.querySelector('.upload-form')
+            };
 
-    const fields = {
-        name: document.getElementById('name'),
-        email: document.getElementById('email'),
-        phone: document.getElementById('phone'),
-        currentPassword: document.getElementById('currentPassword'),
-        newPassword: document.getElementById('newPassword'),
-        confirmPassword: document.getElementById('confirmPassword'),
-        profilePicture: document.getElementById('profile_picture')
-    };
+            const fields = {
+                name: document.getElementById('name'),
+                email: document.getElementById('email'),
+                phone: document.getElementById('phone'),
+                currentPassword: document.getElementById('currentPassword'),
+                newPassword: document.getElementById('newPassword'),
+                confirmPassword: document.getElementById('confirmPassword'),
+                profilePicture: document.getElementById('profile_picture')
+            };
 
-    const passwordRequirements = document.getElementById('passwordRequirements');
-    const requirementItems = document.querySelectorAll('.password-req li');
+            const passwordRequirements = document.getElementById('passwordRequirements');
+            const requirementItems = document.querySelectorAll('.password-req li');
 
-    // ========== PASSWORD TOGGLE VISIBILITY ==========
-    function setupPasswordToggle(passwordInputId, eyeIconId) {
-        const eyeIcon = document.getElementById(eyeIconId);
-        const passwordInput = document.getElementById(passwordInputId);
+            // ========== PASSWORD TOGGLE VISIBILITY ==========
+            function setupPasswordToggle(passwordInputId, eyeIconId) {
+                const eyeIcon = document.getElementById(eyeIconId);
+                const passwordInput = document.getElementById(passwordInputId);
 
-        if (eyeIcon && passwordInput) {
-            eyeIcon.addEventListener('click', function () {
-                const type = passwordInput.type === 'password' ? 'text' : 'password';
-                passwordInput.type = type;
-                this.className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
-            });
-        }
-    }
-
-    // Initialize all password toggles
-    setupPasswordToggle('currentPassword', 'show-current-password');
-    setupPasswordToggle('newPassword', 'show-new-password');
-    setupPasswordToggle('confirmPassword', 'show-confirm-password');
-
-    // ========== PASSWORD VALIDATION ==========
-    if (fields.newPassword) {
-        const requirements = [
-            { regex: /^.{8,}$/, index: 0 }, // At least 8 characters
-            { regex: /[A-Z]/, index: 1 },    // Uppercase letter
-            { regex: /[a-z]/, index: 2 },    // Lowercase letter
-            { regex: /\d/, index: 3 },       // Number
-            { regex: /[@$!%*#?&]/, index: 4 }, // Special character
-            { regex: /^\S*$/, index: 5 }     // No spaces
-        ];
-
-        let hidePasswordTimeout;
-
-        fields.newPassword.addEventListener('focus', () => {
-            clearTimeout(hidePasswordTimeout);
-            passwordRequirements.style.display = 'block';
-        });
-
-        fields.newPassword.addEventListener('blur', () => {
-            hidePasswordTimeout = setTimeout(() => {
-                passwordRequirements.style.display = 'none';
-            }, PASSWORD_REQ_TIMEOUT);
-        });
-
-        fields.newPassword.addEventListener('input', function () {
-            const password = this.value;
-            
-            // Validate each requirement
-            requirements.forEach(item => {
-                const isValid = item.regex.test(password);
-                const reqItem = requirementItems[item.index];
-                reqItem.firstElementChild.className = isValid ? "fas fa-check-circle" : "fas fa-circle";
-                reqItem.classList.toggle('valid', isValid);
-            });
-
-            // Check if new password matches current password
-            if (fields.currentPassword && password === fields.currentPassword.value) {
-                showError(this, 'New password cannot be the same as current password');
-            } else {
-                clearError(this);
+                if (eyeIcon && passwordInput) {
+                    eyeIcon.addEventListener('click', function () {
+                        const type = passwordInput.type === 'password' ? 'text' : 'password';
+                        passwordInput.type = type;
+                        this.className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+                    });
+                }
             }
 
-            // Check password confirmation
-            if (fields.confirmPassword.value && password !== fields.confirmPassword.value) {
-                showError(fields.confirmPassword, 'Passwords do not match');
-            } else if (fields.confirmPassword.value) {
-                clearError(fields.confirmPassword);
+            // Initialize all password toggles
+            setupPasswordToggle('currentPassword', 'show-current-password');
+            setupPasswordToggle('newPassword', 'show-new-password');
+            setupPasswordToggle('confirmPassword', 'show-confirm-password');
+
+            // ========== PASSWORD VALIDATION ==========
+            if (fields.newPassword) {
+                const requirements = [
+                    { regex: /^.{8,}$/, index: 0 }, // At least 8 characters
+                    { regex: /[A-Z]/, index: 1 },    // Uppercase letter
+                    { regex: /[a-z]/, index: 2 },    // Lowercase letter
+                    { regex: /\d/, index: 3 },       // Number
+                    { regex: /[@$!%*#?&]/, index: 4 }, // Special character
+                    { regex: /^\S*$/, index: 5 }     // No spaces
+                ];
+
+                let hidePasswordTimeout;
+
+                fields.newPassword.addEventListener('focus', () => {
+                    clearTimeout(hidePasswordTimeout);
+                    passwordRequirements.style.display = 'block';
+                });
+
+                fields.newPassword.addEventListener('blur', () => {
+                    hidePasswordTimeout = setTimeout(() => {
+                        passwordRequirements.style.display = 'none';
+                    }, PASSWORD_REQ_TIMEOUT);
+                });
+
+                fields.newPassword.addEventListener('input', function () {
+                    const password = this.value;
+                    
+                    // Validate each requirement
+                    requirements.forEach(item => {
+                        const isValid = item.regex.test(password);
+                        const reqItem = requirementItems[item.index];
+                        reqItem.firstElementChild.className = isValid ? "fas fa-check-circle" : "fas fa-circle";
+                        reqItem.classList.toggle('valid', isValid);
+                    });
+
+                    // Check if new password matches current password
+                    if (fields.currentPassword && password === fields.currentPassword.value) {
+                        showError(this, 'New password cannot be the same as current password');
+                    } else {
+                        clearError(this);
+                    }
+
+                    // Check password confirmation
+                    if (fields.confirmPassword.value && password !== fields.confirmPassword.value) {
+                        showError(fields.confirmPassword, 'Passwords do not match');
+                    } else if (fields.confirmPassword.value) {
+                        clearError(fields.confirmPassword);
+                    }
+                });
+
+                fields.confirmPassword.addEventListener('input', function () {
+                    if (this.value !== fields.newPassword.value) {
+                        showError(this, 'Passwords do not match');
+                    } else {
+                        clearError(this);
+                    }
+                });
             }
-        });
 
-        fields.confirmPassword.addEventListener('input', function () {
-            if (this.value !== fields.newPassword.value) {
-                showError(this, 'Passwords do not match');
-            } else {
-                clearError(this);
+            // ========== FORM VALIDATION ==========
+            function initFormValidation() {
+                // Email validation
+                if (fields.email) {
+                    fields.email.addEventListener('blur', validateEmail);
+                }
+
+                // Phone number validation and formatting
+                if (fields.phone) {
+                    fields.phone.addEventListener('input', formatPhoneNumber);
+                    fields.phone.addEventListener('blur', validatePhoneNumber);
+                }
+
+                // Profile form submission
+                if (forms.profile) {
+                    forms.profile.addEventListener('submit', function(e) {
+                        if (!validateProfileForm()) {
+                            e.preventDefault();
+                            scrollToFirstError();
+                        }
+                    });
+                }
+
+                // Password form submission
+                if (forms.password) {
+                    forms.password.addEventListener('submit', function(e) {
+                        if (!validatePasswordForm()) {
+                            e.preventDefault();
+                            scrollToFirstError();
+                        }
+                    });
+                }
+
+                // Profile picture upload
+                if (fields.profilePicture) {
+                    fields.profilePicture.addEventListener('change', function() {
+                        if (this.files && this.files[0]) {
+                            validateImageUpload(this.files[0])
+                                .then(() => document.getElementById('upload_submit').click())
+                                .catch(error => {
+                                    showError(this, error.message);
+                                });
+                        }
+                    });
+                }
             }
-        });
-    }
 
-    // ========== FORM VALIDATION ==========
-    function initFormValidation() {
-        // Email validation
-        if (fields.email) {
-            fields.email.addEventListener('blur', validateEmail);
-        }
+            // ========== VALIDATION FUNCTIONS ==========
+            function validateProfileForm() {
+                let isValid = true;
 
-        // Phone number validation and formatting
-        if (fields.phone) {
-            fields.phone.addEventListener('input', formatPhoneNumber);
-            fields.phone.addEventListener('blur', validatePhoneNumber);
-        }
+                // Name validation
+                if (fields.name && fields.name.value.trim().length < 2) {
+                    showError(fields.name, 'Name must be at least 2 characters');
+                    isValid = false;
+                } else if (fields.name) {
+                    clearError(fields.name);
+                }
 
-        // Profile form submission
-        if (forms.profile) {
-            forms.profile.addEventListener('submit', function(e) {
-                if (!validateProfileForm()) {
-                    e.preventDefault();
-                    scrollToFirstError();
+                // Email validation
+                if (fields.email && !validateEmail(fields.email)) {
+                    isValid = false;
+                }
+
+                // Phone validation
+                if (fields.phone && !validatePhoneNumber(fields.phone)) {
+                    isValid = false;
+                }
+
+                return isValid;
+            }
+
+            function validatePasswordForm() {
+                let isValid = true;
+
+                // Current password validation
+                if (fields.currentPassword && fields.currentPassword.value.trim() === '') {
+                    showError(fields.currentPassword, 'Current password is required');
+                    isValid = false;
+                } else if (fields.currentPassword) {
+                    clearError(fields.currentPassword);
+                }
+
+                // New password validation
+                if (fields.newPassword) {
+                    const password = fields.newPassword.value;
+                    
+                    if (password.trim() === '') {
+                        showError(fields.newPassword, 'New password is required');
+                        isValid = false;
+                    } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/.test(password)) {
+                        showError(fields.newPassword, 'Password does not meet requirements');
+                        isValid = false;
+                    } else if (fields.currentPassword && password === fields.currentPassword.value) {
+                        showError(fields.newPassword, 'New password cannot be the same as current password');
+                        isValid = false;
+                    } else {
+                        clearError(fields.newPassword);
+                    }
+
+                    // Confirm password validation
+                    if (fields.confirmPassword.value.trim() === '') {
+                        showError(fields.confirmPassword, 'Please confirm your new password');
+                        isValid = false;
+                    } else if (fields.confirmPassword.value !== password) {
+                        showError(fields.confirmPassword, 'Passwords do not match');
+                        isValid = false;
+                    } else {
+                        clearError(fields.confirmPassword);
+                    }
+                }
+
+                return isValid;
+            }
+
+            function validateEmail(inputElement = fields.email) {
+                const email = inputElement.value.trim();
+                const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                
+                if (!emailRegex.test(email) || !email.endsWith('.com')) {
+                    showError(inputElement, 'Please enter a valid email ending with .com');
+                    return false;
+                }
+                
+                clearError(inputElement);
+                return true;
+            }
+
+            function formatPhoneNumber() {
+                let phone = this.value.replace(/[^\d]/g, '');
+                
+                if (phone.length > 11) {
+                    phone = phone.substring(0, 11);
+                }
+                
+                let formatted = '';
+                if (phone.length > 0) {
+                    formatted = phone.substring(0, 3);
+                    if (phone.length > 3) formatted += '-' + phone.substring(3, 6);
+                    if (phone.length > 6) formatted += ' ' + phone.substring(6);
+                }
+                
+                this.value = formatted;
+            }
+
+            function validatePhoneNumber(inputElement = fields.phone) {
+                const phone = inputElement.value.replace(/[-\s]/g, '');
+                const phoneRegex = /^(\+?6?01)[0-46-9][0-9]{7,8}$/;
+                
+                if (phone && !phoneRegex.test(phone)) {
+                    showError(inputElement, 'Please enter a valid Malaysian phone number');
+                    return false;
+                }
+                
+                clearError(inputElement);
+                return true;
+            }
+
+            async function validateImageUpload(file) {
+                return new Promise((resolve, reject) => {
+                    // Check file type
+                    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
+                    if (!validTypes.includes(file.type)) {
+                        reject(new Error('Only JPG, JPEG, PNG & GIF files are allowed'));
+                        return;
+                    }
+
+                    // Check file size (5MB max)
+                    if (file.size > 5000000) {
+                        reject(new Error('File size must be less than 5MB'));
+                        return;
+                    }
+
+                    // Verify it's actually an image
+                    const img = new Image();
+                    img.onload = () => resolve();
+                    img.onerror = () => reject(new Error('File is not a valid image'));
+                    img.src = URL.createObjectURL(file);
+                });
+            }
+
+            // ========== ERROR HANDLING ==========
+            function showError(field, message) {
+                field.classList.add('error-field');
+                
+                let errorElement = field.nextElementSibling;
+                if (!errorElement || !errorElement.classList.contains('error-message')) {
+                    errorElement = document.createElement('div');
+                    errorElement.className = 'error-message';
+                    field.parentNode.insertBefore(errorElement, field.nextSibling);
+                }
+                
+                errorElement.textContent = message;
+            }
+
+            function clearError(field) {
+                field.classList.remove('error-field');
+                const errorElement = field.nextElementSibling;
+                if (errorElement?.classList.contains('error-message')) {
+                    errorElement.remove();
+                }
+            }
+
+            function clearAllErrors(form) {
+                form.querySelectorAll('.error-field').forEach(field => {
+                    field.classList.remove('error-field');
+                });
+                
+                form.querySelectorAll('.error-message').forEach(error => {
+                    error.remove();
+                });
+            }
+
+            function scrollToFirstError() {
+                const firstError = document.querySelector('.error-field');
+                if (firstError) {
+                    firstError.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center',
+                        inline: 'nearest'
+                    });
+                    firstError.focus();
+                }
+            }
+
+            // ========== REAL-TIME VALIDATION ==========
+            function setupRealTimeValidation() {
+                const debounceTimers = {};
+
+                function debounce(field, callback) {
+                    clearTimeout(debounceTimers[field.name]);
+                    debounceTimers[field.name] = setTimeout(() => callback(field), DEBOUNCE_DELAY);
+                }
+
+                // Name validation
+                if (fields.name) {
+                    fields.name.addEventListener('input', () => {
+                        debounce(fields.name, validateName);
+                    });
+                }
+
+                // Email validation
+                if (fields.email) {
+                    fields.email.addEventListener('input', () => {
+                        debounce(fields.email, validateEmail);
+                    });
+                }
+
+                // Phone validation
+                if (fields.phone) {
+                    fields.phone.addEventListener('input', () => {
+                        debounce(fields.phone, validatePhoneNumber);
+                    });
+                }
+            }
+
+            function validateName(field) {
+                const name = field.value.trim();
+                if (name.length < 2) {
+                    showError(field, 'Name must be at least 2 characters');
+                    return false;
+                }
+                
+                clearError(field);
+                return true;
+            }
+
+            // ========== INITIALIZATION ==========
+            initFormValidation();
+            setupRealTimeValidation();
+
+            // Initialize any existing errors from server-side validation
+            document.querySelectorAll('.error-field').forEach(field => {
+                const errorMessage = field.nextElementSibling?.textContent;
+                if (errorMessage) {
+                    showError(field, errorMessage);
                 }
             });
-        }
-
-        // Password form submission
-        if (forms.password) {
-            forms.password.addEventListener('submit', function(e) {
-                if (!validatePasswordForm()) {
-                    e.preventDefault();
-                    scrollToFirstError();
-                }
-            });
-        }
-
-        // Profile picture upload
-        if (fields.profilePicture) {
-            fields.profilePicture.addEventListener('change', function() {
-                if (this.files && this.files[0]) {
-                    validateImageUpload(this.files[0])
-                        .then(() => document.getElementById('upload_submit').click())
-                        .catch(error => {
-                            showError(this, error.message);
-                        });
-                }
-            });
-        }
-    }
-
-    // ========== VALIDATION FUNCTIONS ==========
-    function validateProfileForm() {
-        let isValid = true;
-
-        // Name validation
-        if (fields.name && fields.name.value.trim().length < 2) {
-            showError(fields.name, 'Name must be at least 2 characters');
-            isValid = false;
-        } else if (fields.name) {
-            clearError(fields.name);
-        }
-
-        // Email validation
-        if (fields.email && !validateEmail(fields.email)) {
-            isValid = false;
-        }
-
-        // Phone validation
-        if (fields.phone && !validatePhoneNumber(fields.phone)) {
-            isValid = false;
-        }
-
-        return isValid;
-    }
-
-    function validatePasswordForm() {
-        let isValid = true;
-
-        // Current password validation
-        if (fields.currentPassword && fields.currentPassword.value.trim() === '') {
-            showError(fields.currentPassword, 'Current password is required');
-            isValid = false;
-        } else if (fields.currentPassword) {
-            clearError(fields.currentPassword);
-        }
-
-        // New password validation
-        if (fields.newPassword) {
-            const password = fields.newPassword.value;
-            
-            if (password.trim() === '') {
-                showError(fields.newPassword, 'New password is required');
-                isValid = false;
-            } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/.test(password)) {
-                showError(fields.newPassword, 'Password does not meet requirements');
-                isValid = false;
-            } else if (fields.currentPassword && password === fields.currentPassword.value) {
-                showError(fields.newPassword, 'New password cannot be the same as current password');
-                isValid = false;
-            } else {
-                clearError(fields.newPassword);
-            }
-
-            // Confirm password validation
-            if (fields.confirmPassword.value.trim() === '') {
-                showError(fields.confirmPassword, 'Please confirm your new password');
-                isValid = false;
-            } else if (fields.confirmPassword.value !== password) {
-                showError(fields.confirmPassword, 'Passwords do not match');
-                isValid = false;
-            } else {
-                clearError(fields.confirmPassword);
-            }
-        }
-
-        return isValid;
-    }
-
-    function validateEmail(inputElement = fields.email) {
-        const email = inputElement.value.trim();
-        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-        
-        if (!emailRegex.test(email) || !email.endsWith('.com')) {
-            showError(inputElement, 'Please enter a valid email ending with .com');
-            return false;
-        }
-        
-        clearError(inputElement);
-        return true;
-    }
-
-    function formatPhoneNumber() {
-        let phone = this.value.replace(/[^\d]/g, '');
-        
-        if (phone.length > 11) {
-            phone = phone.substring(0, 11);
-        }
-        
-        let formatted = '';
-        if (phone.length > 0) {
-            formatted = phone.substring(0, 3);
-            if (phone.length > 3) formatted += '-' + phone.substring(3, 6);
-            if (phone.length > 6) formatted += ' ' + phone.substring(6);
-        }
-        
-        this.value = formatted;
-    }
-
-    function validatePhoneNumber(inputElement = fields.phone) {
-        const phone = inputElement.value.replace(/[-\s]/g, '');
-        const phoneRegex = /^(\+?6?01)[0-46-9][0-9]{7,8}$/;
-        
-        if (phone && !phoneRegex.test(phone)) {
-            showError(inputElement, 'Please enter a valid Malaysian phone number');
-            return false;
-        }
-        
-        clearError(inputElement);
-        return true;
-    }
-
-    async function validateImageUpload(file) {
-        return new Promise((resolve, reject) => {
-            // Check file type
-            const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
-            if (!validTypes.includes(file.type)) {
-                reject(new Error('Only JPG, JPEG, PNG & GIF files are allowed'));
-                return;
-            }
-
-            // Check file size (5MB max)
-            if (file.size > 5000000) {
-                reject(new Error('File size must be less than 5MB'));
-                return;
-            }
-
-            // Verify it's actually an image
-            const img = new Image();
-            img.onload = () => resolve();
-            img.onerror = () => reject(new Error('File is not a valid image'));
-            img.src = URL.createObjectURL(file);
         });
-    }
-
-    // ========== ERROR HANDLING ==========
-    function showError(field, message) {
-        field.classList.add('error-field');
-        
-        let errorElement = field.nextElementSibling;
-        if (!errorElement || !errorElement.classList.contains('error-message')) {
-            errorElement = document.createElement('div');
-            errorElement.className = 'error-message';
-            field.parentNode.insertBefore(errorElement, field.nextSibling);
-        }
-        
-        errorElement.textContent = message;
-    }
-
-    function clearError(field) {
-        field.classList.remove('error-field');
-        const errorElement = field.nextElementSibling;
-        if (errorElement?.classList.contains('error-message')) {
-            errorElement.remove();
-        }
-    }
-
-    function clearAllErrors(form) {
-        form.querySelectorAll('.error-field').forEach(field => {
-            field.classList.remove('error-field');
-        });
-        
-        form.querySelectorAll('.error-message').forEach(error => {
-            error.remove();
-        });
-    }
-
-    function scrollToFirstError() {
-        const firstError = document.querySelector('.error-field');
-        if (firstError) {
-            firstError.scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'center',
-                inline: 'nearest'
-            });
-            firstError.focus();
-        }
-    }
-
-    // ========== REAL-TIME VALIDATION ==========
-    function setupRealTimeValidation() {
-        const debounceTimers = {};
-
-        function debounce(field, callback) {
-            clearTimeout(debounceTimers[field.name]);
-            debounceTimers[field.name] = setTimeout(() => callback(field), DEBOUNCE_DELAY);
-        }
-
-        // Name validation
-        if (fields.name) {
-            fields.name.addEventListener('input', () => {
-                debounce(fields.name, validateName);
-            });
-        }
-
-        // Email validation
-        if (fields.email) {
-            fields.email.addEventListener('input', () => {
-                debounce(fields.email, validateEmail);
-            });
-        }
-
-        // Phone validation
-        if (fields.phone) {
-            fields.phone.addEventListener('input', () => {
-                debounce(fields.phone, validatePhoneNumber);
-            });
-        }
-    }
-
-    function validateName(field) {
-        const name = field.value.trim();
-        if (name.length < 2) {
-            showError(field, 'Name must be at least 2 characters');
-            return false;
-        }
-        
-        clearError(field);
-        return true;
-    }
-
-    // ========== INITIALIZATION ==========
-    initFormValidation();
-    setupRealTimeValidation();
-
-    // Initialize any existing errors from server-side validation
-    document.querySelectorAll('.error-field').forEach(field => {
-        const errorMessage = field.nextElementSibling?.textContent;
-        if (errorMessage) {
-            showError(field, errorMessage);
-        }
-    });
-});
 </script>
 
 </body>
