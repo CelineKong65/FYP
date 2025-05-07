@@ -60,7 +60,7 @@ $customer = $stmt->get_result()->fetch_assoc();
             
             <div class="cust-info">
                 <p><b>User Information</b></p>
-                <p>Name: <?php echo $customer['CustName']; ?> (ID: <?php echo $customer['CustID']; ?>)</p>
+                <p>Name: <?php echo $customer['CustName']; ?></p>
                 <p>Email: <?php echo $customer['CustEmail']; ?></p>
             </div>
             <div style="display: flex; gap: 50px; flex-wrap: wrap; margin-top: 20px;">

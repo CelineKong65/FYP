@@ -86,7 +86,6 @@ $feedbacks = $stmt->get_result();
                 <table>
                     <thead>
                         <tr>
-                            <th style="width: 35px; text-align: center;">Order ID</th>
                             <th style="width: 150px;">Customer</th>
                             <th style="width: 40px; text-align: center;">Rating</th>
                             <th style="width: 300px;">Comment</th>
@@ -99,8 +98,7 @@ $feedbacks = $stmt->get_result();
                             while ($feedback = $feedbacks->fetch_assoc()): 
                         ?>
                         <tr>
-                            <td style="text-align: center;"><?php echo htmlspecialchars($feedback['OrderID']); ?></td>
-                            <td><?php echo htmlspecialchars($feedback['CustName']) . " (ID: " . $feedback['CustID'] . ")"; ?></td>
+                            <td><?php echo htmlspecialchars($feedback['CustName']); ?></td>
                             <td style="text-align: center;"><?php echo $feedback['Rating']; ?> / 5</td>
                             <td>
                                 <?php 
