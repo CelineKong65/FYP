@@ -30,7 +30,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $errors['email'] = "Invalid email format.";
     } else {
         try {
-            $sql = "SELECT AdminID, AdminName, AdminEmail, AdminPassword FROM admin WHERE AdminEmail = :email LIMIT 1";
+            $sql = "SELECT AdminID, AdminName, AdminEmail, AdminPassword, AdminStatus 
+                    FROM admin 
+                    WHERE AdminEmail = :email 
+                    LIMIT 1";
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(":email", $email, PDO::PARAM_STR);            
             $stmt->execute();
@@ -38,7 +41,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $admin = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($admin) {
-                if ($password === $admin["AdminPassword"]) {
+                if (strtolower($admin['AdminStatus']) !== 'active') {
+                    $errors['general'] = "Your admin account is inactive. Please contact the system administrator.";
+                } elseif ($password === $admin["AdminPassword"]) {
                     $_SESSION["AdminID"] = $admin["AdminID"];
                     $_SESSION["admin_email"] = $admin["AdminEmail"];
                     $_SESSION['show_loading'] = true;
@@ -55,6 +60,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }
 }
+
 ?>
 
 <!DOCTYPE html>

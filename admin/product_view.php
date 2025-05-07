@@ -393,7 +393,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     $productID = (int)$_POST['product_id'];
     $currentStatus = strtolower($_POST['current_status']);
 
-    $newStatus = ($currentStatus == 'Active') ? 'Inactive' : 'Active';
+    $newStatus = ($currentStatus == 'active') ? 'Inactive' : 'Active';
 
     $stmt = $conn->prepare("UPDATE product SET ProductStatus = ? WHERE productID = ?");
     $stmt->bind_param("si", $newStatus, $productID);
