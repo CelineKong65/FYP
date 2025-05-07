@@ -71,6 +71,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $step == 1) {
         unset($_SESSION['register_errors']); // Clear session errors
     }
 }
+
 ?>
 <!DOCTYPE html>
 <html>

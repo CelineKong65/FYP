@@ -111,7 +111,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
     if (empty($custEmail)) {
         $errors['custEmail'] = "Email is required";
     } elseif (!preg_match("/^[a-zA-Z0-9._%+-]+@gmail\.com$/i", $custEmail)) {
-        $errors['custEmail'] = "Invalid Gmail format";
+        $errors['custEmail'] = "Invalid Gmail format. Exp: example@gmail.com";
     } else {
         // Check if email exists for another user
         $stmt = $conn->prepare("SELECT CustID FROM customer WHERE CustEmail = ? AND CustID != ?");
@@ -412,7 +412,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
         </div>
     </div>
 
-    <script>
+<script>
     document.addEventListener('DOMContentLoaded', function() {
         // ================== PASSWORD FEATURES ================== //
         // Password visibility toggle
@@ -554,7 +554,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
                     errorMsg: 'Email already registered',
                     formatCheck: (value) => {
                         const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
-                        if (!emailRegex.test(value)) return 'Invalid Gmail format';
+                        if (!emailRegex.test(value)) return 'Invalid Gmail format, Exp: example@gmail.com';
                         return null;
                     }
                 },
@@ -688,26 +688,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
         function validateEmail() {
             const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
             if (!emailRegex.test(this.value)) {
-                showError(this, 'Invalid Gmail format');
+                showError(this, 'Invalid Gmail format, Exp: example@gmail.com');
             }
         }
 
         function validatePhoneNumber() {
             // Format to XXX-XXX XXXX or XXX-XXXX XXXX
             let phone = this.value.replace(/[-\s]/g, '');
-            if (phone.length > 11) phone = phone.substring(0, 11);
+            if (phone.length > 12) phone = phone.substring(0, 12);
             
             let formatted = '';
             if (phone.length > 0) {
                 formatted = phone.substring(0, 3);
-                if (phone.length > 3) formatted += '-' + phone.substring(3, 6);
+                // if (phone.length > 3) formatted += '-' + phone.substring(3, 6);
                 if (phone.length > 6) formatted += ' ' + phone.substring(6);
             }
             this.value = formatted;
 
             // Validate format
             if (phone && !/^(\+?6?01)[0-46-9][0-9]{7,8}$/.test(phone)) {
-                showError(this, 'Invalid Malaysian phone format');
+                showError(this, 'Invalid Malaysian phone format, Exp: XXX-XXX XXXX or XXX-XXXX XXXX');
             }
         }
 

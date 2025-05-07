@@ -24,15 +24,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $errors['postcode'] = "Please enter a valid 5-digit postcode";
     }
 
-    // // Check if address already exists
-    // $sql_check_address = "SELECT StreetAddress FROM customer WHERE StreetAddress = ?";
-    // $stmt_check_address = $conn->prepare($sql_check_address);
-    // $stmt_check_address->execute([$custAddress]);
-    
-    // if ($stmt_check_address->rowCount() > 0) {
-    //     $errors['custAddress'] = "Address already exists";
-    // }
-
     if (empty($errors)) {
         // Complete registration
         $data = $_SESSION['register_data'];
@@ -53,7 +44,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if ($stmt->rowCount() > 0) {
             unset($_SESSION['register_data']);
-            echo "<script>window.location.href='login.php?success=Registration successful!!!';</script>";
+            
+            $_SESSION['registration_success'] = true;
+            header("Location: register_success.php");
             exit();
         } else {
             $errors['general'] = "Error: Registration failed";
