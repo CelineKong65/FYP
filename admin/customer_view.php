@@ -90,7 +90,7 @@ if (isset($_POST['update_customer'])) {
             unlink($target_dir . $existing_picture);
         }
 
-        $image_name = $cust_id . "." . $image_extension;
+        $image_name = "user_" . $cust_id . "." . $image_extension;
         $target_file = $target_dir . $image_name;
 
         if (!move_uploaded_file($profile_picture['tmp_name'], $target_file)) {
@@ -137,29 +137,6 @@ if (isset($_POST['update_customer'])) {
         exit();
     }
     $stmt->close();
-
-    $stmt = $conn->prepare("SELECT * FROM customer WHERE CustID = ?");
-    $stmt->bind_param("i", $cust_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $original_data = $result->fetch_assoc();
-    $stmt->close();
-
-    $has_changes = (
-        $name !== $original_data['CustName'] ||
-        $email !== $original_data['CustEmail'] ||
-        $phone !== $original_data['CustPhoneNum'] ||
-        $street !== $original_data['StreetAddress'] ||
-        $postcode !== $original_data['Postcode'] ||
-        $city !== $original_data['City'] ||
-        $state !== $original_data['State'] ||
-        (isset($image_name) && $image_name !== $original_data['CustProfilePicture'])
-    );
-
-    if (!$has_changes) {
-        echo "<script>alert('No changes detected.'); window.location.href='customer_view.php';</script>";
-        exit();
-    }
 
     $update_query = "UPDATE customer SET 
                     CustName = ?, 
@@ -298,9 +275,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                         <?php while ($customer = $customer_result->fetch_assoc()): ?>
                             <?php
                             $cust_id = $customer['CustID'];
-                            $jpgPath = "../image/user/{$cust_id}.jpg";
-                            $jpegPath = "../image/user/{$cust_id}.jpeg";
-                            $pngPath = "../image/user/{$cust_id}.png";
+                            $jpgPath = "../image/user/user_{$cust_id}.jpg";
+                            $jpegPath = "../image/user/user_{$cust_id}.jpeg";
+                            $pngPath = "../image/user/user_{$cust_id}.png";
 
                             if (file_exists($jpgPath)) {
                                 $profile_pic_path = $jpgPath;
@@ -370,7 +347,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
 
                 <div class="edit-form">
                     <div class="left">
-                        <label>Profile Picture:<span> (.jpp,.jpeg or .png only)</span></label>
+                        <label>Profile Picture:<span> (.jpg,.jpeg or .png only)</span></label>
                         <input class="img" type="file" name="profile_picture" id="profile_picture" accept=".jpg,.jpeg,.png">
                         <label>Name:<span class="required">*</span></label>
                         <input type="text" name="name" id="name" required onblur="checkAvailability('name', this.value)">
@@ -384,16 +361,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                     </div>
                     <div class="right">
                         <label>Street Address:<span class="required">*</span></label>
-                        <input type="text" name="street" id="street">
+                        <input type="text" name="street" id="street" required>
                         <div id="street-error" class="error-message"></div>
                         <label>Postcode:<span class="required">*</span></label>
-                        <input type="text" name="postcode" id="postcode">
+                        <input type="text" name="postcode" id="postcode" required>
                         <div id="postcode-error" class="error-message"></div>
                         <label>City:<span class="required">*</span></label>
-                        <input type="text" name="city" id="city">
+                        <input type="text" name="city" id="city" required>
                         <div id="city-error" class="error-message"></div>
                         <label>State:<span class="required">*</span></label>
-                        <select name="state" id="state">
+                        <select name="state" id="state" required>
                             <option value="" disabled selected>-- Select City/State --</option>
                             <option value="Johor">Johor</option>
                             <option value="Kedah">Kedah</option>
@@ -421,86 +398,82 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
     </div>
 
     <script>
-        // Add this function to check address field dependencies
         function validateAddressFields() {
-    const street = document.getElementById('street');
-    const postcode = document.getElementById('postcode');
-    const city = document.getElementById('city');
-    const state = document.getElementById('state');
+            const street = document.getElementById('street');
+            const postcode = document.getElementById('postcode');
+            const city = document.getElementById('city');
+            const state = document.getElementById('state');
 
-    // First clear all previous errors
-    const fields = [street, postcode, city, state];
-    fields.forEach(field => {
-        const errorElement = document.getElementById(`${field.id}-error`);
-        errorElement.textContent = '';
-        errorElement.style.display = 'none';
-        field.classList.remove('error-field');
-    });
+            // First clear all previous errors
+            const fields = [street, postcode, city, state];
+            fields.forEach(field => {
+                const errorElement = document.getElementById(`${field.id}-error`);
+                errorElement.textContent = '';
+                errorElement.style.display = 'none';
+                field.classList.remove('error-field');
+            });
 
-    let isValid = true;
+            let isValid = true;
 
-    const streetVal = street.value.trim();
-    const postcodeVal = postcode.value.trim();
-    const cityVal = city.value.trim();
-    const stateVal = state.value.trim();
+            const streetVal = street.value.trim();
+            const postcodeVal = postcode.value.trim();
+            const cityVal = city.value.trim();
+            const stateVal = state.value.trim();
 
-    const anyAddressFieldFilled = streetVal || postcodeVal || cityVal || stateVal;
+            // Make all address fields required (like name, email, phone)
+            if (!streetVal) {
+                document.getElementById('street-error').textContent = 'Street address is required';
+                document.getElementById('street-error').style.display = 'block';
+                street.classList.add('error-field');
+                isValid = false;
+            }
 
-    if (anyAddressFieldFilled) {
-        if (!streetVal) {
-            document.getElementById('street-error').textContent = 'Street address is required when filling address';
-            document.getElementById('street-error').style.display = 'block';
-            street.classList.add('error-field');
-            isValid = false;
+            if (!postcodeVal) {
+                document.getElementById('postcode-error').textContent = 'Postcode is required';
+                document.getElementById('postcode-error').style.display = 'block';
+                postcode.classList.add('error-field');
+                isValid = false;
+            }
+
+            if (!cityVal) {
+                document.getElementById('city-error').textContent = 'City is required';
+                document.getElementById('city-error').style.display = 'block';
+                city.classList.add('error-field');
+                isValid = false;
+            }
+
+            if (!stateVal) {
+                document.getElementById('state-error').textContent = 'State is required';
+                document.getElementById('state-error').style.display = 'block';
+                state.classList.add('error-field');
+                isValid = false;
+            }
+
+            // Validate postcode format if postcode exists
+            if (postcodeVal && !/^\d{5}$/.test(postcodeVal)) {
+                document.getElementById('postcode-error').textContent = 'Postcode must be 5 digits';
+                document.getElementById('postcode-error').style.display = 'block';
+                postcode.classList.add('error-field');
+                isValid = false;
+            }
+
+            return isValid;
         }
 
-        if (!postcodeVal) {
-            document.getElementById('postcode-error').textContent = 'Postcode is required when filling address';
-            document.getElementById('postcode-error').style.display = 'block';
-            postcode.classList.add('error-field');
-            isValid = false;
-        }
-
-        if (!cityVal) {
-            document.getElementById('city-error').textContent = 'City is required when filling address';
-            document.getElementById('city-error').style.display = 'block';
-            city.classList.add('error-field');
-            isValid = false;
-        }
-
-        if (!stateVal) {
-            document.getElementById('state-error').textContent = 'State is required when filling address';
-            document.getElementById('state-error').style.display = 'block';
-            state.classList.add('error-field');
-            isValid = false;
-        }
-
-        // Validate postcode format
-        if (postcodeVal && !/^\d{5}$/.test(postcodeVal)) {
-            document.getElementById('postcode-error').textContent = 'Postcode must be 5 digits';
-            document.getElementById('postcode-error').style.display = 'block';
-            postcode.classList.add('error-field');
-            isValid = false;
-        }
-    }
-
-    return isValid;
-}
-
-
-        // Modify the validateForm function to include address validation
         function validateForm() {
             let isValid = true;
-            const requiredFields = ['name', 'email', 'phone'];
+            const requiredFields = ['name', 'email', 'phone', 'street', 'postcode', 'city', 'state'];
             
-            // Check basic required fields
+            // Check all required fields (including address fields)
             requiredFields.forEach(field => {
                 const fieldValue = document.getElementById(field).value.trim();
                 const errorElement = document.getElementById(`${field}-error`);
                 const inputField = document.getElementById(field);
                 
                 if (!fieldValue) {
-                    errorElement.textContent = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
+                    const fieldName = field === 'postcode' ? 'Postcode' : 
+                                    field.charAt(0).toUpperCase() + field.slice(1);
+                    errorElement.textContent = `${fieldName} is required`;
                     errorElement.style.display = 'block';
                     inputField.classList.add('error-field');
                     inputField.classList.remove('valid-field');
@@ -528,125 +501,72 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 isValid = false;
             }
 
-            // Validate address fields
-            const addressValid = validateAddressFields();
-            if (!addressValid) {
+            // Validate postcode format
+            const postcode = document.getElementById('postcode').value.trim();
+            if (postcode && !/^\d{5}$/.test(postcode)) {
+                document.getElementById('postcode-error').textContent = 'Postcode must be 5 digits';
+                document.getElementById('postcode-error').style.display = 'block';
+                document.getElementById('postcode').classList.add('error-field');
+                document.getElementById('postcode').classList.remove('valid-field');
                 isValid = false;
             }
 
             return isValid;
         }
 
-        // Add event listeners to address fields to validate when they change
-        document.getElementById('street').addEventListener('blur', function() {
-            validateAddressFields();
-        });
-
-        document.getElementById('postcode').addEventListener('blur', function() {
-            validateAddressFields();
-        });
-
-        document.getElementById('city').addEventListener('blur', function() {
-            validateAddressFields();
+        // Add event listeners to all fields for real-time validation
+        ['name', 'email', 'phone', 'street', 'postcode', 'city'].forEach(field => {
+            document.getElementById(field).addEventListener('blur', function() {
+                if (field === 'street' || field === 'postcode' || field === 'city' || field === 'state') {
+                    validateAddressFields();
+                } else {
+                    const value = this.value.trim();
+                    const errorElement = document.getElementById(`${field}-error`);
+                    
+                    if (!value) {
+                        errorElement.textContent = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
+                        errorElement.style.display = 'block';
+                        this.classList.add('error-field');
+                        this.classList.remove('valid-field');
+                    } else {
+                        // Additional validation for specific fields
+                        if (field === 'email' && !/^[^\s@]+@[^\s@]+\.com$/.test(value)) {
+                            errorElement.textContent = 'Invalid email format (must end with .com)';
+                            errorElement.style.display = 'block';
+                            this.classList.add('error-field');
+                            this.classList.remove('valid-field');
+                        } else if (field === 'phone' && !/^\d{3}-\d{3,4} \d{4}$/.test(value)) {
+                            errorElement.textContent = 'Phone must be in XXX-XXX XXXX or XXX-XXXX XXXX format';
+                            errorElement.style.display = 'block';
+                            this.classList.add('error-field');
+                            this.classList.remove('valid-field');
+                        } else {
+                            errorElement.textContent = '';
+                            errorElement.style.display = 'none';
+                            this.classList.remove('error-field');
+                            this.classList.add('valid-field');
+                        }
+                    }
+                }
+            });
         });
 
         document.getElementById('state').addEventListener('change', function() {
             validateAddressFields();
         });
 
-        // Modify the form submission handler to use the updated validation
+        // Form submission handler
         document.getElementById('editCustomerForm').addEventListener('submit', function(e) {
             if (!validateForm()) {
                 e.preventDefault();
-                alert('Please fix all errors before submitting.');
-                return;
-            }
-
-            const errorMessages = document.querySelectorAll('.error-message');
-            let hasErrors = false;
-            
-            errorMessages.forEach(error => {
-                if (error.textContent && error.style.display !== 'none') {
-                    hasErrors = true;
+                // Scroll to the first error
+                const firstError = document.querySelector('.error-field');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
-            });
-
-            if (hasErrors) {
-                e.preventDefault();
-                alert('Please fix all errors before submitting.');
                 return;
             }
         });
-
-        function checkAvailability(type, value) {
-            const custId = document.getElementById('cust_id')?.value;
-            const errorElement = document.getElementById(`${type}-error`);
-            const inputField = document.getElementById(type);
-            
-            errorElement.textContent = '';
-            errorElement.style.display = 'none';
-            inputField.classList.remove('error-field', 'valid-field');
-
-            if (!value.trim() && (type === 'name' || type === 'email' || type === 'phone')) {
-                errorElement.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} is required`;
-                errorElement.style.display = 'block';
-                inputField.classList.add('error-field');
-                return;
-            }
-
-            let isValidFormat = true;
-            let formatErrorMessage = '';
-            
-            if (type === 'email') {
-                if (!/^[^\s@]+@[^\s@]+\.com$/.test(value)) {
-                    isValidFormat = false;
-                    formatErrorMessage = "Invalid email format (must contain @ and end with .com)";
-                }
-            } else if (type === 'phone') {
-                if (!/^\d{3}-\d{3,4} \d{4}$/.test(value)) {
-                    isValidFormat = false;
-                    formatErrorMessage = "Phone must be in XXX-XXX XXXX or XXX-XXXX XXXX format";
-                }
-            }
-
-            if (!isValidFormat) {
-                errorElement.textContent = formatErrorMessage;
-                errorElement.style.display = 'block';
-                inputField.classList.add('error-field');
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('check_availability', 'true');
-            formData.append('type', type);
-            formData.append('value', value);
-            formData.append('cust_id', custId);
-
-            fetch(window.location.href, {
-                method: 'POST',
-                body: formData,
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (!data.valid_format) {
-                    errorElement.textContent = data.message;
-                    errorElement.style.display = 'block';
-                    inputField.classList.add('error-field');
-                } else if (data.exists) {
-                    errorElement.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} already exists`;
-                    errorElement.style.display = 'block';
-                    inputField.classList.add('error-field');
-                } else {
-                    errorElement.textContent = '';
-                    errorElement.style.display = 'none';
-                    inputField.classList.remove('error-field');
-                    inputField.classList.add('valid-field');
-                }
-            })
-            .catch(error => {
-                console.error('Error checking availability:', error);
-            });
-        }
 
         function editCustomer(id, name, email, phone, street, postcode, city, state, profile_picture, status) {
             document.querySelectorAll('.error-message').forEach(el => {

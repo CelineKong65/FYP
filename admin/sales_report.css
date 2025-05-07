@@ -57,8 +57,7 @@ form {
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     margin: 0 auto;
-    width: 65%;
-
+    width: 50%;
 }
 
 form label {
@@ -83,18 +82,20 @@ form label {
 
 .bcm-button {
     padding: 12px;
-    background-color: #007BFF;
+    background-color: #1e3a8a;
     color: white;
     border: none;
     border-radius: 6px;
     font-size: 16px;
     font-weight: bold;
     transition: background-color 0.3s ease;
+    margin: 0 auto;
     margin-top: 10px;
+    width: 80%;
 }
 
 .bcm-button:hover {
-    background-color: #005f87;
+    background-color: #1d4ed8;
 }
 
 .error-message {

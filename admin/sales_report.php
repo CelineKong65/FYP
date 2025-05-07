@@ -382,8 +382,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 const start = new Date(startDate);
                 const end = new Date(endDate);
                 
-                if (start > end) {
-                    document.getElementById('endDateError').textContent = 'End date cannot be before start date';
+                if (start >= end) {
+                    document.getElementById('endDateError').textContent = 'End date must be after start date (cannot be the same)';
                     document.getElementById('endDateError').style.display = 'block';
                     isValid = false;
                 }
