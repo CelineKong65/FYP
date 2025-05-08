@@ -279,7 +279,6 @@ select.error-field {
                 onerror="this.src='../image/admin/admin.jpg';">
 
             <h1 class="profile-title">Welcome, <?= htmlspecialchars($admin['AdminName']) ?></h1>
-            <div class="account-number">Admin ID: <?= htmlspecialchars($admin['AdminID']) ?></div>
             
             <form class="upload-form" method="post" enctype="multipart/form-data">
                 <input type="file" name="profile_picture" id="profile_picture" accept="image/*" required>

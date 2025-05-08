@@ -242,7 +242,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
                  class="profile-picture"
                  onerror="this.src='image/user/user.png'">
             <h1 class="profile-title">Welcome, <?= htmlspecialchars($customer['CustName']) ?></h1>
-            <div class="account-number">Account ID: <?= htmlspecialchars($customer['CustID']) ?></div>
             
             <form class="upload-form" method="post" enctype="multipart/form-data">
                 <input type="file" name="profile_picture" id="profile_picture" accept="image/*" required>
