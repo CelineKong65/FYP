@@ -24,6 +24,47 @@
             justify-content: center;
             color: white;
         }
+        .brands-section {
+            padding: 30px 0;
+            text-align: center;
+            background-color: #f8f9fa;
+        }
+        .brands-section h2 {
+            font-size: 28px;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        .brands-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            
+        }
+        .brand-item {
+            border-radius: 5px;
+            padding: 15px;
+            transition: transform 0.3s ease;
+            text-align: center;
+        }
+        .brand-item:hover {
+            transform: translateY(-5px);
+        }
+        .brand-item img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 10px;
+            border: 2px solid #ccc;
+        }
+        
+
+        .brand-item p {
+            margin: 0;
+            font-weight: 500;
+            color: #333;
+        }
     </style>
 </head>
 <body>
@@ -101,6 +142,38 @@
         ?>
     </section>
     
+    <section class="brands-section">
+        <h2>Explore More Brands</h2>
+        <div class="brands-container">
+            <?php
+            try {
+                $stmt = $conn->prepare("SELECT * FROM brand WHERE BrandStatus = 'Active'");
+                $stmt->execute();
+                
+                $brands = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                if (count($brands) > 0) {
+                    foreach ($brands as $row) {
+                        $brandId = $row['BrandID'];
+                        $brandName = $row['BrandName'];
+                        $brandImage = $row['BrandPicture'] ? 'image/brand/' . $row['BrandPicture'] : 'image/brand/default-brand.jpg';
+                        
+                        echo '<div class="brand-item">';
+                        echo '<a href="brand.php?id=' . $brandId . '">';
+                        echo '<img src="' . $brandImage . '" alt="' . htmlspecialchars($brandName). '">';
+                        echo '</a>';
+                        echo '</div>';
+                    }
+                } else {
+                    echo '<p>No brands found</p>';
+                }
+            } catch (PDOException $e) {
+                echo '<p>Error loading brands: ' . $e->getMessage() . '</p>';
+            }
+            ?>
+        </div>
+    </section>
+
     <script>
         // Slideshow functionality
         var slideIndex = 0;
@@ -123,7 +196,7 @@
             }
             dots[slideIndex - 1].className += " active";
 
-            setTimeout(showSlides, 5000); // Change image every 5 seconds
+            setTimeout(showSlides, 5000); 
         }
 
         function plusSlides(n) {
