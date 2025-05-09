@@ -150,7 +150,7 @@
         <div class="brands-container">
             <?php
             try {
-                $stmt = $conn->prepare("SELECT * FROM brand WHERE BrandStatus = 'Active' LIMIT 6");
+                $stmt = $conn->prepare("SELECT * FROM brand WHERE BrandStatus = 'Active'");
                 $stmt->execute();
                 
                 $brands = $stmt->fetchAll(PDO::FETCH_ASSOC);
