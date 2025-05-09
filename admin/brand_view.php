@@ -12,39 +12,39 @@ $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 if (!empty($search_query)) {
     $search_param = "%$search_query%";
-    $category_query = "SELECT * FROM category WHERE CategoryName LIKE ? 
+    $brand_query = "SELECT * FROM brand WHERE BrandName LIKE ? 
                       ORDER BY 
-                          CategoryStatus = 'Active' DESC,
-                          CategoryName ASC";
-    $stmt = $conn->prepare($category_query);
+                          BrandStatus = 'Active' DESC,
+                          BrandName ASC";
+    $stmt = $conn->prepare($brand_query);
     $stmt->bind_param("s", $search_param);
     $stmt->execute();
-    $category_result = $stmt->get_result();
+    $brand_result = $stmt->get_result();
 } else {
-    $category_query = "SELECT * FROM category 
+    $brand_query = "SELECT * FROM brand 
                       ORDER BY 
-                          CategoryStatus = 'Active' DESC,
-                          CategoryName ASC";
-    $category_result = $conn->query($category_query);
+                          BrandStatus = 'Active' DESC,
+                          BrandName ASC";
+    $brand_result = $conn->query($brand_query);
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability'])) {
     $type = $_POST['type'];
     $value = trim($_POST['value']);
-    $category_id = isset($_POST['category_id']) ? (int)$_POST['category_id'] : 0;
+    $brand_id = isset($_POST['brand_id']) ? (int)$_POST['brand_id'] : 0;
     $exists = false;
     $is_valid_format = true;
     $error_message = '';
 
     if ($type === 'name') {
-        $error = validateCategoryName($value);
+        $error = validateBrandName($value);
         if ($error !== '') {
             $is_valid_format = false;
             $error_message = $error;
         } else {
-            $sql = "SELECT CategoryID FROM category WHERE CategoryName = ? AND CategoryID != ?";
+            $sql = "SELECT BrandID FROM brand WHERE BrandName = ? AND BrandID != ?";
             $stmt = $conn->prepare($sql);
-            $stmt->bind_param("si", $value, $category_id);
+            $stmt->bind_param("si", $value, $brand_id);
             $stmt->execute();
             $stmt->store_result();
             $exists = $stmt->num_rows > 0;
@@ -57,12 +57,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
     exit();
 }
 
-function validateCategoryName($name) {
+function validateBrandName($name) {
     if (trim($name) === '') {
-        return 'Category name is required';
+        return 'Brand name is required';
     }
-    if (strlen($name) > 50) {
-        return 'Category name must be 50 characters or less';
+    if (strlen($name) > 100) {
+        return 'Brand name must be 100 characters or less';
     }
     if (!preg_match('/^[a-zA-Z0-9\s\/\-]+$/', $name)) {
         return 'Only letters, numbers, spaces, slashes and hyphens allowed';
@@ -70,24 +70,24 @@ function validateCategoryName($name) {
     return '';
 }
 
-if (isset($_POST['add_category'])) {
-    $category_name = trim($_POST['category_name']);
+if (isset($_POST['add_brand'])) {
+    $brand_name = trim($_POST['brand_name']);
     $admin_id = $_SESSION['AdminID'];
 
-    $error = validateCategoryName($category_name);
+    $error = validateBrandName($brand_name);
     if ($error !== '') {
-        echo "<script>alert('$error'); window.location.href='category_view.php';</script>";
+        echo "<script>alert('$error'); window.location.href='brand_view.php';</script>";
         exit();
     }
 
-    $check_query = "SELECT CategoryID FROM category WHERE CategoryName = ?";
+    $check_query = "SELECT BrandID FROM brand WHERE BrandName = ?";
     $stmt = $conn->prepare($check_query);
-    $stmt->bind_param("s", $category_name);
+    $stmt->bind_param("s", $brand_name);
     $stmt->execute();
     $stmt->store_result();
 
     if ($stmt->num_rows > 0) {
-        echo "<script>alert('Category name already exists.'); window.location.href='category_view.php';</script>";
+        echo "<script>alert('Brand name already exists.'); window.location.href='brand_view.php';</script>";
         exit();
     }
     $stmt->close();
@@ -101,77 +101,76 @@ if (isset($_POST['add_category'])) {
         $allowed_types = ['jpg', 'jpeg', 'png'];
 
         if (!in_array($image_extension, $allowed_types)) {
-            echo "<script>alert('Invalid file format. Only JPG, JPEG, and PNG allowed.'); window.location.href='category_view.php';</script>";
+            echo "<script>alert('Invalid file format. Only JPG, JPEG, and PNG allowed.'); window.location.href='brand_view.php';</script>";
             exit();
         }
-
-        $clean_name = strtolower(str_replace([' ', '/'], '_', $category_name));
+        $clean_name = strtolower(str_replace([' ', '/'], '_', $brand_name));
         $clean_name = preg_replace("/[^a-z0-9_]/", "", $clean_name);
         $image_name = $clean_name . '.' . $image_extension;
-        
-        $target_dir = "../image/categories/";
+
+        $target_dir = "../image/brand/";
         $target_file = $target_dir . $image_name;
 
         if (!move_uploaded_file($profile_picture_tmp, $target_file)) {
-            echo "<script>alert('Failed to upload image.'); window.location.href='category_view.php';</script>";
+            echo "<script>alert('Failed to upload image.'); window.location.href='brand_view.php';</script>";
             exit();
         }
     }
 
-    $insert_query = "INSERT INTO category (CategoryName, CategoryPicture, AdminID) VALUES (?, ?, ?)";
+    $insert_query = "INSERT INTO brand (BrandName, BrandPicture, AdminID) VALUES (?, ?, ?)";
     $stmt = $conn->prepare($insert_query);
-    $stmt->bind_param("ssi", $category_name, $image_name, $admin_id);
+    $stmt->bind_param("ssi", $brand_name, $image_name, $admin_id);
 
     if ($stmt->execute()) {
-        echo "<script>alert('Category added successfully!'); window.location.href='category_view.php';</script>";
+        echo "<script>alert('Brand added successfully!'); window.location.href='brand_view.php';</script>";
     } else {
         if (!empty($image_name) && file_exists($target_file)) {
             unlink($target_file);
         }
-        echo "<script>alert('Error adding category.'); window.location.href='category_view.php';</script>";
+        echo "<script>alert('Error adding brand.'); window.location.href='brand_view.php';</script>";
     }
     $stmt->close();
     exit();
 }
 
-if (isset($_POST['edit_category'])) {
-    $category_id = intval($_POST['category_id']);
-    $new_name = trim($_POST['new_category_name']);
+if (isset($_POST['edit_brand'])) {
+    $brand_id = intval($_POST['brand_id']);
+    $new_name = trim($_POST['new_brand_name']);
 
-    $error = validateCategoryName($new_name);
+    $error = validateBrandName($new_name);
     if ($error !== '') {
-        echo "<script>alert('$error'); window.location.href='category_view.php';</script>";
+        echo "<script>alert('$error'); window.location.href='brand_view.php';</script>";
         exit();
     }
 
-    $stmt = $conn->prepare("SELECT CategoryID FROM category WHERE CategoryName = ? AND CategoryID != ?");
-    $stmt->bind_param("si", $new_name, $category_id);
+    $stmt = $conn->prepare("SELECT BrandID FROM brand WHERE BrandName = ? AND BrandID != ?");
+    $stmt->bind_param("si", $new_name, $brand_id);
     $stmt->execute();
     $stmt->store_result();
     if ($stmt->num_rows > 0) {
-        echo "<script>alert('Category name already exists.'); window.location.href='category_view.php';</script>";
+        echo "<script>alert('Brand name already exists.'); window.location.href='brand_view.php';</script>";
         exit();
     }
     $stmt->close();
 
-    $stmt = $conn->prepare("SELECT CategoryPicture FROM category WHERE CategoryID = ?");
-    $stmt->bind_param("i", $category_id);
+    $stmt = $conn->prepare("SELECT BrandPicture FROM brand WHERE BrandID = ?");
+    $stmt->bind_param("i", $brand_id);
     $stmt->execute();
     $stmt->bind_result($old_image);
     $stmt->fetch();
     $stmt->close();
 
-    $target_dir = "../image/categories/";
+    $target_dir = "../image/brand/";
     $new_image_uploaded = !empty($_FILES['profile_picture']['name']);
     
     $clean_name = strtolower(str_replace([' ', '/'], '_', $new_name));
     $clean_name = preg_replace("/[^a-z0-9_]/", "", $clean_name);
-
+    
     if ($new_image_uploaded) {
         $ext = strtolower(pathinfo($_FILES['profile_picture']['name'], PATHINFO_EXTENSION));
         $allowed_types = ['jpg', 'jpeg', 'png'];
         if (!in_array($ext, $allowed_types)) {
-            echo "<script>alert('Invalid file format. Only JPG, JPEG, and PNG allowed.'); window.location.href='category_view.php';</script>";
+            echo "<script>alert('Invalid file format. Only JPG, JPEG, and PNG allowed.'); window.location.href='brand_view.php';</script>";
             exit();
         }
     } elseif (!empty($old_image)) {
@@ -187,34 +186,34 @@ if (isset($_POST['edit_category'])) {
         }
 
         if (!move_uploaded_file($_FILES['profile_picture']['tmp_name'], $new_path)) {
-            echo "<script>alert('Failed to upload new image.'); window.location.href='category_view.php';</script>";
+            echo "<script>alert('Failed to upload new image.'); window.location.href='brand_view.php';</script>";
             exit();
         }
     } elseif (!empty($old_image) && $old_image !== $image_name_to_store) {
         if (file_exists($target_dir . $old_image)) {
             if (!rename($target_dir . $old_image, $new_path)) {
-                echo "<script>alert('Failed to rename image file.'); window.location.href='category_view.php';</script>";
+                echo "<script>alert('Failed to rename image file.'); window.location.href='brand_view.php';</script>";
                 exit();
             }
         }
     }
 
-    $stmt = $conn->prepare("UPDATE category SET CategoryName = ?, CategoryPicture = ? WHERE CategoryID = ?");
-    $stmt->bind_param("ssi", $new_name, $image_name_to_store, $category_id);
+    $stmt = $conn->prepare("UPDATE brand SET BrandName = ?, BrandPicture = ? WHERE BrandID = ?");
+    $stmt->bind_param("ssi", $new_name, $image_name_to_store, $brand_id);
     if ($stmt->execute()) {
-        echo "<script>alert('Category updated successfully!'); window.location.href='category_view.php';</script>";
+        echo "<script>alert('Brand updated successfully!'); window.location.href='brand_view.php';</script>";
     } else {
         if (!empty($image_name_to_store) && file_exists($new_path) && (!empty($old_image) && $old_image !== $image_name_to_store)) {
             rename($new_path, $target_dir . $old_image);
         }
-        echo "<script>alert('Failed to update category.'); window.location.href='category_view.php';</script>";
+        echo "<script>alert('Failed to update brand.'); window.location.href='brand_view.php';</script>";
     }
     $stmt->close();
     exit();
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
-    $category_id = (int)$_POST['category_id'];
+    $brand_id = (int)$_POST['brand_id'];
     $currentStatus = strtolower($_POST['current_status']);
     
     $newStatus = ($currentStatus == 'active') ? 'Inactive' : 'Active';
@@ -222,23 +221,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     $conn->begin_transaction();
 
     try {
-        $stmt = $conn->prepare("UPDATE category SET CategoryStatus = ? WHERE CategoryID = ?");
-        $stmt->bind_param("si", $newStatus, $category_id);
+        $stmt = $conn->prepare("UPDATE brand SET BrandStatus = ? WHERE BrandID = ?");
+        $stmt->bind_param("si", $newStatus, $brand_id);
         $stmt->execute();
         $stmt->close();
 
-        $stmt2 = $conn->prepare("UPDATE product SET ProductStatus = ? WHERE CategoryID = ?");
-        $stmt2->bind_param("si", $newStatus, $category_id);
+        $stmt2 = $conn->prepare("UPDATE product SET ProductStatus = ? WHERE BrandID = ?");
+        $stmt2->bind_param("si", $newStatus, $brand_id);
         $stmt2->execute();
         $stmt2->close();
 
         $conn->commit();
 
-        header("Location: category_view.php");
+        header("Location: brand_view.php");
         exit();
     } catch (Exception $e) {
         $conn->rollback();
-        echo "<script>alert('Failed to update status.'); window.location.href='category_view.php';</script>";
+        echo "<script>alert('Failed to update status.'); window.location.href='brand_view.php';</script>";
     }
 }
 ?>
@@ -248,8 +247,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Categories</title>
-    <link rel="stylesheet" href="category_view.css">
+    <title>Product Brands</title>
+    <link rel="stylesheet" href="brand_view.css">
 </head>
 <body>
     <div class="header">
@@ -262,15 +261,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         </div>
 
         <div class="main-content">
-        <h2>Product Categories</h2>
+        <h2>Product Brands</h2>
 
         <form method="GET" action="" class="search">
-            <input type="text" name="search" placeholder="Search category" value="<?php echo htmlspecialchars($search_query); ?>">
+            <input type="text" name="search" placeholder="Search brand" value="<?php echo htmlspecialchars($search_query); ?>">
             <button type="submit" class="search">Search</button>
         </form>
 
-        <div class="add-category-form">
-            <button type="button" onclick="openAddModal()" class="add_btn">Add Category</button>
+        <div class="add-brand-form">
+            <button type="button" onclick="openAddModal()" class="add_btn">Add Brand</button>
         </div>
 
         <table>
@@ -278,46 +277,46 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                 <tr>
                     <th style="text-align: center;">ID</th>
                     <th>Image</th>
-                    <th>Category Name</th>
+                    <th>Brand Name</th>
                     <th style="text-align: center;">Status</th>
                     <th class="action"></th>
                 </tr>
             </thead>
             <tbody>
-                <?php if ($category_result->num_rows > 0): ?>
-                    <?php while ($category = $category_result->fetch_assoc()): ?>
+                <?php if ($brand_result->num_rows > 0): ?>
+                    <?php while ($brand = $brand_result->fetch_assoc()): ?>
                         <tr>
-                            <td style="text-align: center;"><?php echo $category['CategoryID']; ?></td>
+                            <td style="text-align: center;"><?php echo $brand['BrandID']; ?></td>
                             <?php
-                                $category_image_name = $category['CategoryPicture'];
-                                $image_path = !empty($category_image_name) ? "../image/categories/" . $category_image_name : "";
+                                $brand_image_name = $brand['BrandPicture'];
+                                $image_path = !empty($brand_image_name) ? "../image/brand/" . $brand_image_name : "";
                             ?>
                             <td style="text-align: center;">
                                 <?php if (!empty($image_path) && file_exists($image_path)): ?>
-                                    <img src="<?php echo $image_path; ?>" alt="Category Image" style="width: 120px; height: 80px;">
+                                    <img src="<?php echo $image_path; ?>" alt="Brand Image" style="width: 120px; height: 80px;">
                                 <?php else: ?>
                                     <span>No Image</span>
                                 <?php endif; ?>
                             </td>
-                            <td><?php echo $category['CategoryName']; ?></td>
-                            <td class="<?php echo ($category['CategoryStatus'] === 'Active') ? 'status-active' : 'status-inactive'; ?>" style="text-align: center;">
-                                <?php echo ucfirst($category['CategoryStatus']); ?>
+                            <td><?php echo $brand['BrandName']; ?></td>
+                            <td class="<?php echo ($brand['BrandStatus'] === 'Active') ? 'status-active' : 'status-inactive'; ?>" style="text-align: center;">
+                                <?php echo ucfirst($brand['BrandStatus']); ?>
                             </td>
                             <td>
-                                <button name="edit_category" onclick='editCategory(<?php echo json_encode($category["CategoryID"]); ?>, <?php echo json_encode($category["CategoryName"]); ?>)'>Edit</button>
+                                <button name="edit_brand" onclick='editBrand(<?php echo json_encode($brand["BrandID"]); ?>, <?php echo json_encode($brand["BrandName"]); ?>)'>Edit</button>
                                 <form method="post" action="" style="display: inline;">
                                     <input type="hidden" name="toggle_status" value="1">
-                                    <input type="hidden" name="category_id" value="<?php echo $category['CategoryID']; ?>">
-                                    <input type="hidden" name="current_status" value="<?php echo $category['CategoryStatus']; ?>">
-                                    <button type="submit" class="btn-status <?php echo ($category['CategoryStatus'] == 'Active') ? 'btn-inactive' : 'btn-active'; ?>">
-                                        <?php echo ($category['CategoryStatus'] == 'Active') ? 'Deactivate' : 'Activate'; ?>
+                                    <input type="hidden" name="brand_id" value="<?php echo $brand['BrandID']; ?>">
+                                    <input type="hidden" name="current_status" value="<?php echo $brand['BrandStatus']; ?>">
+                                    <button type="submit" class="btn-status <?php echo ($brand['BrandStatus'] == 'Active') ? 'btn-inactive' : 'btn-active'; ?>">
+                                        <?php echo ($brand['BrandStatus'] == 'Active') ? 'Deactivate' : 'Activate'; ?>
                                     </button>
                                  </form>
                             </tr>
                         <?php endwhile; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="8" style="text-align: center;color:red;"><b>No category found.</b></td>
+                            <td colspan="8" style="text-align: center;color:red;"><b>No brand found.</b></td>
                         </tr>
                     <?php endif; ?>
             </tbody>
@@ -328,14 +327,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     <div id="addModal">
         <div class="add-content">
             <span class="close" onclick="closeAddModal()">&times;</span>
-            <h2>Add Categories</h2>
-            <form method="POST" action="" enctype="multipart/form-data" id="addCategoryForm">
-                <input type="hidden" name="add_category" value="1">
-                <label>Category Image:<span class="required">*</span><span> (.jpg, .jpeg or .png only)</span></label>
+            <h2>Add Brands</h2>
+            <form method="POST" action="" enctype="multipart/form-data" id="addBrandForm">
+                <input type="hidden" name="add_brand" value="1">
+                <label>Brand Image:<span class="required">*</span><span> (.jpg, .jpeg or .png only)</span></label>
                 <input class="img" type="file" name="profile_picture" id="add-profile-picture" accept=".jpg,.jpeg,.png" required>
                 
-                <label>Category Name:<span class="required">*</span></label>
-                <input type="text" name="category_name" id="add-name" required 
+                <label>Brand Name:<span class="required">*</span></label>
+                <input type="text" name="brand_name" id="add-name" required 
                        oninput="validateNameInRealTime(this.value, 'add')"
                        onblur="checkAvailability('name', this.value, 0, true)">
                 <div id="add-name-error" class="error"></div>
@@ -350,20 +349,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     <div id="editModal">
         <div class="edit-content">
             <span class="close" onclick="closeEditModal()">&times;</span>
-            <h2>Edit Category</h2>
-            <form method="POST" action="" enctype="multipart/form-data" id="editCategoryForm">
-                <label>Category Image:<span> (.jpg, .jpeg or .png only)</span></label>
+            <h2>Edit Brand</h2>
+            <form method="POST" action="" enctype="multipart/form-data" id="editBrandForm">
+                <label>Brand Image:<span> (.jpg, .jpeg or .png only)</span></label>
                 <input class="img" type="file" name="profile_picture" id="edit-profile-picture" accept=".jpg,.jpeg,.png">
                 
                 <label>New name:<span class="required">*</span></label>
-                <input type="hidden" name="category_id" id="editCategoryID">
-                <input type="text" name="new_category_name" id="edit-name" required 
+                <input type="hidden" name="brand_id" id="editBrandID">
+                <input type="text" name="new_brand_name" id="edit-name" required 
                        oninput="validateNameInRealTime(this.value, 'edit')"
-                       onblur="checkAvailability('name', this.value, document.getElementById('editCategoryID').value, false)">
+                       onblur="checkAvailability('name', this.value, document.getElementById('editBrandID').value, false)">
                 <div id="edit-name-error" class="error"></div>
                 
                 <div class="submit_btn">
-                    <button type="submit" name="edit_category" id="edit-submit-btn" disabled>Update</button>
+                    <button type="submit" name="edit_brand" id="edit-submit-btn" disabled>Update</button>
                 </div>
             </form>
         </div>
@@ -383,7 +382,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         errorElement.style.display = 'none';
         inputField.classList.remove('error-field', 'valid-field');
 
-        const error = validateCategoryName(value);
+        const error = validateBrandName(value);
         if (error) {
             errorElement.textContent = error;
             errorElement.style.display = 'block';
@@ -393,7 +392,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         } else {
             inputField.classList.add('valid-field');
             const isAvailable = await checkAvailability('name', value,
-                prefix === 'edit' ? document.getElementById('editCategoryID').value : 0,
+                prefix === 'edit' ? document.getElementById('editBrandID').value : 0,
                 prefix === 'add'
             );
 
@@ -413,13 +412,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         }
     }
 
-    function checkAvailability(type, value, categoryId = 0, isAddModal = false) {
+    function checkAvailability(type, value, brandId = 0, isAddModal = false) {
         const prefix = isAddModal ? 'add-' : 'edit-';
         const errorElement = document.getElementById(`${prefix}${type}-error`);
         const inputField = document.getElementById(`${prefix}${type}`);
 
         return new Promise((resolve) => {
-            const error = validateCategoryName(value);
+            const error = validateBrandName(value);
             if (error) {
                 errorElement.textContent = error;
                 errorElement.style.display = 'block';
@@ -432,7 +431,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
             formData.append('check_availability', 'true');
             formData.append('type', type);
             formData.append('value', value);
-            formData.append('category_id', categoryId);
+            formData.append('brand_id', brandId);
 
             fetch(window.location.href, {
                 method: 'POST',
@@ -441,7 +440,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
             .then(response => response.json())
             .then(data => {
                 if (data.exists) {
-                    errorElement.textContent = 'Category name already exists';
+                    errorElement.textContent = 'Brand name already exists';
                     errorElement.style.display = 'block';
                     inputField.classList.add('error-field');
                     resolve(false);
@@ -462,9 +461,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         });
     }
 
-    function validateCategoryName(name) {
-        if (name.trim() === '') return 'Category name is required';
-        if (name.length > 50) return 'Category name must be 50 characters or less';
+    function validateBrandName(name) {
+        if (name.trim() === '') return 'Brand name is required';
+        if (name.length > 100) return 'Brand name must be 100 characters or less';
         if (!/^[a-zA-Z0-9\s\/\-]+$/.test(name)) return 'Only letters, numbers, spaces, slashes and hyphens allowed';
         return '';
     }
@@ -484,7 +483,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         });
     }
 
-    // ================== EDIT CATEGORY SPECIFIC ==================
+    // ================== EDIT BRAND SPECIFIC ==================
     function validateEditForm() {
         const nameInput = document.getElementById('edit-name');
         const name = nameInput.value.trim();
@@ -496,7 +495,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         nameInput.classList.remove('error-field');
 
         // Validate name
-        const nameError = validateCategoryName(name);
+        const nameError = validateBrandName(name);
         if (nameError) {
             document.getElementById('edit-name-error').textContent = nameError;
             nameInput.classList.add('error-field');
@@ -517,9 +516,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         return isValid;
     }
 
-    function editCategory(id, name) {
+    function editBrand(id, name) {
         document.getElementById("editModal").style.display = "block";
-        document.getElementById("editCategoryID").value = id;
+        document.getElementById("editBrandID").value = id;
         document.getElementById("edit-name").value = name;
         originalEditName = name;
         clearErrors('edit');
@@ -531,7 +530,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         document.getElementById("editModal").style.display = "none";
     }
 
-    // ================== ADD CATEGORY SPECIFIC ==================
+    // ================== ADD BRAND SPECIFIC ==================
     function openAddModal() {
         document.getElementById("addModal").style.display = "block";
         isAddNameValid = false;
@@ -541,7 +540,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
 
     function closeAddModal() {
         document.getElementById("addModal").style.display = "none";
-        document.getElementById("addCategoryForm").reset();
+        document.getElementById("addBrandForm").reset();
         clearErrors('add');
     }
 
@@ -551,7 +550,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
             updateSubmitButton('add');
         });
 
-        document.getElementById('addCategoryForm').addEventListener('submit', async function (e) {
+        document.getElementById('addBrandForm').addEventListener('submit', async function (e) {
             e.preventDefault();
             const nameInput = document.getElementById('add-name');
             await validateNameInRealTime(nameInput.value, 'add');
@@ -565,7 +564,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
             this.submit();
         });
 
-        document.getElementById('editCategoryForm')?.addEventListener('submit', function (e) {
+        document.getElementById('editBrandForm')?.addEventListener('submit', function (e) {
             if (!validateEditForm()) {
                 e.preventDefault();
                 alert('Please fix all errors before submitting.');
