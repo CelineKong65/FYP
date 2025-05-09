@@ -25,7 +25,7 @@
             color: white;
         }
         .brands-section {
-            padding: 50px 0;
+            padding: 30px 0;
             text-align: center;
             background-color: #f8f9fa;
         }
@@ -38,31 +38,28 @@
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
+            gap: 10px;
+            
         }
         .brand-item {
-            background: white;
-            border-radius: 8px;
+            border-radius: 5px;
             padding: 15px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             transition: transform 0.3s ease;
-            width: 150px;
             text-align: center;
         }
         .brand-item:hover {
             transform: translateY(-5px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
         }
         .brand-item img {
-            max-width: 100%;
-            height: auto;
-            max-height: 80px;
-            object-fit: contain;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
             margin-bottom: 10px;
+            border: 2px solid #ccc;
         }
+        
+
         .brand-item p {
             margin: 0;
             font-weight: 500;
