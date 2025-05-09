@@ -20,8 +20,13 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 
 $productID = (int) $_GET['id'];
 
-// Fetch product details
-$stmt = $conn->prepare("SELECT * FROM product WHERE ProductID = :productID");
+// Fetch product details with brand information
+$stmt = $conn->prepare("
+    SELECT p.*, b.BrandName 
+    FROM product p
+    LEFT JOIN brand b ON p.BrandID = b.BrandID
+    WHERE p.ProductID = :productID
+");
 $stmt->execute(['productID' => $productID]);
 $product = $stmt->fetch();
 
@@ -624,6 +629,7 @@ $reviewCount = $avgData['review_count'] ?: 0;
                 <div class="info">
                     <h2><?= htmlspecialchars($product['ProductName']) ?></h2>
                     <p class="price">RM <?= number_format($product['ProductPrice'], 2) ?></p>
+                    <p><strong>Brand: <?= htmlspecialchars($product['BrandName'] ?? 'No brand specified') ?></strong></p>
                     <p><?= nl2br(htmlspecialchars($product['ProductDesc'])) ?></p>
 
                     <?php if ($totalStock > 0): ?>

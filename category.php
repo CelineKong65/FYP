@@ -17,14 +17,21 @@ $productsPerPage = 6;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($page - 1) * $productsPerPage;
 
-// Get total products in selected category
-$stmt = $conn->prepare("SELECT COUNT(*) FROM product WHERE CategoryID = :categoryID AND ProductStatus = 'active'");
+// Get total products in selected category with active brands
+$stmt = $conn->prepare("
+    SELECT COUNT(*) 
+    FROM product p
+    JOIN brand b ON p.BrandID = b.BrandID
+    WHERE p.CategoryID = :categoryID 
+    AND p.ProductStatus = 'Active'
+    AND b.BrandStatus = 'Active'
+");
 $stmt->bindParam(':categoryID', $categoryID, PDO::PARAM_INT);
 $stmt->execute();
 $totalProducts = $stmt->fetchColumn();
 $totalPages = ceil($totalProducts / $productsPerPage);
 
-// Get category name (optional)
+// Get category name
 $categoryName = "Products";
 $catStmt = $conn->prepare("SELECT CategoryName FROM category WHERE CategoryID = :categoryID");
 $catStmt->bindParam(':categoryID', $categoryID, PDO::PARAM_INT);
@@ -33,8 +40,16 @@ if ($row = $catStmt->fetch()) {
     $categoryName = $row['CategoryName'];
 }
 
-// Fetch products in the selected category
-$stmt = $conn->prepare("SELECT * FROM product WHERE CategoryID = :categoryID AND ProductStatus = 'active' LIMIT :limit OFFSET :offset");
+// Fetch products in the selected category with active brands
+$stmt = $conn->prepare("
+    SELECT p.* 
+    FROM product p
+    JOIN brand b ON p.BrandID = b.BrandID
+    WHERE p.CategoryID = :categoryID 
+    AND p.ProductStatus = 'Active'
+    AND b.BrandStatus = 'Active'
+    LIMIT :limit OFFSET :offset
+");
 $stmt->bindParam(':categoryID', $categoryID, PDO::PARAM_INT);
 $stmt->bindValue(':limit', $productsPerPage, PDO::PARAM_INT);
 $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
