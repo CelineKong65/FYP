@@ -76,7 +76,7 @@ $feedback_result = $conn->query($feedback_query);
                                 <td><?php echo htmlspecialchars($feedback['CustName']); ?></td>
                                 <td style="text-align: center;"><?php echo htmlspecialchars($feedback['Rating']); ?></td>
                                 <td><?php echo htmlspecialchars($feedback['Feedback']); ?></td>
-                                <td><?php echo date('Y-m-d', strtotime($feedback['FeedbackDate'])); ?></td>
+                                <td><?php echo $feedback['FeedbackDate']; ?></td>
                             </tr>
                         <?php endwhile; ?>
                     <?php else: ?>
