@@ -263,7 +263,7 @@ if (isset($_POST['add_admin'])) {
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port = 587;
 
-            $mail->setFrom('panzhixin99@gmail.com', 'WaterSport_Equipment'); // Your Gmail
+            $mail->setFrom('lawrencetan20050429@gmail.com', 'WaterSport_Equipment'); // Your Gmail
             $mail->addAddress($email);
 
             $mail->isHTML(true);
