@@ -156,69 +156,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['topup_amount'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-wallet Top Up</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="topup.css">
-    <style>
-        .success-popup {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .popup-content {
-            background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-            max-width: 400px;
-            width: 90%;
-        }
-
-        .popup-content h3 {
-            color: #4CAF50;
-            margin-bottom: 15px;
-            font-size: 24px;
-        }
-
-        .popup-content p {
-            margin: 10px 0;
-            font-size: 16px;
-            color: #333;
-        }
-
-        .popup-content button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            margin-top: 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
-        }
-
-        .popup-content button:hover {
-            background-color: #45a049;
-        }
-
-        .new-balance { 
-            margin-top: 10px;
-            padding: 5px;
-            background-color: #f0f8ff;
-            border-radius: 5px;
-            font-weight: bold;
-        }
-    </style>
 </head>
 <body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="account.php"><i class="fas fa-user"></i> Profile</a></li>
+            <li><a href="order_history.php"><i class="fas fa-history"></i> Order History</a></li>
+            <li><a href="rate_products.php"><i class="fa fa-star" style="color: white;"></i>Rate</a></li>
+            <li class="active"><a href="topup.php"><i class="fa-solid fa-money-bill" style="color: white;"></i>Top Up</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <button class="logout-btn" onclick="window.location.href='logout.php'"><i class="fas fa-sign-out-alt"></i> LOG OUT</button>
+        </div>
+    </div>
     <div class="topup-container">
         <h2>E-wallet Top Up</h2>
         

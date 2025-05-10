@@ -41,9 +41,23 @@ $order_result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order History</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="order_history.css">
 </head>
 <body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="account.php"><i class="fas fa-user"></i> Profile</a></li>
+            <li class="active"><a href="order_history.php"><i class="fas fa-history"></i> Order History</a></li>
+            <li><a href="rate_products.php"><i class="fa fa-star" style="color: white;"></i>Rate</a></li>
+            <li><a href="topup.php"><i class="fa-solid fa-money-bill" style="color: white;"></i>Top Up</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <button class="logout-btn" onclick="window.location.href='logout.php'"><i class="fas fa-sign-out-alt"></i> LOG OUT</button>
+        </div>
+    </div>
     <div class="history-container">
         <div class="main-content">
             <h2>Order History</h2>
@@ -81,7 +95,7 @@ $order_result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <td class="<?php echo ($orderpayment['OrderStatus'] == 'Out for delivery' || $orderpayment['OrderStatus'] == 'Delivered') ? 'status-completed' : 'status-pending'; ?>">
                                     <?php echo $orderpayment['OrderStatus']; ?>
                                 </td>                               
-                                <td>RM <?php echo number_format($orderpayment['TotalPrice'], 2); ?></td>
+                                <td><?php echo number_format($orderpayment['TotalPrice'], 2); ?></td>
                                 <td>
                                     <button name="view_details" class="view_details" onclick="window.location.href='order_details.php?order_id=<?php echo $orderpayment['OrderID']; ?>'">View Details</button>
                                 </td>
