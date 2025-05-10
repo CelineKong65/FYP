@@ -14,23 +14,45 @@ if (isset($_POST['ajax_check'])) {
     
     $field = $_POST['field'] ?? '';
     $value = $_POST['value'] ?? '';
-    $userId = $_SESSION['user_id'] ?? 0;
+    $adminId = $_SESSION['AdminID'] ?? 0;
 
     if (!empty($field) && !empty($value)) {
         try {
             // Special handling for phone number
             if ($field === 'AdminPhoneNum') {
-                $cleanValue = preg_replace('/[-\s]/', '', $value);
+                // First validate format
+                if (!preg_match('/^\d{3}-\d{3,4} \d{4}$/', $value)) {
+                    $response = [
+                        'available' => false,
+                        'valid_format' => false,
+                        'message' => 'Format: XXX-XXX XXXX or XXX-XXXX XXXX'
+                    ];
+                    echo json_encode($response);
+                    exit();
+                }
+
+                // Then validate Malaysian number format and check availability
                 $stmt = $conn->prepare("SELECT AdminID FROM admin WHERE REPLACE(REPLACE(AdminPhoneNum, '-', ''), ' ', '') = ? AND AdminID != ?");
-                $stmt->execute([$cleanValue, $adminId]);
+                $stmt->execute([preg_replace('/[-\s]/', '', $value), $adminId]);
+                
+                if (!preg_match("/^(\+?6?01)[0-46-9][0-9]{7,8}$/", preg_replace('/[-\s]/', '', $value))) {
+                    $response = [
+                        'available' => false,
+                        'valid_format' => false,
+                        'message' => 'Invalid Malaysian phone number'
+                    ];
+                } else {
+                    $response['available'] = ($stmt->rowCount() === 0);
+                }
+                
             } else {
+                // Other field validations (email, username, etc.)
                 $stmt = $conn->prepare("SELECT AdminID FROM admin WHERE $field = ? AND AdminID != ?");
                 $stmt->execute([$value, $adminId]);
+                $response['available'] = ($stmt->rowCount() === 0);
             }
-            
-            $response['available'] = ($stmt->rowCount() === 0);
         } catch (PDOException $e) {
-            // Keep available=true on error
+            error_log("Database error: " . $e->getMessage());
         }
     }
     
@@ -49,69 +71,71 @@ $admin = $admin_result->fetch_assoc();
 $errors = [];
 $success = '';
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    if (isset($_FILES['profile_picture'])) {
-        $allowed_types = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/jpg' => 'jpg'];
-        $file_type = $_FILES['profile_picture']['type'];
+// Profile Picture Upload
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES['profile_picture'])) {
+    $allowed_types = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/jpg' => 'jpg'];
+    $file_type = $_FILES['profile_picture']['type'];
+    
+    // Validate file type
+    if (!array_key_exists($file_type, $allowed_types)) {
+        $errors['profile_picture'] = "Only JPG, JPEG & PNG files are allowed";
+    } elseif ($_FILES['profile_picture']['size'] > 5000000) { // 5MB max
+        $errors['profile_picture'] = "File size must be less than 5MB";
+    } else {
+        $target_dir = "../image/admin/";
         
-        // Validate file type
-        if (!array_key_exists($file_type, $allowed_types)) {
-            $errors['profile_picture'] = "Only JPG, JPEG & PNG files are allowed";
-        } elseif ($_FILES['profile_picture']['size'] > 5000000) { // 5MB max
-            $errors['profile_picture'] = "File size must be less than 5MB";
-        } else {
-            $target_dir = "../image/admin/";
+        // Create directory if it doesn't exist
+        if (!file_exists($target_dir)) {
+            mkdir($target_dir, 0777, true);
+        }
+        
+        // Get proper extension based on MIME type
+        $file_ext = $allowed_types[$file_type];
+        $new_filename = "admin_" . $admin_id . "." . $file_ext;
+        $target_file = $target_dir . $new_filename;
+        $relative_path = "image/admin/" . $new_filename; // For database storage
+        
+        // Delete old profile picture first (if exists and not default)
+        $old_pic = $admin['AdminProfilePicture'] ?? '';
+        if ($old_pic) {
+            // Convert database path to server path if needed
+            $old_file_path = strpos($old_pic, '../') === 0 ? $old_pic : "../" . $old_pic;
             
-            // Create directory if it doesn't exist
-            if (!file_exists($target_dir)) {
-                mkdir($target_dir, 0777, true);
+            // Delete if it's not the default image and exists
+            if ($old_file_path != '../image/admin/admin.jpg' && file_exists($old_file_path)) {
+                unlink($old_file_path);
             }
             
-            // Get proper extension based on MIME type
-            $file_ext = $allowed_types[$file_type];
-            $new_filename = "admin_" . $admin_id . "." . $file_ext;
-            $target_file = $target_dir . $new_filename;
-            $relative_path = "image/admin/" . $new_filename; // For database storage
-            
-            // Delete old profile picture first (if exists and not default)
-            $old_pic = $admin['AdminProfilePicture'] ?? '';
-            if ($old_pic) {
-                // Convert database path to server path if needed
-                $old_file_path = strpos($old_pic, '../') === 0 ? $old_pic : "../" . $old_pic;
-                
-                // Delete if it's not the default image and exists
-                if ($old_file_path != '../image/admin/admin.jpg' && file_exists($old_file_path)) {
-                    unlink($old_file_path);
+            // Also delete any other potential formats of the same admin's picture
+            $old_pattern = $target_dir . "admin_" . $admin_id . ".*";
+            $old_files = glob($old_pattern);
+            foreach ($old_files as $file) {
+                if ($file != $target_file && file_exists($file)) {
+                    unlink($file);
                 }
-                
-                // Also delete any other potential formats of the same admin's picture
-                $old_pattern = $target_dir . "admin_" . $admin_id . ".*";
-                $old_files = glob($old_pattern);
-                foreach ($old_files as $file) {
-                    if ($file != $target_file && file_exists($file)) {
-                        unlink($file);
-                    }
-                }
-            }
-            
-            // Move new file and update database
-            if (move_uploaded_file($_FILES['profile_picture']['tmp_name'], $target_file)) {
-                // Update database with relative path
-                $sql = "UPDATE admin SET AdminProfilePicture = ? WHERE AdminID = ?";
-                $stmt = $conn->prepare($sql);
-                $stmt->execute([$relative_path, $admin_id]);
-                
-                $success = "Profile picture updated successfully!";
-                
-                // Refresh admin data
-                $stmt = $conn->prepare("SELECT * FROM admin WHERE AdminID = ?");
-                $stmt->execute([$admin_id]);
-            } else {
-                $errors['profile_picture'] = "Sorry, there was an error uploading your file";
             }
         }
+        
+        // Move new file and update database
+        if (move_uploaded_file($_FILES['profile_picture']['tmp_name'], $target_file)) {
+            // Update database with relative path
+            $sql = "UPDATE admin SET AdminProfilePicture = ? WHERE AdminID = ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute([$relative_path, $admin_id]);
+            
+            $success = "Profile picture updated successfully!";
+            
+            // Refresh admin data
+            $stmt = $conn->prepare("SELECT * FROM admin WHERE AdminID = ?");
+            $stmt->execute([$admin_id]);
+        } else {
+            $errors['profile_picture'] = "Sorry, there was an error uploading your file";
+        }
     }
-    elseif (isset($_POST['update_account'])) {
+}
+
+// Account Information Update
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
         $name = $_POST['name'];
         $email = $_POST['email'];
         $phone = $_POST['phone'];
@@ -170,50 +194,51 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $errors['general'] = 'Error updating profile';
             }
         }
-    }
-    elseif (isset($_POST['update_password'])) {
-        $current_password = $_POST['currentPassword'];
-        $new_password = $_POST['newPassword'];
-        $confirm_password = $_POST['confirmPassword'];
-        
-        if (empty($current_password) || empty($new_password) || empty($confirm_password)) {
-            $errors['password'] = 'All password fields are required';
-        }
-        
-        if ($new_password !== $confirm_password) {
-            $errors['confirmPassword'] = 'New passwords do not match';
-        }
-        
-        $password_query = "SELECT AdminPassword FROM admin WHERE AdminID = ?";
-        $stmt = $conn->prepare($password_query);
-        $stmt->bind_param("i", $admin_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $db_password = $result->fetch_assoc()['AdminPassword'];
-        
-        if ($current_password !== $db_password) {
-            $errors['currentPassword'] = 'Current password is incorrect';
-        }
-        
-        if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/', $new_password)) {
-            $errors['newPassword'] = 'New password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.';
-        }
+}
+
+// Password Update
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
+    $current_password = $_POST['currentPassword'];
+    $new_password = $_POST['newPassword'];
+    $confirm_password = $_POST['confirmPassword'];
     
-        if (empty($errors)) {
-            $update_query = "UPDATE admin SET AdminPassword = ? WHERE AdminID = ?";
-            $stmt = $conn->prepare($update_query);
-            $stmt->bind_param("si", $new_password, $admin_id);
-        
-            if ($stmt->execute()) {
-                $success = 'Password updated successfully!';
-                $stmt = $conn->prepare($admin_query);
-                $stmt->bind_param("i", $admin_id);
-                $stmt->execute();
-                $admin_result = $stmt->get_result();
-                $admin = $admin_result->fetch_assoc();
-            } else {
-                $errors['general'] = 'Error updating password';
-            }
+    if (empty($current_password) || empty($new_password) || empty($confirm_password)) {
+        $errors['password'] = 'All password fields are required';
+    }
+    
+    if ($new_password !== $confirm_password) {
+        $errors['confirmPassword'] = 'New passwords do not match';
+    }
+    
+    $password_query = "SELECT AdminPassword FROM admin WHERE AdminID = ?";
+    $stmt = $conn->prepare($password_query);
+    $stmt->bind_param("i", $admin_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $db_password = $result->fetch_assoc()['AdminPassword'];
+    
+    if ($current_password !== $db_password) {
+        $errors['currentPassword'] = 'Current password is incorrect';
+    }
+    
+    if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/', $new_password)) {
+        $errors['newPassword'] = 'New password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.';
+    }
+
+    if (empty($errors)) {
+        $update_query = "UPDATE admin SET AdminPassword = ? WHERE AdminID = ?";
+        $stmt = $conn->prepare($update_query);
+        $stmt->bind_param("si", $new_password, $admin_id);
+    
+        if ($stmt->execute()) {
+            $success = 'Password updated successfully!';
+            $stmt = $conn->prepare($admin_query);
+            $stmt->bind_param("i", $admin_id);
+            $stmt->execute();
+            $admin_result = $stmt->get_result();
+            $admin = $admin_result->fetch_assoc();
+        } else {
+            $errors['general'] = 'Error updating password';
         }
     }
 }
@@ -329,7 +354,7 @@ select.error-field {
                         <div class="form-group">
                             <label for="phone" class="required">Phone Number</label>
                             <input type="tel" id="phone" name="phone" value="<?php echo htmlspecialchars($admin['AdminPhoneNum']); ?>" required
-                                   class="<?= isset($errors['phone']) ? 'error-field' : '' ?>">
+                                   placeholder="XXX-XXX XXXX or XXX-XXXX XXXX" class="<?= isset($errors['phone']) ? 'error-field' : '' ?>">
                             <?php if (isset($errors['phone'])): ?>
                                 <div class="error-message"><?= htmlspecialchars($errors['phone']) ?></div>
                             <?php endif; ?>
@@ -384,391 +409,310 @@ select.error-field {
     </div>
 
     </div>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // ========== CONSTANTS AND CONFIG ==========
-            const DEBOUNCE_DELAY = 500;
-            const PASSWORD_REQ_TIMEOUT = 2000;
-            const ADMIN_ID = <?= json_encode($admin_id) ?>;
+   <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ================== PASSWORD FEATURES ================== //
+    function setupPasswordToggle(passwordInputId, eyeIconId) {
+        const eyeIcon = document.getElementById(eyeIconId);
+        const passwordInput = document.getElementById(passwordInputId) || 
+                            document.querySelector(`input[name="${passwordInputId}"]`);
+        
+        if (eyeIcon && passwordInput) {
+            eyeIcon.addEventListener('click', function() {
+                const type = passwordInput.type === 'password' ? 'text' : 'password';
+                passwordInput.type = type;
+                this.className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+            });
+        }
+    }
 
-            // ========== DOM ELEMENTS ==========
-            const forms = {
-                profile: document.getElementById('profileForm'),
-                password: document.getElementById('passwordForm'),
-                upload: document.querySelector('.upload-form')
-            };
+    // Initialize password toggles
+    setupPasswordToggle('currentPassword', 'show-current-password');
+    setupPasswordToggle('newPassword', 'show-new-password');
+    setupPasswordToggle('confirmPassword', 'show-confirm-password');
 
-            const fields = {
-                name: document.getElementById('name'),
-                email: document.getElementById('email'),
-                phone: document.getElementById('phone'),
-                currentPassword: document.getElementById('currentPassword'),
-                newPassword: document.getElementById('newPassword'),
-                confirmPassword: document.getElementById('confirmPassword'),
-                profilePicture: document.getElementById('profile_picture')
-            };
+    // Password strength meter
+    const passwordInput = document.getElementById('newPassword');
+    const passwordRequirements = document.getElementById('passwordRequirements');
+    if (passwordInput && passwordRequirements) {
+        const requirementList = document.querySelectorAll('.password-req li');
+        const requirements = [
+            {regex: /^.{8,}$/, index: 0},        // At least 8 characters
+            {regex: /[A-Z]/, index: 1},           // Uppercase letter
+            {regex: /[a-z]/, index: 2},           // Lowercase letter
+            {regex: /\d/, index: 3},              // Number
+            {regex: /[@$!%*#?&]/, index: 4},     // Special character
+            {regex: /^\S*$/, index: 5}            // No spaces
+        ];
 
-            const passwordRequirements = document.getElementById('passwordRequirements');
-            const requirementItems = document.querySelectorAll('.password-req li');
+        // Show requirements on focus
+        passwordInput.addEventListener('focus', () => {
+            passwordRequirements.style.display = 'block';
+        });
 
-            // ========== PASSWORD TOGGLE VISIBILITY ==========
-            function setupPasswordToggle(passwordInputId, eyeIconId) {
-                const eyeIcon = document.getElementById(eyeIconId);
-                const passwordInput = document.getElementById(passwordInputId);
-
-                if (eyeIcon && passwordInput) {
-                    eyeIcon.addEventListener('click', function () {
-                        const type = passwordInput.type === 'password' ? 'text' : 'password';
-                        passwordInput.type = type;
-                        this.className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
-                    });
+        // Hide requirements on blur
+        passwordInput.addEventListener('blur', () => {
+            setTimeout(() => {
+                if (!passwordRequirements.contains(document.activeElement)) {
+                    passwordRequirements.style.display = 'none';
                 }
-            }
+            }, 200);
+        });
 
-            // Initialize all password toggles
-            setupPasswordToggle('currentPassword', 'show-current-password');
-            setupPasswordToggle('newPassword', 'show-new-password');
-            setupPasswordToggle('confirmPassword', 'show-confirm-password');
-
-            // ========== PASSWORD VALIDATION ==========
-            if (fields.newPassword) {
-                const requirements = [
-                    { regex: /^.{8,}$/, index: 0 }, // At least 8 characters
-                    { regex: /[A-Z]/, index: 1 },    // Uppercase letter
-                    { regex: /[a-z]/, index: 2 },    // Lowercase letter
-                    { regex: /\d/, index: 3 },       // Number
-                    { regex: /[@$!%*#?&]/, index: 4 }, // Special character
-                    { regex: /^\S*$/, index: 5 }     // No spaces
-                ];
-
-                let hidePasswordTimeout;
-
-                fields.newPassword.addEventListener('focus', () => {
-                    clearTimeout(hidePasswordTimeout);
-                    passwordRequirements.style.display = 'block';
-                });
-
-                fields.newPassword.addEventListener('blur', () => {
-                    hidePasswordTimeout = setTimeout(() => {
-                        passwordRequirements.style.display = 'none';
-                    }, PASSWORD_REQ_TIMEOUT);
-                });
-
-                fields.newPassword.addEventListener('input', function () {
-                    const password = this.value;
-                    
-                    // Validate each requirement
-                    requirements.forEach(item => {
-                        const isValid = item.regex.test(password);
-                        const reqItem = requirementItems[item.index];
-                        reqItem.firstElementChild.className = isValid ? "fas fa-check-circle" : "fas fa-circle";
-                        reqItem.classList.toggle('valid', isValid);
-                    });
-
-                    // Check if new password matches current password
-                    if (fields.currentPassword && password === fields.currentPassword.value) {
-                        showError(this, 'New password cannot be the same as current password');
-                    } else {
-                        clearError(this);
-                    }
-
-                    // Check password confirmation
-                    if (fields.confirmPassword.value && password !== fields.confirmPassword.value) {
-                        showError(fields.confirmPassword, 'Passwords do not match');
-                    } else if (fields.confirmPassword.value) {
-                        clearError(fields.confirmPassword);
-                    }
-                });
-
-                fields.confirmPassword.addEventListener('input', function () {
-                    if (this.value !== fields.newPassword.value) {
-                        showError(this, 'Passwords do not match');
-                    } else {
-                        clearError(this);
-                    }
-                });
-            }
-
-            // ========== FORM VALIDATION ==========
-            function initFormValidation() {
-                // Email validation
-                if (fields.email) {
-                    fields.email.addEventListener('blur', validateEmail);
-                }
-
-                // Phone number validation and formatting
-                if (fields.phone) {
-                    fields.phone.addEventListener('input', formatPhoneNumber);
-                    fields.phone.addEventListener('blur', validatePhoneNumber);
-                }
-
-                // Profile form submission
-                if (forms.profile) {
-                    forms.profile.addEventListener('submit', function(e) {
-                        if (!validateProfileForm()) {
-                            e.preventDefault();
-                            scrollToFirstError();
-                        }
-                    });
-                }
-
-                // Password form submission
-                if (forms.password) {
-                    forms.password.addEventListener('submit', function(e) {
-                        if (!validatePasswordForm()) {
-                            e.preventDefault();
-                            scrollToFirstError();
-                        }
-                    });
-                }
-
-                // Profile picture upload
-                if (fields.profilePicture) {
-                    fields.profilePicture.addEventListener('change', function() {
-                        if (this.files && this.files[0]) {
-                            validateImageUpload(this.files[0])
-                                .then(() => document.getElementById('upload_submit').click())
-                                .catch(error => {
-                                    showError(this, error.message);
-                                });
-                        }
-                    });
-                }
-            }
-
-            // ========== VALIDATION FUNCTIONS ==========
-            function validateProfileForm() {
-                let isValid = true;
-
-                // Name validation
-                if (fields.name && fields.name.value.trim().length < 2) {
-                    showError(fields.name, 'Name must be at least 2 characters');
-                    isValid = false;
-                } else if (fields.name) {
-                    clearError(fields.name);
-                }
-
-                // Email validation
-                if (fields.email && !validateEmail(fields.email)) {
-                    isValid = false;
-                }
-
-                // Phone validation
-                if (fields.phone && !validatePhoneNumber(fields.phone)) {
-                    isValid = false;
-                }
-
-                return isValid;
-            }
-
-            function validatePasswordForm() {
-                let isValid = true;
-
-                // Current password validation
-                if (fields.currentPassword && fields.currentPassword.value.trim() === '') {
-                    showError(fields.currentPassword, 'Current password is required');
-                    isValid = false;
-                } else if (fields.currentPassword) {
-                    clearError(fields.currentPassword);
-                }
-
-                // New password validation
-                if (fields.newPassword) {
-                    const password = fields.newPassword.value;
-                    
-                    if (password.trim() === '') {
-                        showError(fields.newPassword, 'New password is required');
-                        isValid = false;
-                    } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/.test(password)) {
-                        showError(fields.newPassword, 'Password does not meet requirements');
-                        isValid = false;
-                    } else if (fields.currentPassword && password === fields.currentPassword.value) {
-                        showError(fields.newPassword, 'New password cannot be the same as current password');
-                        isValid = false;
-                    } else {
-                        clearError(fields.newPassword);
-                    }
-
-                    // Confirm password validation
-                    if (fields.confirmPassword.value.trim() === '') {
-                        showError(fields.confirmPassword, 'Please confirm your new password');
-                        isValid = false;
-                    } else if (fields.confirmPassword.value !== password) {
-                        showError(fields.confirmPassword, 'Passwords do not match');
-                        isValid = false;
-                    } else {
-                        clearError(fields.confirmPassword);
-                    }
-                }
-
-                return isValid;
-            }
-
-            function validateEmail(inputElement = fields.email) {
-                const email = inputElement.value.trim();
-                const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-                
-                if (!emailRegex.test(email) || !email.endsWith('.com')) {
-                    showError(inputElement, 'Please enter a valid email ending with .com');
-                    return false;
-                }
-                
-                clearError(inputElement);
-                return true;
-            }
-
-            function formatPhoneNumber() {
-                let phone = this.value.replace(/[^\d]/g, '');
-                
-                if (phone.length > 11) {
-                    phone = phone.substring(0, 11);
-                }
-                
-                let formatted = '';
-                if (phone.length > 0) {
-                    formatted = phone.substring(0, 3);
-                    if (phone.length > 3) formatted += '-' + phone.substring(3, 6);
-                    if (phone.length > 6) formatted += ' ' + phone.substring(6);
-                }
-                
-                this.value = formatted;
-            }
-
-            function validatePhoneNumber(inputElement = fields.phone) {
-                const phone = inputElement.value.replace(/[-\s]/g, '');
-                const phoneRegex = /^(\+?6?01)[0-46-9][0-9]{7,8}$/;
-                
-                if (phone && !phoneRegex.test(phone)) {
-                    showError(inputElement, 'Please enter a valid Malaysian phone number');
-                    return false;
-                }
-                
-                clearError(inputElement);
-                return true;
-            }
-
-            async function validateImageUpload(file) {
-                return new Promise((resolve, reject) => {
-                    // Check file type
-                    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
-                    if (!validTypes.includes(file.type)) {
-                        reject(new Error('Only JPG, JPEG, PNG & GIF files are allowed'));
-                        return;
-                    }
-
-                    // Check file size (5MB max)
-                    if (file.size > 5000000) {
-                        reject(new Error('File size must be less than 5MB'));
-                        return;
-                    }
-
-                    // Verify it's actually an image
-                    const img = new Image();
-                    img.onload = () => resolve();
-                    img.onerror = () => reject(new Error('File is not a valid image'));
-                    img.src = URL.createObjectURL(file);
-                });
-            }
-
-            // ========== ERROR HANDLING ==========
-            function showError(field, message) {
-                field.classList.add('error-field');
-                
-                let errorElement = field.nextElementSibling;
-                if (!errorElement || !errorElement.classList.contains('error-message')) {
-                    errorElement = document.createElement('div');
-                    errorElement.className = 'error-message';
-                    field.parentNode.insertBefore(errorElement, field.nextSibling);
-                }
-                
-                errorElement.textContent = message;
-            }
-
-            function clearError(field) {
-                field.classList.remove('error-field');
-                const errorElement = field.nextElementSibling;
-                if (errorElement?.classList.contains('error-message')) {
-                    errorElement.remove();
-                }
-            }
-
-            function clearAllErrors(form) {
-                form.querySelectorAll('.error-field').forEach(field => {
-                    field.classList.remove('error-field');
-                });
-                
-                form.querySelectorAll('.error-message').forEach(error => {
-                    error.remove();
-                });
-            }
-
-            function scrollToFirstError() {
-                const firstError = document.querySelector('.error-field');
-                if (firstError) {
-                    firstError.scrollIntoView({ 
-                        behavior: 'smooth', 
-                        block: 'center',
-                        inline: 'nearest'
-                    });
-                    firstError.focus();
-                }
-            }
-
-            // ========== REAL-TIME VALIDATION ==========
-            function setupRealTimeValidation() {
-                const debounceTimers = {};
-
-                function debounce(field, callback) {
-                    clearTimeout(debounceTimers[field.name]);
-                    debounceTimers[field.name] = setTimeout(() => callback(field), DEBOUNCE_DELAY);
-                }
-
-                // Name validation
-                if (fields.name) {
-                    fields.name.addEventListener('input', () => {
-                        debounce(fields.name, validateName);
-                    });
-                }
-
-                // Email validation
-                if (fields.email) {
-                    fields.email.addEventListener('input', () => {
-                        debounce(fields.email, validateEmail);
-                    });
-                }
-
-                // Phone validation
-                if (fields.phone) {
-                    fields.phone.addEventListener('input', () => {
-                        debounce(fields.phone, validatePhoneNumber);
-                    });
-                }
-            }
-
-            function validateName(field) {
-                const name = field.value.trim();
-                if (name.length < 2) {
-                    showError(field, 'Name must be at least 2 characters');
-                    return false;
-                }
-                
-                clearError(field);
-                return true;
-            }
-
-            // ========== INITIALIZATION ==========
-            initFormValidation();
-            setupRealTimeValidation();
-
-            // Initialize any existing errors from server-side validation
-            document.querySelectorAll('.error-field').forEach(field => {
-                const errorMessage = field.nextElementSibling?.textContent;
-                if (errorMessage) {
-                    showError(field, errorMessage);
+        // Real-time password validation
+        passwordInput.addEventListener('input', function(e) {
+            const currentPassword = document.querySelector('input[name="currentPassword"]')?.value;
+            
+            // Clear previous same-password errors
+            this.parentNode.querySelectorAll('.error-message').forEach(msg => {
+                if (msg.textContent === 'New password cannot be the same as current password') {
+                    msg.remove();
                 }
             });
-        });
-</script>
 
+            // Check password match
+            if (currentPassword && this.value === currentPassword) {
+                showError(this, 'New password cannot be the same as current password');
+            }
+
+            // Update requirement indicators
+            requirements.forEach(item => {
+                const isValid = item.regex.test(e.target.value);
+                const requirementItem = requirementList[item.index];
+                requirementItem.firstElementChild.className = isValid ? 
+                    "fas fa-check-circle" : "fas fa-circle";
+                requirementItem.classList.toggle('valid', isValid);
+            });
+        });
+    }
+
+    // ================== VALIDATION SYSTEM ================== //
+    // Initialize validation
+    initValidation();
+    setupRealTimeValidation();
+
+    function initValidation() {
+        // Form submission handling
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', handleFormSubmit);
+        });
+
+        // Real-time field validation
+        document.querySelectorAll('input[required], select[required]').forEach(field => {
+            field.addEventListener('blur', validateField);
+            field.addEventListener('input', validateField);
+        });
+
+        // Special field validations
+        document.querySelector('input[name="email"]')?.addEventListener('blur', validateEmail);
+        document.querySelector('input[name="phone"]')?.addEventListener('input', validatePhoneNumber);
+    }
+
+    // ================== REAL-TIME DATABASE CHECKS ================== //
+    async function checkFieldAvailability(fieldName, fieldValue, adminId) {
+        return new Promise((resolve) => {
+            if (!fieldValue) {
+                resolve(true); // Skip empty fields
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('ajax_check', '1');
+            formData.append('field', fieldName);
+            formData.append('value', fieldValue);
+            formData.append('user_id', adminId);
+
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                resolve(data.available);
+            })
+            .catch(() => {
+                resolve(true); // Assume available if error occurs
+            });
+        });
+    }
+
+    function setupRealTimeValidation() {
+        const adminId = <?= json_encode($admin_id) ?>;
+        const DEBOUNCE_DELAY = 500; // 0.5 second delay after typing stops
+        
+        // Fields to validate in real-time
+        const fieldsToValidate = {
+            'name': {
+                errorMsg: 'Name already exists',
+                validate: async (value) => await checkFieldAvailability('AdminName', value, adminId)
+            },
+            'email': {
+                errorMsg: 'Email already exists',
+                validate: async (value) => {
+                    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.com$/i;
+                    if (!emailRegex.test(value)) return true; // Let other validation handle format
+                    return await checkFieldAvailability('AdminEmail', value, adminId);
+                }
+            },
+            'phone': {
+                errorMsg: 'Phone number already exists',
+                validate: async (value) => {
+                    const cleanPhone = value.replace(/[-\s]/g, '');
+                    if (!/^\d{3}-\d{3,4} \d{4}$/.test(cleanPhone)) return true;
+                    return await checkFieldAvailability('AdminPhoneNum', cleanPhone, adminId);
+                }
+            },
+            'newPassword': {
+                errorMsg: 'New password cannot match current password',
+                validate: async (value) => {
+                    const currentPassword = document.querySelector('input[name="currentPassword"]')?.value;
+                    return value !== currentPassword;
+                }
+            }
+        };
+        
+        // Setup real-time validation for all fields
+        Object.entries(fieldsToValidate).forEach(([fieldName, config]) => {
+            const input = document.querySelector(`input[name="${fieldName}"]`);
+            let debounceTimer;
+            
+            if (input) {
+                input.addEventListener('input', () => {
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(async () => {
+                        const value = input.value.trim();
+                        if (value.length < 2 && fieldName !== 'phone') return;
+                        
+                        const isValid = await config.validate(value);
+                        
+                        if (!isValid) {
+                            showError(input, config.errorMsg);
+                        } else {
+                            clearError(input);
+                        }
+                    }, DEBOUNCE_DELAY);
+                });
+                
+                // Also validate when leaving the field
+                input.addEventListener('blur', async () => {
+                    const value = input.value.trim();
+                    const isValid = await config.validate(value);
+                    
+                    if (!isValid) {
+                        showError(input, config.errorMsg);
+                    }
+                });
+            }
+        });
+    }
+
+    function handleFormSubmit(e) {
+        let isValid = true;
+        let firstError = null;
+
+        // Validate all required fields
+        this.querySelectorAll('input[required], select[required]').forEach(field => {
+            if (!validateField({ target: field })) {
+                isValid = false;
+                if (!firstError) firstError = field;
+            }
+        });
+
+        // Check for any remaining error messages
+        this.querySelectorAll('.error-message').forEach(errorElement => {
+            if (errorElement.textContent.trim() !== '') {
+                isValid = false;
+                if (!firstError) {
+                    firstError = errorElement.previousElementSibling || 
+                                errorElement.parentElement.querySelector('input, select');
+                }
+            }
+        });
+
+        if (!isValid) {
+            e.preventDefault();
+            firstError?.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center',
+                inline: 'nearest'
+            });
+        }
+    }
+
+    function validateField(e) {
+        const field = e.target;
+        const value = field.tagName === 'SELECT' ? field.value : field.value.trim();
+        
+        // Required field validation
+        if (field.required && value === '') {
+            const fieldName = field.name;
+            let message = 'Cannot be empty';
+            
+            showError(field, message);
+            return false;
+        }
+        
+        clearError(field);
+        return true;
+    }
+
+    function validateEmail() {
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.com$/i;
+        if (!emailRegex.test(this.value)) {
+            showError(this, 'Invalid email format. Must end with .com');
+        }
+    }
+
+    function validatePhoneNumber() {
+        // Validate format
+        if (phone && !/^\d{3}-\d{3,4} \d{4}$/.test(phone)) {
+            showError(this, 'Format: XXX-XXX XXXX or XXX-XXXX XXXX');
+        }
+    }
+
+    function showError(field, message) {
+        field.classList.add('error-field');
+        let errorElement = field.nextElementSibling;
+        
+        if (!errorElement || !errorElement.classList.contains('error-message')) {
+            errorElement = document.createElement('div');
+            errorElement.className = 'error-message';
+            field.parentNode.insertBefore(errorElement, field.nextSibling);
+        }
+        
+        errorElement.textContent = message;
+    }
+
+    function clearError(field) {
+        field.classList.remove('error-field');
+        const errorElement = field.nextElementSibling;
+        if (errorElement?.classList.contains('error-message')) {
+            errorElement.remove();
+        }
+    }
+
+    // ================== PROFILE PHOTO UPLOAD ================== //
+    document.getElementById('profile_picture')?.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            // Validate image before upload
+            const file = this.files[0];
+            const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+            
+            if (!validTypes.includes(file.type)) {
+                showError(this, 'Only JPG, JPEG & PNG files are allowed');
+                return;
+            }
+            
+            if (file.size > 5000000) { // 5MB max
+                showError(this, 'File size must be less than 5MB');
+                return;
+            }
+            
+            // Submit the form if validation passes
+            document.getElementById('upload_submit').click();
+        }
+    });
+});
+</script>
 </body>
 </html>

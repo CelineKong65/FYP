@@ -75,7 +75,7 @@ $contact_result = $conn->query($contact_query);
                     <?php if ($contact_result && $contact_result->num_rows > 0): ?>
                         <?php while ($contact = $contact_result->fetch_assoc()): ?>
                             <tr>
-                                <td style="text-align: center;"><?php echo $contact['Contact_id']; ?></td>
+                                <td style="text-align: center;"><?php echo $contact['Contact_ID']; ?></td>
                                 <td><?php echo htmlspecialchars($contact['CustName']); ?></td>
                                 <td><?php echo htmlspecialchars($contact['CustEmail']); ?></td>
                                 <td><?php echo htmlspecialchars($contact['CustPhoneNum'] ?? '-'); ?></td>
