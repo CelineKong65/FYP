@@ -85,11 +85,11 @@ $product_feedback_result = $conn->query($product_feedback_query);
             <table>
                 <thead>
                     <tr>
-                        <th style="text-align: center;">Product ID</th>
-                        <th>Product Name</th>
-                        <th style="text-align: center;">Average Rating</th>
-                        <th style="text-align: center;">Total Feedbacks</th>
-                        <th></th>
+                        <th style="text-align: center; width: 50px;">Product ID</th>
+                        <th style="width: 300px;">Product Name</th>
+                        <th style="text-align: center; width: 100px;">Average Rating</th>
+                        <th style="text-align: center; width: 80px;">Total Feedbacks</th>
+                        <th style="width: 200px;"></th>
                     </tr>
                 </thead>
                 <tbody>

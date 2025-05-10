@@ -41,8 +41,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $filename = 'sales_report';
         $title = 'Monthly Sales Report';        
     } elseif ($dataType === 'top_selling') {
-        $query = "SELECT p.ProductName, SUM(od.Quantity) AS total_quantity_sold, SUM(od.Quantity * od.ProductPrice) AS total_sales_value FROM orderdetails od JOIN orderpayment op ON od.OrderID = op.OrderID JOIN product p ON od.ProductName = p.ProductName WHERE op.OrderDate BETWEEN ? AND ? GROUP BY p.ProductID, p.ProductName ORDER BY total_quantity_sold DESC";
-        $filename = 'top_selling_products';
+        $query = "SELECT p.ProductID, p.ProductName, SUM(od.Quantity) AS total_quantity_sold, SUM(od.Quantity * od.ProductPrice) AS total_sales_value 
+        FROM orderdetails od 
+        JOIN orderpayment op ON od.OrderID = op.OrderID 
+        JOIN product p ON od.ProductName = p.ProductName 
+        WHERE op.OrderDate BETWEEN ? AND ? 
+        GROUP BY p.ProductID, p.ProductName 
+        ORDER BY total_quantity_sold DESC";
+      $filename = 'top_selling_products';
         $title = 'Best Selling Products';    
     }
     if ($exportFormat === 'pdf') {
@@ -60,59 +66,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdf = new FPDF('L');
         $pdf->SetAutoPageBreak(true, 15);
         $pdf->AddPage();
+        $pdf->SetFont('Arial', '', 8);
+        $pdf->SetXY(-80, 10);
+        $pdf->Cell(70, 6, "From: $startDateTime", 0, 2, 'R');
+        $pdf->Cell(70, 6, "To: $endDateTime", 0, 1, 'R');
+        
         $pdf->SetFont('Arial','B',16);
         $pdf->Cell(0,10,$title,0,1,'C');
         $pdf->Ln(10);
         if ($dataType === 'orders') {
             $columns = [
-                'OrderID' => ['width' => 15, 'title' => 'ID'],
-                'CustName' => ['width' => 40, 'title' => 'Customer Name'],
-                'ReceiverInfo' => ['width' => 50, 'title' => 'Receiver Info'],
-                'FullAddress' => ['width' => 70, 'title' => 'Address'],
-                'OrderDate' => ['width' => 35, 'title' => 'Order Date'],
-                'OrderStatus' => ['width' => 20, 'title' => 'Status'],
-                'TotalPrice' => ['width' => 20, 'title' => 'Total (RM)'],
-                'PaymentMethod' => ['width' => 25, 'title' => 'Payment']
+                'OrderID' => ['width' => 15, 'title' => 'ID', 'align' => 'C'],
+                'CustName' => ['width' => 40, 'title' => 'Customer Name', 'align' => 'L'],
+                'ReceiverInfo' => ['width' => 50, 'title' => 'Receiver Info', 'align' => 'L'],
+                'FullAddress' => ['width' => 70, 'title' => 'Address', 'align' => 'L'],
+                'OrderDate' => ['width' => 35, 'title' => 'Order Date', 'align' => 'C'],
+                'OrderStatus' => ['width' => 20, 'title' => 'Status', 'align' => 'C'],
+                'PaymentMethod' => ['width' => 25, 'title' => 'Payment', 'align' => 'C'],
+                'TotalPrice' => ['width' => 20, 'title' => 'Total (RM)', 'align' => 'R']
             ];
         } elseif ($dataType === 'contacts') {
             $columns = [
-                'Contact_id' => ['width' => 15, 'title' => 'ID'],
-                'CustName' => ['width' => 40, 'title' => 'Name'],
-                'CustEmail' => ['width' => 50, 'title' => 'Email'],
-                'Subject' => ['width' => 50, 'title' => 'Subject'],
-                'Message' => ['width' => 80, 'title' => 'Message'],
-                'Submission_date' => ['width' => 35, 'title' => 'Date']
+                'Contact_id' => ['width' => 15, 'title' => 'ID', 'align' => 'C'],
+                'CustName' => ['width' => 40, 'title' => 'Name', 'align' => 'L'],
+                'CustEmail' => ['width' => 50, 'title' => 'Email', 'align' => 'L'],
+                'Subject' => ['width' => 50, 'title' => 'Subject', 'align' => 'L'],
+                'Message' => ['width' => 80, 'title' => 'Message', 'align' => 'L'],
+                'Submission_date' => ['width' => 35, 'title' => 'Date', 'align' => 'C']
             ];
         } elseif ($dataType === 'product_feedback') {
             $columns = [
-                'ProductFeedbackID' => ['width' => 15, 'title' => 'ID'],
-                'CustName' => ['width' => 40, 'title' => 'Customer Name'],
-                'ProductID' => ['width' => 20, 'title' => 'Prod_ID'],
-                'ProductName' => ['width' => 60, 'title' => 'Product Name'],
-                'Rating' => ['width' => 20, 'title' => 'Rating'],
-                'Feedback' => ['width' => 80, 'title' => 'Feedback'],
-                'FeedbackDate' => ['width' => 35, 'title' => 'Date']
+                'ProductFeedbackID' => ['width' => 15, 'title' => 'ID', 'align' => 'C'],
+                'CustName' => ['width' => 40, 'title' => 'Customer Name', 'align' => 'L'],
+                'ProductID' => ['width' => 20, 'title' => 'Prod ID', 'align' => 'C'],
+                'ProductName' => ['width' => 60, 'title' => 'Product Name', 'align' => 'L'],
+                'Rating' => ['width' => 20, 'title' => 'Rating', 'align' => 'C'],
+                'Feedback' => ['width' => 80, 'title' => 'Feedback', 'align' => 'L'],
+                'FeedbackDate' => ['width' => 35, 'title' => 'Date', 'align' => 'C']
             ];           
         } elseif ($dataType === 'rating_feedback') {
             $columns = [
-                'FeedbackID' => ['width' => 15, 'title' => 'ID'],
-                'CustName' => ['width' => 50, 'title' => 'Customer Name'],
-                'Rating' => ['width' => 15, 'title' => 'Rating'],
-                'Feedback' => ['width' => 100, 'title' => 'Comment'],
-                'FeedbackDate' => ['width' => 35, 'title' => 'Date']
+                'FeedbackID' => ['width' => 15, 'title' => 'ID', 'align' => 'C'],
+                'CustName' => ['width' => 50, 'title' => 'Customer Name', 'align' => 'L'],
+                'Rating' => ['width' => 15, 'title' => 'Rating', 'align' => 'C'],
+                'Feedback' => ['width' => 100, 'title' => 'Comment', 'align' => 'L'],
+                'FeedbackDate' => ['width' => 35, 'title' => 'Date', 'align' => 'C']
             ];
         } elseif ($dataType === 'sales_report') {
             $columns = [
-                'month' => ['width' => 50, 'title' => 'Month'],
-                'monthly_sales' => ['width' => 50, 'title' => 'Total Sales (RM)']
+                'month' => ['width' => 50, 'title' => 'Month', 'align' => 'L'],
+                'monthly_sales' => ['width' => 50, 'title' => 'Total Sales (RM)', 'align' => 'R']
             ];        
         } elseif ($dataType === 'top_selling') {
             $columns = [
-                'ProductName' => ['width' => 80, 'title' => 'Product Name'],
-                'total_quantity_sold' => ['width' => 40, 'title' => 'Quantity Sold'],
-                'total_sales_value' => ['width' => 50, 'title' => 'Sales Value (RM)']
+                'ProductID' => ['width' => 15, 'title' => 'Prod ID', 'align' => 'C'],
+                'ProductName' => ['width' => 80, 'title' => 'Product Name', 'align' => 'L'],
+                'total_quantity_sold' => ['width' => 40, 'title' => 'Quantity Sold', 'align' => 'C'],
+                'total_sales_value' => ['width' => 50, 'title' => 'Sales Value (RM)', 'align' => 'R']
             ];
         }
+        
+        $totalPriceSum = 0;
+        $monthlySalesSum = 0;
+        $totalSalesValue = 0;
+
         $headerPrinted = false;
         while ($row = $result->fetch_assoc()) {
             if ($pdf->GetY() + 30 > $pdf->GetPageHeight() - 15) {
@@ -122,12 +139,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!$headerPrinted) {
                 $pdf->SetFont('Arial','B',10);
                 foreach ($columns as $col) {
-                    $pdf->Cell($col['width'], 7, $col['title'], 1, 0, 'C');
+                    $pdf->Cell($col['width'], 7, $col['title'], 1, 0, $col['align']);
                 }
                 $pdf->Ln();
                 $headerPrinted = true;
                 $pdf->SetFont('Arial','',9);
             }
+            if ($dataType === 'orders') {
+                $totalPriceSum += floatval($row['TotalPrice']);
+            } elseif ($dataType === 'sales_report') {
+                $monthlySalesSum += floatval($row['monthly_sales']);
+            } elseif ($dataType === 'top_selling') {
+                $totalSalesValue += floatval($row['total_sales_value']);
+            }
+            
             $cellData = [];
             foreach ($columns as $field => $col) {
                 if ($dataType === 'orders' && $field === 'ReceiverInfo') {
@@ -165,12 +190,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdf->SetXY($x, $y);
                 $currentX = $pdf->GetX();
                 $currentY = $pdf->GetY();
-                $pdf->MultiCell($col['width'], $lineHeight, $cellData[$field], 0, 'L');
+                $pdf->MultiCell($col['width'], $lineHeight, $cellData[$field], 0, $col['align']);
                 $pdf->Rect($currentX, $currentY, $col['width'], $rowHeight);
                 $x += $col['width'];
             }
             $pdf->SetY($y + $rowHeight);
         }
+        
+        if (in_array($dataType, ['orders', 'sales_report', 'top_selling'])) {
+            // Add the total row as part of the table
+            $pdf->SetFont('Arial','B',10);
+            $x = $pdf->GetX();
+            $y = $pdf->GetY();
+            $totalWidth = 0;
+        
+            // Calculate the width of all columns except the last one
+            $i = 0;
+            $columnCount = count($columns);
+            foreach ($columns as $col) {
+                $i++;
+                if ($i < $columnCount) {
+                    $totalWidth += $col['width'];
+                }
+            }
+        
+            // Get the width of the last column
+            $lastColumnWidth = end($columns)['width'];
+        
+            // Draw the "Total" label cell
+            $pdf->SetXY($x, $y);
+            $pdf->Cell($totalWidth, 7, 'Total:', 1, 0, 'R');
+        
+            // Draw the total value cell
+            $pdf->SetXY($x + $totalWidth, $y);
+            if ($dataType === 'orders') {
+                $pdf->Cell($lastColumnWidth, 7, number_format($totalPriceSum, 2), 1, 1, 'R');
+            } elseif ($dataType === 'sales_report') {
+                $pdf->Cell($lastColumnWidth, 7, number_format($monthlySalesSum, 2), 1, 1, 'R');
+            } elseif ($dataType === 'top_selling') {
+                $pdf->Cell($lastColumnWidth, 7, number_format($totalSalesValue, 2), 1, 1, 'R');
+            }
+        }
+        
         $pdf->Output('D', $filename.'.pdf');
         exit();
     } elseif ($exportFormat === 'excel') {
@@ -195,8 +256,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'FullAddress' => ['width' => 70, 'title' => 'Address'],
                 'OrderDate' => ['width' => 35, 'title' => 'Order Date'],
                 'OrderStatus' => ['width' => 20, 'title' => 'Status'],
-                'TotalPrice' => ['width' => 20, 'title' => 'Total (RM)'],
-                'PaymentMethod' => ['width' => 25, 'title' => 'Payment']
+                'PaymentMethod' => ['width' => 25, 'title' => 'Payment'],
+                'TotalPrice' => ['width' => 20, 'title' => 'Total (RM)']
             ];
         } elseif ($dataType === 'contacts') {
             $columns = [
@@ -232,12 +293,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ];        
         } elseif ($dataType === 'top_selling') {
             $columns = [
+                'ProductID' => ['width' => 15, 'title' => 'Prod ID'],
                 'ProductName' => ['width' => 80, 'title' => 'Product Name'],
                 'total_quantity_sold' => ['width' => 40, 'title' => 'Quantity Sold'],
                 'total_sales_value' => ['width' => 50, 'title' => 'Sales Value (RM)']
             ];
         }
-    
+        $totalPriceSum = 0;
+        $monthlySalesSum = 0;
+        $totalSalesValue = 0;
+
         // Prepare headers for HTML table to be opened in Excel
         header("Content-Type: application/vnd.ms-excel");
         header("Content-Disposition: attachment; filename=\"$filename.xls\"");
@@ -279,19 +344,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $value = $row[$field] ?? '';
                 }
-    
-                // Format numeric values
+
+                // Format numeric fields
                 if (in_array($field, ['TotalPrice', 'monthly_sales', 'total_sales_value'])) {
-                    $value = number_format((float)$value, 2);
+                    $rawValue = (float)$value;
+                    echo "<td style='mso-number-format:\"0\.00\"; padding: 5px;'>" . number_format($rawValue, 2) . "</td>";
+                    
+                    // Accumulate totals (only once per field)
+                    if ($dataType === 'orders' && $field === 'TotalPrice') {
+                        $totalPriceSum += $rawValue;
+                    } elseif ($dataType === 'sales_report' && $field === 'monthly_sales') {
+                        $monthlySalesSum += $rawValue;
+                    } elseif ($dataType === 'top_selling' && $field === 'total_sales_value') {
+                        $totalSalesValue += $rawValue;
+                    }
+                } else {
+                    $value = nl2br(htmlspecialchars($value));
+                    echo "<td style='padding: 5px;'>{$value}</td>";
                 }
-    
-                // Convert newlines to <br> for Excel
-                $value = nl2br(htmlspecialchars($value));
-                echo "<td style='padding: 5px;'>{$value}</td>";
             }
             echo "</tr>";
         }
-    
+
+        if ($dataType === 'orders') {
+            echo "<tr>";
+            $colspan = count($columns) - 2;
+            echo "<td colspan='{$colspan}'></td>";
+            echo "<td style='font-weight: bold;'>Grand Total:</td>";
+            echo "<td style='font-weight: bold;'>" . number_format($totalPriceSum, 2) . "</td>";
+            echo "</tr>";
+        } elseif ($dataType === 'sales_report') {
+            echo "<tr>";
+            $colspan = count($columns) - 1;
+            echo "<td colspan='{$colspan}' style='font-weight: bold;'>Total</td>";
+            echo "<td style='font-weight: bold;'>" . number_format($monthlySalesSum, 2) . "</td>";
+            echo "</tr>";
+        } elseif ($dataType === 'top_selling') {
+            echo "<tr>";
+            $colspan = count($columns) - 2;
+            echo "<td colspan='{$colspan}'></td>";
+            echo "<td style='font-weight: bold; text-align: right'>Total:</td>";
+            echo "<td style='font-weight: bold;'>" . number_format($totalSalesValue, 2) . "</td>";
+            echo "</tr>";
+        }         
+        
         echo "</table>";
         echo "</body>";
         echo "</html>";

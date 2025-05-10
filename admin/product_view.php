@@ -25,6 +25,9 @@ function validateProductName($name) {
 $category_query = "SELECT * FROM category";
 $category_result = $conn->query($category_query);
 
+$brand_query = "SELECT * FROM brand";
+$brand_result = $conn->query($brand_query);
+
 $selected_category = isset($_GET['category']) ? $_GET['category'] : '';
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 
@@ -45,7 +48,7 @@ $count_query = "
 
 // Base query for fetching products
 $product_query = "
-    SELECT p.*,
+    SELECT p.*, b.BrandName, c.CategoryName,
             COALESCE(ps_S.Stock, 0) as stock_S,
             COALESCE(ps_M.Stock, 0) as stock_M,
             COALESCE(ps_L.Stock, 0) as stock_L,
@@ -57,6 +60,8 @@ $product_query = "
             EXISTS (SELECT 1 FROM product_size WHERE ProductID = p.ProductID AND Size IS NULL) as has_no_size,
             (SELECT Stock FROM product_size WHERE ProductID = p.ProductID AND Size IS NULL LIMIT 1) as no_size_stock
     FROM product p
+    LEFT JOIN brand b ON p.BrandID = b.BrandID
+    LEFT JOIN category c ON p.CategoryID = c.CategoryID
     LEFT JOIN product_size ps_S ON p.ProductID = ps_S.ProductID AND ps_S.Size = 'S'
     LEFT JOIN product_size ps_M ON p.ProductID = ps_M.ProductID AND ps_M.Size = 'M'
     LEFT JOIN product_size ps_L ON p.ProductID = ps_L.ProductID AND ps_L.Size = 'L'
@@ -199,15 +204,18 @@ if (isset($_POST['update_product'])) {
     $conn->begin_transaction();
 
     try {
+        $brand_id = intval($_POST['brand_id']);
+
         $update_query = "UPDATE product SET
-                            ProductName = ?,
-                            ProductPrice = ?,
-                            ProductDesc = ?,
-                            CategoryID = ?,
-                            ProductPicture = ?
-                            WHERE ProductID = ?";
+                        ProductName = ?,
+                        ProductPrice = ?,
+                        ProductDesc = ?,
+                        CategoryID = ?,
+                        BrandID = ?,
+                        ProductPicture = ?
+                        WHERE ProductID = ?";
         $stmt = $conn->prepare($update_query);
-        $stmt->bind_param("sdsisi", $name, $price, $description, $category_id, $image_name, $product_id);
+        $stmt->bind_param("sdsissi", $name, $price, $description, $category_id, $brand_id, $image_name, $product_id);
         $stmt->execute();
         $stmt->close();
 
@@ -348,10 +356,12 @@ if (isset($_POST['add_product'])) {
         $conn->begin_transaction();
 
         try {
-            $insert_query = "INSERT INTO product (ProductName, ProductPrice, ProductDesc, CategoryID, AdminID, ProductPicture)
-                                    VALUES (?, ?, ?, ?, ?, ?)";
+            $brand_id = intval($_POST['brand_id']);
+
+            $insert_query = "INSERT INTO product (ProductName, ProductPrice, ProductDesc, CategoryID, AdminID, ProductPicture, BrandID)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)";
             $stmt = $conn->prepare($insert_query);
-            $stmt->bind_param("sdsiss", $name, $price, $description, $category_id, $admin_id, $image_name);
+            $stmt->bind_param("sdsissi", $name, $price, $description, $category_id, $admin_id, $image_name, $brand_id);
             $stmt->execute();
             $product_id = $conn->insert_id;
             $stmt->close();
@@ -393,7 +403,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     $productID = (int)$_POST['product_id'];
     $currentStatus = strtolower($_POST['current_status']);
 
-    $newStatus = ($currentStatus == 'Active') ? 'Inactive' : 'Active';
+    $newStatus = ($currentStatus == 'active') ? 'Inactive' : 'Active';
 
     $stmt = $conn->prepare("UPDATE product SET ProductStatus = ? WHERE productID = ?");
     $stmt->bind_param("si", $newStatus, $productID);
@@ -465,7 +475,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name']))
                 <thead>
                     <tr>
                         <th style="text-align: center;">ID</th>
-                        <th>Image</th>
+                        <th style="text-align: center;">Image</th>
                         <th>Name</th>
                         <th style="text-align: center;">Price (RM)</th>
                         <th style="width: 350px;">Description</th>
@@ -481,19 +491,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name']))
                                 <td style="text-align: center;"><?php echo $product['ProductID']; ?></td>
                                 <td style="display: grid; place-items: center;">
                                     <?php
-                                    $imageName = $product['ProductPicture'] ?? '';
-                                    $imagePath = "../image/" . $imageName;
+                                        $imageName = $product['ProductPicture'] ?? '';
+                                        $imagePath = "../image/" . $imageName;
 
-                                    // Check if the file exists and the filename is not empty
-                                    if (!empty($imageName) && file_exists($imagePath)) {
-                                        echo "<img src='$imagePath' alt='Product Image' width='150'>";
-                                    } else {
-                                        echo "<img src='../image/placeholder.jpg' alt='Image not available' width='150'>";
-                                    }
+                                        if (!empty($imageName) && file_exists($imagePath)) {
+                                            echo "<img src='$imagePath' alt='Product Image' width='150' >";
+                                        } else {
+                                            echo "<img src='../image/placeholder.jpg' alt='Image not available' width='150'>";
+                                        }
                                     ?>
                                 </td>
 
-                                <td><?php echo $product['ProductName']; ?></td>
+                                <td style="line-height: 1.75;">
+                                    <strong><?php echo $product['ProductName']; ?><br></strong>
+                                    <span style="font-size: 12px; color: black;">Brand: <?php echo $product['BrandName']; ?></span><br>
+                                    <span style="font-size: 12px; color: black;">Category: <?php echo $product['CategoryName']; ?></span>
+                                </td>
+
                                 <td style="text-align: center;"><?php echo number_format($product['ProductPrice'], 2); ?></td>
                                 <td><?php echo $product['ProductDesc']; ?></td>
                                 <td style="text-align: center; line-height: 1.5;">
@@ -527,7 +541,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name']))
                                         <?php echo json_encode($product["CategoryID"]); ?>,
                                         <?php echo json_encode($product["has_no_size"]); ?>,
                                         <?php echo json_encode($product["no_size_stock"] ?? 0); ?>,
-                                        <?php echo json_encode($product["ProductPicture"]); ?>
+                                        <?php echo json_encode($product["ProductPicture"]); ?>,
+                                        <?php echo json_encode($product["BrandID"]); ?>
                                     )'>Edit</button>
                                     <form method="post" action="" style="display: inline;">
                                         <input type="hidden" name="toggle_status" value="1">
@@ -588,6 +603,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name']))
                                 </option>
                             <?php endwhile; ?>
                         </select>
+                        <label>Brand:<span class="required">*</span></label>
+                        <select name="brand_id" id="brand_id" required>
+                            <?php $brand_result->data_seek(0); ?>
+                            <?php while ($row = $brand_result->fetch_assoc()): ?>
+                                <option value="<?php echo $row['BrandID']; ?>">
+                                    <?php echo $row['BrandName']; ?>
+                                </option>
+                            <?php endwhile; ?>
+                        </select>
                         <label>Description:<span class="required">*</span></label>
                         <textarea name="description" id="description" required></textarea>
                     </div>
@@ -641,6 +665,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name']))
                         <?php while ($row = $category_result->fetch_assoc()): ?>
                             <option value="<?php echo $row['CategoryID']; ?>">
                                 <?php echo $row['CategoryName']; ?>
+                            </option>
+                        <?php endwhile; ?>
+                    </select>
+                    <label>Brand:<span class="required">*</span></label>
+                    <select name="brand_id" id="brand_id" required>
+                        <option value="" disabled selected>--- Select a brand ---</option>
+                        <?php $brand_result->data_seek(0); ?>
+                        <?php while ($row = $brand_result->fetch_assoc()): ?>
+                            <option value="<?php echo $row['BrandID']; ?>">
+                                <?php echo $row['BrandName']; ?>
                             </option>
                         <?php endwhile; ?>
                     </select>
@@ -777,8 +811,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name']))
             document.getElementById('no_size_field').style.display = hasSizes ? 'none' : 'block';
         }
 
-        function editProduct(id, name, price, description, stock_S, stock_M, stock_L, stock_XL, category_id, hasNoSize, noSizeStock, productPicture) {
-            // Clear any existing errors
+        function editProduct(id, name, price, description, stock_S, stock_M, stock_L, stock_XL, category_id, hasNoSize, noSizeStock, productPicture, brand_id) {
             clearAllErrors();
             
             document.getElementById('product_id').value = id;
@@ -786,6 +819,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name']))
             document.getElementById('price').value = price;
             document.getElementById('description').value = description;
             document.getElementById('category_id').value = category_id;
+            document.getElementById('brand_id').value = brand_id;
             document.getElementById('existing_image').value = productPicture;
             
             if (hasNoSize) {

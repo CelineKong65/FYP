@@ -261,7 +261,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Profile Picture</th>
+                        <th style="text-align: center;">Profile Picture</th>
                         <th>Name</th>
                         <th>Email</th>
                         <th style="width: 120px;">Phone</th>
@@ -288,10 +288,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                             } else {
                                 $profile_pic_path = "../image/user/user.png";
                             }
-                            ?>
+                        ?>
                             <tr>
                                 <td><?php echo $customer['CustID']; ?></td>
-                                <td><img src="<?php echo $profile_pic_path; ?>" alt="Profile Picture" width="50"></td>
+                                <td style="text-align: center;">
+                                    <img src="<?php echo $profile_pic_path; ?>" alt="Profile Picture" class="cust-pic">
+                                </td>
                                 <td><?php echo $customer['CustName']; ?></td>
                                 <td><?php echo $customer['CustEmail']; ?></td>
                                 <td><?php echo $customer['CustPhoneNum']; ?></td>

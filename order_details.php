@@ -63,7 +63,6 @@ try {
             
             <div class="cust-info">
                 <p><b>User Information</b></p>
-                <p>ID: <?php echo htmlspecialchars($customer['CustID']); ?></p>
                 <p>Name: <?php echo htmlspecialchars($customer['CustName']); ?></p>
                 <p>Email: <?php echo htmlspecialchars($customer['CustEmail']); ?></p>
             </div>

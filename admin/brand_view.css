@@ -49,83 +49,54 @@ h2 {
     margin-bottom: 50px;
 }
 
-.cust-pic{
-    width: 80px;
-    height: 80px;
-    margin: 0 auto;
-}
-
-.message {
-    padding: 10px;
-    color: #1e3a8a;
-    border-radius: 4px;
-    margin-bottom: 20px;
-}
-
 form.search {
     display: flex;
     justify-content: flex-end;
     gap:10px;
-    margin-bottom: 30px;
+    width: 60%;
+    margin: 0 auto;
 }
 
-form.editForm{
-    margin-bottom: 20px;
-}
-
-.search label{
-    font-weight: bold;
-    color: #0A2F4F;
-    transform: translateY(7px);
-}
-
-.search input{
-    padding: 8px;
+.search input {
     width: 200px;
+    padding: 8px;
     font-size: 12px;
     margin-bottom: 10px;
     border: 1px solid #0A2F4F;
     border-radius: 4px;
 }
 
-button {
-    padding: 10px 16px;
-    background-color: #1e3a8a;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-right: 5px;
-    margin-bottom: 10px;
-    font-size: 13px;
-}
-
-button.search{
-    width: 115px;
-}
-
-button:hover {
-    background-color: #1d4ed8;
-}
-
-button[name="edit_customer"]{
-    color: black;
-    background-color: #ffc107;
-}
-
-button[name="edit_customer"]:hover{
-    background-color: #e0a800d1;
-}
-
-.upd_div{
+.add-brand-form{
     display: flex;
     justify-content: flex-end;
+    width: 60%;
+    margin: 0 auto;
+}
+
+.add_btn{
+    margin-top: 12px;
+    background-color: #28a745;
+    width: 112px;
+}
+
+.add_btn:hover {
+    background-color: #218838;
+}
+
+input{
+    width: 200px;
+    padding: 8px;
+    font-size: 12px;
+    margin-bottom: 10px;
+    border: 1px solid #0A2F4F;
+    border-radius: 4px;
+    margin-right: 10px;
 }
 
 table {
-    width: 100%;
+    width: 60%;
     border-collapse: collapse;
-    font-size: 15px;
+    margin: 0 auto;
     margin-top: 10px;
 }
 
@@ -152,10 +123,37 @@ table tr:hover {
     background-color:rgb(237, 236, 236);
 }
 
-img {
-    max-width: 100%;
-    height: auto;
-    display: flex;
+th.action{
+    width: 180px;
+}
+
+button {
+    padding: 10px 16px;
+    background-color: #1e3a8a;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 5px;
+    margin-bottom: 10px;
+    font-size: 13px;
+}
+
+button.search {
+    width: 112px;
+}
+
+button:hover {
+    background-color: #1d4ed8;
+}
+
+button[name="edit_brand"] {
+    color: black;
+    background-color: #ffc107;
+}
+
+button[name="edit_brand"]:hover {
+    background-color: #e0a800d1;
 }
 
 .status-inactive{
@@ -170,7 +168,6 @@ img {
     background-color:red;
 }
 
-
 .btn-inactive:hover{
     background-color: #c82333;
 }
@@ -183,6 +180,11 @@ img {
     background-color: #218838;
 }
 
+.actions {
+    display: flex;
+    gap: 10px;
+}
+
 .close {
     float: right;
     font-size: 24px;
@@ -192,7 +194,7 @@ img {
     color: red;
 }
 
-#editModal{
+#editModal, #addModal{
     display: none;
     position: fixed;
     z-index: 1;
@@ -205,68 +207,57 @@ img {
     align-items: center;
 }
 
-.edit-content {
+.edit-content, .add-content{
     background-color: white;
     padding: 20px;
     border-radius: 10px;
-    width: 850px;
+    width: 350px;
     margin: auto;
-    margin-top: 200px;
+    margin-top: 300px;
 }
 
-.edit-form{
-    display: flex;
-    gap: 25px;
-    flex-wrap: wrap;
+.add-content{
+    margin-top: 250px;
 }
 
-.left, .right {
-    flex: 1;
-    min-width: 250px;
-    display: flex;
-    flex-direction: column;
-}
-
-#editModal h3{
+#editModal h2, #addModal h2{
     margin-top: 0;
-    margin-bottom: 30px;
     color: #1e3a8a;
     font-size: 25px;
     text-align: center;
+    margin-bottom: 30px;
 }
 
-#editModal label{
+#editModal label, #addModal label{
+    font-weight: bold;
     display: block;
     margin-bottom: 5px;
     color: #1e3a8a;
-    font-weight: bold;
+    text-align: left;
     font-size: 15px;
 }
 
-#editModal input, #editModal textarea, #editModal select{
+#editModal input, #addModal input{
     width: 95%;
     padding: 8px;
-    margin-bottom: 13px;
+    margin-bottom: 15px;
     border: 1px solid #93c5fd;
     border-radius: 4px;
     font-size: 13px;
 }
 
-#editModal select{
-    width: 100%;
-}
-
-#editModal button[type="submit"]{
+#editModal button[type="submit"], #addModal button[type="submit"]{
     background-color: #1e3a8a;
+    color: white;
 }
 
-#editModal button[type="submit"]:hover{
+#editModal button[type="submit"]:hover, #addModal button[type="submit"]:hover{
     background-color: #1d4ed8;
 }
 
-#editModal p{
-    margin: 0;
-    color:gray;
+.submit_btn{
+    display: flex;
+    justify-content: flex-end;
 }
 
 input::placeholder{
@@ -274,19 +265,15 @@ input::placeholder{
     font-style: italic;
 }
 
-.error-message {
+.error {
     color: red;
     font-size: 12px;
+    margin-top: 5px;
     display: none;
-    margin-bottom: 5px;
 }
 
 .error-field {
     border: 1px solid red !important;
-}
-
-.valid-field{
-    border: 1px solid rgb(0, 255, 0) !important;
 }
 
 span{

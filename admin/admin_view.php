@@ -406,7 +406,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 <thead>
                     <tr>
                         <th style="text-align: center;">ID</th>
-                        <th>Profile Picture</th>
+                        <th style="width: 100px; text-align: center;">Profile Picture</th>
                         <th>Name</th>
                         <th>Email</th>
                         <th>Phone</th>
@@ -436,19 +436,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                             } else {
                                 $profile_pic_path = $defaultPath;
                             }
-                            ?>
-                            <tr>
-                                <td style="text-align: center;"><?php echo $admin['AdminID']; ?></td>
-                                <td><img src="<?php echo $profile_pic_path; ?>" alt="Profile Picture" class="profile-pic"></td>
-                                <td><?php echo $admin['AdminName']; ?></td>
-                                <td><?php echo $admin['AdminEmail']; ?></td>
-                                <td><?php echo $admin['AdminPhoneNum']; ?></td>
-                                <td style="text-align: center;"><?php echo $admin['AdminPosition']; ?></td>
-                                <?php if ($loggedInPosition === 'superadmin'): ?>
-                                    <td class="<?php echo ($admin['AdminStatus'] === 'Active') ? 'status-active' : 'status-inactive'; ?>" style="text-align: center;">
-                                        <?php echo $admin['AdminStatus']; ?>
-                                    </td>
-                                    <td>
+                        ?>
+                        <tr>
+                            <td style="text-align: center;"><?php echo $admin['AdminID']; ?></td>
+                            <td style="text-align: center;">
+                                <img src="<?php echo $profile_pic_path; ?>" alt="Profile Picture" class="profile-pic">
+                            </td>
+                            <td><?php echo $admin['AdminName']; ?></td>
+                            <td><?php echo $admin['AdminEmail']; ?></td>
+                            <td><?php echo $admin['AdminPhoneNum']; ?></td>
+                            <td style="text-align: center;"><?php echo $admin['AdminPosition']; ?></td>
+                            <?php if ($loggedInPosition === 'superadmin'): ?>
+                                <td class="<?php echo ($admin['AdminStatus'] === 'Active') ? 'status-active' : 'status-inactive'; ?>" style="text-align: center;">
+                                    <?php echo $admin['AdminStatus']; ?>
+                                </td>
+                                <td>
                                     <button name="edit_admin" onclick='openEditModal({
                                         id: <?php echo json_encode($admin["AdminID"]); ?>,
                                         name: <?php echo json_encode($admin["AdminName"]); ?>,
@@ -456,24 +458,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                                         phone: <?php echo json_encode($admin["AdminPhoneNum"]); ?>,
                                         position: <?php echo json_encode($admin["AdminPosition"]); ?>
                                     })'>Edit</button>
-                                        <?php if ($admin['AdminPosition'] === 'superadmin'): ?>
-                                            <button type="button" class="btn-disabled" title="Cannot modify superadmin status">
+
+                                    <?php if ($admin['AdminPosition'] === 'superadmin'): ?>
+                                        <button type="button" class="btn-disabled" title="Cannot modify superadmin status">
+                                            <?php echo ($admin['AdminStatus'] == 'Active') ? 'Deactivate' : 'Activate'; ?>
+                                        </button>
+                                    <?php else: ?>
+                                        <form method="post" action="" style="display: inline;">
+                                            <input type="hidden" name="toggle_status" value="1">
+                                            <input type="hidden" name="admin_id" value="<?php echo $admin['AdminID']; ?>">
+                                            <input type="hidden" name="current_status" value="<?php echo $admin['AdminStatus']; ?>">
+                                            <button type="submit" class="btn-status <?php echo ($admin['AdminStatus'] == 'Active') ? 'btn-inactive' : 'btn-active'; ?>">
                                                 <?php echo ($admin['AdminStatus'] == 'Active') ? 'Deactivate' : 'Activate'; ?>
                                             </button>
-                                        <?php else: ?>
-                                            <form method="post" action="" style="display: inline;">
-                                                <input type="hidden" name="toggle_status" value="1">
-                                                <input type="hidden" name="admin_id" value="<?php echo $admin['AdminID']; ?>">
-                                                <input type="hidden" name="current_status" value="<?php echo $admin['AdminStatus']; ?>">
-                                                <button type="submit" class="btn-status <?php echo ($admin['AdminStatus'] == 'Active') ? 'btn-inactive' : 'btn-active'; ?>">
-                                                    <?php echo ($admin['AdminStatus'] == 'Active') ? 'Deactivate' : 'Activate'; ?>
-                                                </button>
-                                            </form>
-                                        <?php endif; ?>
-                                    </td>
-                                <?php endif; ?>
-                            </tr>
-                        <?php endwhile; ?>
+                                        </form>
+                                    <?php endif; ?>
+                                </td>
+                            <?php endif; ?>
+                        </tr> 
+                    <?php endwhile; ?>
                     <?php else: ?>
                         <tr>
                             <td colspan="8" style="text-align: center;color:red;"><b>No admin found.</b></td>

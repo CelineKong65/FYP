@@ -48,6 +48,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['topup_amount'])) {
     } elseif ($topupAmount < 10) {
         $errors[] = "The top-up amount must be at least RM 10.";
         $fieldErrors['topup_amount'] = "Value must be greater than or equal to 10";
+    } elseif ($topupAmount > 1000) {
+        $errors[] = "The maximum top-up amount is RM 1000.";
+        $fieldErrors['topup_amount'] = "Maximum amount is RM 1000";
     }
     
     // Payment Method Validation
@@ -131,7 +134,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['topup_amount'])) {
             $insertStmt->bindParam(':cvv', $cardCVV, PDO::PARAM_STR);
 
             if ($insertStmt->execute()) {
-                $_SESSION['topup_success'] = true;
+                $_SESSION['topup_success'] = $topupAmount;
+                $_SESSION['new_balance'] = $newBalance;
                 header('Location: topup.php');
                 exit();
             } else {
@@ -153,6 +157,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['topup_amount'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-wallet Top Up</title>
     <link rel="stylesheet" href="topup.css">
+    <style>
+        .success-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .popup-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .popup-content h3 {
+            color: #4CAF50;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+
+        .popup-content p {
+            margin: 10px 0;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .popup-content button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .popup-content button:hover {
+            background-color: #45a049;
+        }
+
+        .new-balance { 
+            margin-top: 10px;
+            padding: 5px;
+            background-color: #f0f8ff;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
     <div class="topup-container">
@@ -170,10 +234,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['topup_amount'])) {
             <div class="error"><?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
         
+        <?php if (isset($_SESSION['topup_success'])): ?>
+            <div class="success-popup" id="successPopup">
+                <div class="popup-content">
+                    <h3>Top Up Successful!</h3>
+                    <p>You have successfully topped up RM <?= number_format($_SESSION['topup_success'], 2) ?></p>
+                    <div class="new-balance"> 
+                        <p><strong>Your new balance is RM <?= number_format($_SESSION['new_balance'], 2) ?></strong></p>
+                    </div>
+                    <button onclick="closePopup()">OK</button>
+                </div>
+            </div>
+            <?php unset($_SESSION['topup_success']); ?>
+            <?php unset($_SESSION['new_balance']); ?>
+        <?php endif; ?>
+        
         <form method="POST" action="topup.php" id="topupForm" novalidate>
             <div class="form-group">
                 <label for="topup_amount" class="required-field">Top Up Amount (RM)</label>
-                <input type="number" id="topup_amount" name="topup_amount" min="10" step="10" 
+                <input type="number" id="topup_amount" name="topup_amount" min="10" max="1000" step="10" 
                        value="<?= $topupAmount > 0 ? $topupAmount : '' ?>" required
                        class="<?= isset($fieldErrors['topup_amount']) ? 'error-field' : '' ?>">
                 <span class="error-text" id="topup_amount_error"><?= isset($fieldErrors['topup_amount']) ? htmlspecialchars($fieldErrors['topup_amount']) : '' ?></span>
@@ -184,6 +263,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['topup_amount'])) {
                 <div class="amount-btn" data-amount="100">RM 100</div>
                 <div class="amount-btn" data-amount="200">RM 200</div>
                 <div class="amount-btn" data-amount="500">RM 500</div>
+                <div class="amount-btn" data-amount="1000">RM 1000</div>
             </div>
 
             <div class="col">
@@ -294,6 +374,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['topup_amount'])) {
             } else if (value < 10) {
                 field.classList.add('error-field');
                 errorElement.textContent = 'Value must be greater than or equal to 10';
+                return false;
+            } else if (value > 1000) {
+                field.classList.add('error-field');
+                errorElement.textContent = 'Maximum amount is RM 1000';
                 return false;
             }
             
@@ -464,8 +548,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['topup_amount'])) {
             }
         });
 
-        // Initial validation of all fields
+        // Close popup function
+        function closePopup() {
+            const popup = document.getElementById('successPopup');
+            if (popup) {
+                popup.style.display = 'none';
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            // Initial validation of all fields
             validateTopupAmount();
             validatePaymentMethod();
             validateCardName();

@@ -217,6 +217,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
             $stmt->execute([$newPassword, $user_id]);
             
             $success = "Password updated successfully!";
+            $stmt = $conn->prepare("SELECT * FROM customer WHERE CustID = ?");
+            $stmt->execute([$user_id]);
+            $customer = $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             $errors['general'] = "Error updating password: " . $e->getMessage();
         }
@@ -266,7 +269,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
                  class="profile-picture"
                  onerror="this.src='image/user/user.png'">
             <h1 class="profile-title">Welcome, <?= htmlspecialchars($customer['CustName']) ?></h1>
-            <div class="account-number">Account ID: <?= htmlspecialchars($customer['CustID']) ?></div>
             
             <form class="upload-form" method="post" enctype="multipart/form-data">
                 <input type="file" name="profile_picture" id="profile_picture" accept="image/*" required>

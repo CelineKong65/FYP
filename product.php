@@ -7,13 +7,26 @@ $productsPerPage = 6;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($page - 1) * $productsPerPage;
 
-// Fetch total number of products
-$stmt = $conn->query("SELECT COUNT(*) FROM product WHERE ProductStatus = 'active'");
+// Fetch total number of active products with active brands
+$stmt = $conn->query("
+    SELECT COUNT(*) 
+    FROM product p
+    JOIN brand b ON p.BrandID = b.BrandID
+    WHERE p.ProductStatus = 'active' 
+    AND b.BrandStatus = 'Active'
+");
 $totalProducts = $stmt->fetchColumn();
 $totalPages = ceil($totalProducts / $productsPerPage);
 
-// Fetch products for the current page
-$stmt = $conn->prepare("SELECT * FROM product WHERE ProductStatus = 'active' LIMIT :limit OFFSET :offset");
+// Fetch products with active brands for the current page
+$stmt = $conn->prepare("
+    SELECT p.* 
+    FROM product p
+    JOIN brand b ON p.BrandID = b.BrandID
+    WHERE p.ProductStatus = 'active'
+    AND b.BrandStatus = 'Active'
+    LIMIT :limit OFFSET :offset
+");
 $stmt->bindValue(':limit', $productsPerPage, PDO::PARAM_INT);
 $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();

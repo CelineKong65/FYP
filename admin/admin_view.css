@@ -54,6 +54,12 @@ h2 {
     margin-bottom: 50px;
 }
 
+.profile-pic{
+    height: 80px; 
+    width: 80px;
+    margin: 0 auto;
+}
+
 form.search {
     display: flex;
     justify-content: flex-end;

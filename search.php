@@ -22,21 +22,26 @@ if ($isLoggedIn) {
 // Get search query
 $query = isset($_GET['query']) ? trim($_GET['query']) : '';
 
-// Search products
-$stmt = $conn->prepare("
-    SELECT * FROM product 
-    WHERE ProductName LIKE ? 
-    AND ProductStatus = 'active'
-");
-$searchTerm = '%' . $query . '%';
-$stmt->execute([$searchTerm]);
-$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
 // Redirect if query is empty
 if (empty($query)) {
     header("Location: product.php");
     exit();
 }
+
+// Search products with active product, brand, and category
+$stmt = $conn->prepare("
+    SELECT p.* 
+    FROM product p
+    JOIN brand b ON p.BrandID = b.BrandID
+    JOIN category c ON p.CategoryID = c.CategoryID
+    WHERE p.ProductName LIKE ?
+    AND p.ProductStatus = 'active'
+    AND b.BrandStatus = 'active'
+    AND c.CategoryStatus = 'active'
+");
+$searchTerm = '%' . $query . '%';
+$stmt->execute([$searchTerm]);
+$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
