@@ -104,87 +104,93 @@ $ordersResult = $stmt->fetchAll(PDO::FETCH_ASSOC);
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rate Your Purchases</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="rate_products.css">
-  <style>
-    .anonymous-checkbox {
-      margin: 10px 0;
-      display: flex;
-      align-items: center;
-    }
-    .anonymous-checkbox input {
-      margin-right: 8px;
-    }
-  </style>
 </head>
 <body>
-  <h2>Rate Your Purchases</h2>
+  <div class="sidebar">
+        <div class="sidebar-header">
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="account.php"><i class="fas fa-user"></i> Profile</a></li>
+            <li><a href="order_history.php"><i class="fas fa-history"></i> Order History</a></li>
+            <li class="active"><a href="rate_products.php"><i class="fa fa-star" style="color: white;"></i>Rate</a></li>
+            <li><a href="topup.php"><i class="fa-solid fa-money-bill" style="color: white;"></i>Top Up</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <button class="logout-btn" onclick="window.location.href='logout.php'"><i class="fas fa-sign-out-alt"></i> LOG OUT</button>
+        </div>
+  </div>
+  <div class = "rate-container">
+    <h2>Rate Your Purchases</h2>
 
-  <?php if ($success): ?>
-    <div class="alert success"><?= htmlspecialchars($success) ?></div>
-  <?php endif; ?>
+    <?php if ($success): ?>
+      <div class="alert success"><?= htmlspecialchars($success) ?></div>
+    <?php endif; ?>
 
-  <?php if ($error): ?>
-    <div class="alert error"><?= htmlspecialchars($error) ?></div>
-  <?php endif; ?>
+    <?php if ($error): ?>
+      <div class="alert error"><?= htmlspecialchars($error) ?></div>
+    <?php endif; ?>
 
-  <?php if (empty($ordersResult)): ?>
-    <div class="alert info">
-      You don't have any delivered products to review at this time.
-    </div>
-  <?php else: ?>
-    <div class="product-grid">
-      <?php 
-      $currentProduct = null;
-      foreach ($ordersResult as $order): 
-        $productKey = $order['ProductID'].'-'.$order['Size'];
-        $uniquePrefix = 'rating_' . $order['ProductID'] . '_' . md5($order['Size']);
-        
-        if ($currentProduct !== $productKey):
-          $currentProduct = $productKey;
-      ?>
-
-      <div class="product-item">
-        <?php if (!empty($order['ProductPicture'])): ?>
-            <img src="image/<?= htmlspecialchars($order['ProductPicture']) ?>" 
-                alt="<?= htmlspecialchars($order['ProductName']) ?>"
-                style="max-width: 100px; max-height: 100px; object-fit: contain; margin-bottom: 10px;">
-          <?php endif; ?>
-          <div class="product-title"><?= htmlspecialchars($order['ProductName']) ?></div>
-          <div class="product-details">
-            <strong>Size:</strong> <?= htmlspecialchars($order['Size']) ?><br>
-            Order #<?= htmlspecialchars($order['OrderID']) ?> - <?= date('M d, Y', strtotime($order['OrderDate'])) ?>
-          </div>
-
-          <form method="post" action="rate_products.php">
-            <input type="hidden" name="product_id" value="<?= htmlspecialchars($order['ProductID']) ?>">
-            <input type="hidden" name="order_id" value="<?= htmlspecialchars($order['OrderID']) ?>">
-            <input type="hidden" name="size" value="<?= htmlspecialchars($order['Size']) ?>">
-
-            <label class="rating-label">Your Rating:</label>
-            <div class="rating-stars">
-              <?php for ($i = 1; $i <= 5; $i++): ?>
-                <input type="radio" name="rating" class="d-none" id="<?= $uniquePrefix . '_star' . $i ?>" value="<?= $i ?>" required>
-                <label for="<?= $uniquePrefix . '_star' . $i ?>" class="rating-star">★</label>
-              <?php endfor; ?>
-            </div>
-
-            <label class="feedback-label">Your Feedback (optional):</label>
-            <textarea name="feedback" placeholder="Share your experience..."></textarea>
-            
-            <div class="anonymous-checkbox">
-              <input type="checkbox" id="<?= $uniquePrefix . '_anonymous' ?>" name="is_anonymous" value="1">
-              <label for="<?= $uniquePrefix . '_anonymous' ?>">Post anonymously</label>
-            </div>
-
-            <button type="submit" class="submit-btn">Submit Review</button>
-          </form>
+    <?php if (empty($ordersResult)): ?>
+      <div class="alert info">
+        You don't have any delivered products to review at this time.
       </div>
+    <?php else: ?>
+      <div class="product-grid">
         <?php 
-          endif;
-        endforeach; 
+        $currentProduct = null;
+        foreach ($ordersResult as $order): 
+          $productKey = $order['ProductID'].'-'.$order['Size'];
+          $uniquePrefix = 'rating_' . $order['ProductID'] . '_' . md5($order['Size']);
+          
+          if ($currentProduct !== $productKey):
+            $currentProduct = $productKey;
         ?>
-      <?php endif; ?>
-    </div>
+
+        <div class="product-item">
+          <?php if (!empty($order['ProductPicture'])): ?>
+              <img src="image/<?= htmlspecialchars($order['ProductPicture']) ?>" 
+                  alt="<?= htmlspecialchars($order['ProductName']) ?>"
+                  style="max-width: 100px; max-height: 100px; object-fit: contain; margin-bottom: 10px;">
+            <?php endif; ?>
+            <div class="product-title"><?= htmlspecialchars($order['ProductName']) ?></div>
+            <div class="product-details">
+              <strong>Size:</strong> <?= htmlspecialchars($order['Size']) ?><br>
+              Order #<?= htmlspecialchars($order['OrderID']) ?> - <?= date('M d, Y', strtotime($order['OrderDate'])) ?>
+            </div>
+
+            <form method="post" action="rate_products.php">
+              <input type="hidden" name="product_id" value="<?= htmlspecialchars($order['ProductID']) ?>">
+              <input type="hidden" name="order_id" value="<?= htmlspecialchars($order['OrderID']) ?>">
+              <input type="hidden" name="size" value="<?= htmlspecialchars($order['Size']) ?>">
+
+              <label class="rating-label">Your Rating:</label>
+              <div class="rating-stars">
+                <?php for ($i = 1; $i <= 5; $i++): ?>
+                  <input type="radio" name="rating" class="d-none" id="<?= $uniquePrefix . '_star' . $i ?>" value="<?= $i ?>" required>
+                  <label for="<?= $uniquePrefix . '_star' . $i ?>" class="rating-star">★</label>
+                <?php endfor; ?>
+              </div>
+
+              <label class="feedback-label">Your Feedback (optional):</label>
+              <textarea name="feedback" placeholder="Share your experience..."></textarea>
+              
+              <div class="anonymous-checkbox">
+                <input type="checkbox" id="<?= $uniquePrefix . '_anonymous' ?>" name="is_anonymous" value="1">
+                <label for="<?= $uniquePrefix . '_anonymous' ?>">Post anonymously</label>
+              </div>
+
+              <button type="submit" class="submit-btn">Submit Review</button>
+            </form>
+        </div>
+          <?php 
+            endif;
+          endforeach; 
+          ?>
+        <?php endif; ?>
+      </div>
+  </div>
 
   <script>
   document.addEventListener('DOMContentLoaded', () => {

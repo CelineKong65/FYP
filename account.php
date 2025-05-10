@@ -705,7 +705,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function validatePhoneNumber() {
         // Validate format
         if (phone && !/^\d{3}-\d{3,4} \d{4}$/.test(phone)) {
-            showError(this, 'Invalid Malaysian phone format');
+            showError(this, 'Format: XXX-XXX XXXX or XXX-XXXX XXXX');
         }
     }
 
