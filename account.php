@@ -20,17 +20,39 @@ if (isset($_POST['ajax_check'])) {
         try {
             // Special handling for phone number
             if ($field === 'CustPhoneNum') {
-                $cleanValue = preg_replace('/[-\s]/', '', $value);
+                // First validate format
+                if (!preg_match('/^\d{3}-\d{3,4} \d{4}$/', $value)) {
+                    $response = [
+                        'available' => false,
+                        'valid_format' => false,
+                        'message' => 'Format: XXX-XXX XXXX or XXX-XXXX XXXX'
+                    ];
+                    echo json_encode($response);
+                    exit();
+                }
+
+                // Then validate Malaysian number format and check availability
                 $stmt = $conn->prepare("SELECT CustID FROM customer WHERE REPLACE(REPLACE(CustPhoneNum, '-', ''), ' ', '') = ? AND CustID != ?");
-                $stmt->execute([$cleanValue, $userId]);
+                $stmt->execute([preg_replace('/[-\s]/', '', $value), $userId]);
+                
+                if (!preg_match("/^(\+?6?01)[0-46-9][0-9]{7,8}$/", preg_replace('/[-\s]/', '', $value))) {
+                    $response = [
+                        'available' => false,
+                        'valid_format' => false,
+                        'message' => 'Invalid Malaysian phone number'
+                    ];
+                } else {
+                    $response['available'] = ($stmt->rowCount() === 0);
+                }
+                
             } else {
+                // Other field validations (email, username, etc.)
                 $stmt = $conn->prepare("SELECT CustID FROM customer WHERE $field = ? AND CustID != ?");
                 $stmt->execute([$value, $userId]);
+                $response['available'] = ($stmt->rowCount() === 0);
             }
-            
-            $response['available'] = ($stmt->rowCount() === 0);
         } catch (PDOException $e) {
-            // Keep available=true on error
+            error_log("Database error: " . $e->getMessage());
         }
     }
     
@@ -122,16 +144,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
     }
     
     if (!empty($custPhoneNum)) {
-        // Remove all formatting to check the actual digits
-        $cleanPhone = preg_replace('/[-\s]/', '', $custPhoneNum);
-        
-        if (!preg_match("/^(\+?6?01)[0-46-9][0-9]{7,8}$/", $cleanPhone)) {
-            $errors['custPhoneNum'] = "Invalid Malaysian phone format (e.g., 017-510 0205)";
+        // First validate the format
+        if (!preg_match('/^\d{3}-\d{3,4} \d{4}$/', $custPhoneNum)) {
+            $errors['custPhoneNum'] = "Format: XXX-XXX XXXX or XXX-XXXX XXXX";
         } else {
-            $stmt = $conn->prepare("SELECT CustID FROM customer WHERE REPLACE(REPLACE(CustPhoneNum, '-', ''), ' ', '') = ? AND CustID != ?");
-            $stmt->execute([$cleanPhone, $user_id]);
-            if ($stmt->rowCount() > 0) {
-                $errors['custPhoneNum'] = "Phone number already exists";
+            // Then validate it's a proper Malaysian number
+            $cleanPhone = preg_replace('/[-\s]/', '', $custPhoneNum);
+            if (!preg_match("/^(\+?6?01)[0-46-9][0-9]{7,8}$/", $cleanPhone)) {
+                $errors['custPhoneNum'] = "Invalid Malaysian phone number";
+            } else {
+                // Then check for duplicates
+                $stmt = $conn->prepare("SELECT CustID FROM customer WHERE REPLACE(REPLACE(CustPhoneNum, '-', ''), ' ', '') = ? AND CustID != ?");
+                $stmt->execute([$cleanPhone, $user_id]);
+                if ($stmt->rowCount() > 0) {
+                    $errors['custPhoneNum'] = "Phone number already exists";
+                }
             }
         }
     }
@@ -340,9 +367,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
                         <label>Phone Number</label>
                             <input type="text" name="custPhoneNum" required
                                 value="<?= htmlspecialchars($customer['CustPhoneNum'] ?? '') ?>" 
-                                placeholder="017-510 0205"
-                                maxlength="12"
-                                oninput="formatPhoneNumber(this)"
+                                placeholder="XXX-XXX XXXX or XXX-XXXX XXXX"
                                 class="<?= isset($errors['custPhoneNum']) ? 'error-field' : '' ?>">
                             <?php if (isset($errors['custPhoneNum'])): ?>
                                 <div class="error-message"><?= htmlspecialchars($errors['custPhoneNum']) ?></div>
@@ -415,7 +440,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
     <script>
 document.addEventListener('DOMContentLoaded', function() {
     // ================== PASSWORD FEATURES ================== //
-    // Password visibility toggle
     function setupPasswordToggle(passwordInputId, eyeIconId) {
         const eyeIcon = document.getElementById(eyeIconId);
         const passwordInput = document.getElementById(passwordInputId) || 
@@ -565,7 +589,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 errorMsg: 'Phone number already exists',
                 validate: async (value) => {
                     const cleanPhone = value.replace(/[-\s]/g, '');
-                    if (!/^(\+?6?01)[0-46-9][0-9]{7,8}$/.test(cleanPhone)) return true;
+                    if (!/^\d{3}-\d{3,4} \d{4}$/.test(cleanPhone)) return true;
                     return await checkFieldAvailability('CustPhoneNum', cleanPhone, userId);
                 }
             },
@@ -588,7 +612,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     clearTimeout(debounceTimer);
                     debounceTimer = setTimeout(async () => {
                         const value = input.value.trim();
-                        if (value.length < 2) return; // Don't check short values
+                        if (value.length < 2) return;
                         
                         const isValid = await config.validate(value);
                         
@@ -677,20 +701,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function validatePhoneNumber() {
-        // Format to XXX-XXX XXXX or XXX-XXXX XXXX
-        let phone = this.value.replace(/[-\s]/g, '');
-        if (phone.length > 11) phone = phone.substring(0, 11);
-        
-        let formatted = '';
-        if (phone.length > 0) {
-            formatted = phone.substring(0, 3);
-            if (phone.length > 3) formatted += '-' + phone.substring(3, 6);
-            if (phone.length > 6) formatted += ' ' + phone.substring(6);
-        }
-        this.value = formatted;
-
         // Validate format
-        if (phone && !/^(\+?6?01)[0-46-9][0-9]{7,8}$/.test(phone)) {
+        if (phone && !/^\d{3}-\d{3,4} \d{4}$/.test(phone)) {
             showError(this, 'Invalid Malaysian phone format');
         }
     }

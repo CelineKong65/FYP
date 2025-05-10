@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Real-time check for phone number
     if (phoneInput) {
         phoneInput.addEventListener('blur', function() {
-            checkAvailability('phone', this.value, 'custPhoneNum-error');
+            validateContactNumber();
         });
     }
 
@@ -109,10 +109,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 errorMessage = "Please enter a valid gmail address";
             }
         } else if (type === 'phone') {
-            const phoneReq = /^(\+?6?01)[0-46-9]-*[0-9]{7,8}$/;
+            const phoneReq = /^\d{3}-\d{3,4} \d{4}$/;
             if (!phoneReq.test(value)) {
                 isValidFormat = false;
-                errorMessage = "Please enter a valid Malaysian phone number (e.g., 012-3456789)";
+                errorMessage = "Format: XXX-XXX XXXX or XXX-XXXX XXXX";
             }
         }
 
@@ -186,4 +186,32 @@ document.addEventListener('DOMContentLoaded', function() {
             inputElement.classList.remove('error');
         }
     }
+
+    function validateContactNumber() {
+        const value = phoneInput.value.trim();
+        const errorElement = document.getElementById('custPhoneNum-error');
+        
+        if (!value) {
+            errorElement.textContent = 'Contact number is required';
+            errorElement.style.display = 'block';
+            phoneInput.classList.add('error');
+            return false;
+        }
+        
+        // Validate either XXX-XXX XXXX or XXX-XXXX XXXX format
+        if (!/^\d{3}-\d{3,4} \d{4}$/.test(value)) {
+            errorElement.textContent = 'Format: XXX-XXX XXXX or XXX-XXXX XXXX';
+            errorElement.style.display = 'block';
+            phoneInput.classList.add('error');
+            return false;
+        }
+        
+        // If valid, clear error and check availability
+        errorElement.textContent = '';
+        errorElement.style.display = 'none';
+        phoneInput.classList.remove('error');
+        checkAvailability('phone', value, 'custPhoneNum-error');
+        return true;
+    }
 });
+

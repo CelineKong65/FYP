@@ -29,14 +29,21 @@ if (isset($_POST['check_availability'])) {
             $exists = $stmt->rowCount() > 0;
         }
     } elseif ($type === 'phone') {
-        if (!preg_match("/^(\+?6?01)[0-46-9]-*[0-9]{7,8}$/", $value)) {
-            $is_valid_format = false;
-            $error_message = "Invalid Malaysian phone number (e.g., 012-3456789)";
-        } else {
-            $sql = "SELECT CustPhoneNum FROM customer WHERE CustPhoneNum = ?";
-            $stmt = $conn->prepare($sql);
-            $stmt->execute([$value]);
-            $exists = $stmt->rowCount() > 0;
+        if (!empty($custPhoneNum)) {
+            if (!preg_match('/^\d{3}-\d{3,4} \d{4}$/', $custPhoneNum)) {
+                $errors['custPhoneNum'] = "Format: XXX-XXX XXXX or XXX-XXXX XXXX";
+            } else {
+                $cleanPhone = preg_replace('/[-\s]/', '', $custPhoneNum);
+                if (!preg_match('/^\d{3}-\d{3,4} \d{4}$/', $cleanPhone)) {
+                    $errors['custPhoneNum'] = "Invalid Malaysian phone number";
+                } else {
+                    $stmt = $conn->prepare("SELECT CustPhoneNum FROM customer WHERE REPLACE(REPLACE(CustPhoneNum, '-', ''), ' ', '') = ?");
+                    $stmt->execute([$cleanPhone]);
+                    if ($stmt->rowCount() > 0) {
+                        $errors['custPhoneNum'] = "Phone number already exists";
+                    }
+                }
+            }
         }
     }
 
@@ -143,7 +150,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $step == 1) {
                             </div>
 
                             <label for="custPhoneNum">Phone Number:</label>
-                            <input type="text" id="custPhoneNum" placeholder="012-345 6789" name="custPhoneNum" value="<?php echo isset($_POST['custPhoneNum']) ? htmlspecialchars($_POST['custPhoneNum']) : ''; ?>" required>
+                            <input type="text" id="custPhoneNum" placeholder="012-345 6789 or 012-3456 7890" name="custPhoneNum" value="<?php echo isset($_POST['custPhoneNum']) ? htmlspecialchars($_POST['custPhoneNum']) : ''; ?>" required>
                             <div class="error-message" id="custPhoneNum-error">
                                 <?php if (isset($errors['custPhoneNum'])): ?>
                                     <?php echo $errors['custPhoneNum']; ?>
