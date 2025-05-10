@@ -49,6 +49,12 @@ h2 {
     margin-bottom: 50px;
 }
 
+.cust-pic{
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
+}
+
 .message {
     padding: 10px;
     color: #1e3a8a;

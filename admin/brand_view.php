@@ -276,7 +276,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
             <thead>
                 <tr>
                     <th style="text-align: center;">ID</th>
-                    <th>Image</th>
+                    <th style="text-align: center;">Image</th>
                     <th>Brand Name</th>
                     <th style="text-align: center;">Status</th>
                     <th class="action"></th>

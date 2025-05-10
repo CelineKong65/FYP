@@ -475,7 +475,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name']))
                 <thead>
                     <tr>
                         <th style="text-align: center;">ID</th>
-                        <th>Image</th>
+                        <th style="text-align: center;">Image</th>
                         <th>Name</th>
                         <th style="text-align: center;">Price (RM)</th>
                         <th style="width: 350px;">Description</th>
@@ -491,23 +491,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name']))
                                 <td style="text-align: center;"><?php echo $product['ProductID']; ?></td>
                                 <td style="display: grid; place-items: center;">
                                     <?php
-                                    $imageName = $product['ProductPicture'] ?? '';
-                                    $imagePath = "../image/" . $imageName;
+                                        $imageName = $product['ProductPicture'] ?? '';
+                                        $imagePath = "../image/" . $imageName;
 
-                                    // Check if the file exists and the filename is not empty
-                                    if (!empty($imageName) && file_exists($imagePath)) {
-                                        echo "<img src='$imagePath' alt='Product Image' width='150'>";
-                                    } else {
-                                        echo "<img src='../image/placeholder.jpg' alt='Image not available' width='150'>";
-                                    }
+                                        if (!empty($imageName) && file_exists($imagePath)) {
+                                            echo "<img src='$imagePath' alt='Product Image' width='150' >";
+                                        } else {
+                                            echo "<img src='../image/placeholder.jpg' alt='Image not available' width='150'>";
+                                        }
                                     ?>
                                 </td>
 
                                 <td style="line-height: 1.75;">
                                     <strong><?php echo $product['ProductName']; ?><br></strong>
-                                    Brand: <?php echo $product['BrandName']; ?><br>
-                                    Category: <?php echo $product['CategoryName']; ?>
+                                    <span style="font-size: 12px; color: black;">Brand: <?php echo $product['BrandName']; ?></span><br>
+                                    <span style="font-size: 12px; color: black;">Category: <?php echo $product['CategoryName']; ?></span>
                                 </td>
+
                                 <td style="text-align: center;"><?php echo number_format($product['ProductPrice'], 2); ?></td>
                                 <td><?php echo $product['ProductDesc']; ?></td>
                                 <td style="text-align: center; line-height: 1.5;">
