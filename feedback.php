@@ -14,6 +14,7 @@ $error_message = '';
 if($_SERVER["REQUEST_METHOD"] == "POST"){
     $rating = isset($_POST['rating']) ? (int)$_POST['rating'] : 0;
     $feedback = trim($_POST['feedback'] ?? '');
+    $feedback_date = date('Y-m-d H:i:s');
 
     if ($rating < 1 || $rating > 5){
         $error_message = "Please select a rating between 1 and 5 stars.";
@@ -21,8 +22,8 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
         $error_message = "Please enter you feedback";
     }else{
         try{
-            $stmt = $conn -> prepare("INSERT INTO feedback_rating (CustID, Rating, Feedback) VALUES (?, ?, ?)");
-            $stmt -> execute([$user_id, $rating, $feedback]);
+            $stmt = $conn -> prepare("INSERT INTO feedback_rating (CustID, Rating, Feedback, FeedbackDate) VALUES (?, ?, ?, ?)");
+            $stmt -> execute([$user_id, $rating, $feedback, $feedback_date]);
 
             $success_message = "Thank you for your feedback!!";
         }catch (PDOException $e) {
