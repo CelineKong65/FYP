@@ -124,10 +124,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES['profile_picture'])) {
             $stmt->execute([$relative_path, $admin_id]);
             
             $success = "Profile picture updated successfully!";
-            
-            // Refresh admin data
-            $stmt = $conn->prepare("SELECT * FROM admin WHERE AdminID = ?");
-            $stmt->execute([$admin_id]);
+            $stmt = $conn->prepare($admin_query);
+            $stmt->bind_param("i", $admin_id);
+            $stmt->execute();
+            $admin_result = $stmt->get_result();
+            $admin = $admin_result->fetch_assoc();
         } else {
             $errors['profile_picture'] = "Sorry, there was an error uploading your file";
         }
@@ -461,23 +462,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Real-time password validation
         passwordInput.addEventListener('input', function(e) {
-            const currentPassword = document.querySelector('input[name="currentPassword"]')?.value;
+            const value = e.target.value;
             
-            // Clear previous same-password errors
-            this.parentNode.querySelectorAll('.error-message').forEach(msg => {
-                if (msg.textContent === 'New password cannot be the same as current password') {
-                    msg.remove();
-                }
-            });
-
-            // Check password match
-            if (currentPassword && this.value === currentPassword) {
-                showError(this, 'New password cannot be the same as current password');
-            }
-
             // Update requirement indicators
             requirements.forEach(item => {
-                const isValid = item.regex.test(e.target.value);
+                const isValid = item.regex.test(value);
                 const requirementItem = requirementList[item.index];
                 requirementItem.firstElementChild.className = isValid ? 
                     "fas fa-check-circle" : "fas fa-circle";
@@ -506,6 +495,64 @@ document.addEventListener('DOMContentLoaded', function() {
         // Special field validations
         document.querySelector('input[name="email"]')?.addEventListener('blur', validateEmail);
         document.querySelector('input[name="phone"]')?.addEventListener('input', validatePhoneNumber);
+    }
+
+    // ================== PASSWORD FORM VALIDATION ================== //
+    function validatePasswordForm() {
+        const currentPassword = document.querySelector('input[name="currentPassword"]')?.value.trim();
+        const newPassword = document.querySelector('input[name="newPassword"]')?.value.trim();
+        const confirmPassword = document.querySelector('input[name="confirmPassword"]')?.value.trim();
+        let isValid = true;
+
+        // Clear previous errors
+        clearError(document.querySelector('input[name="currentPassword"]'));
+        clearError(document.querySelector('input[name="newPassword"]'));
+        clearError(document.querySelector('input[name="confirmPassword"]'));
+
+        // Validate current password
+        if (!currentPassword) {
+            showError(document.querySelector('input[name="currentPassword"]'), 'Current password is required');
+            isValid = false;
+        }
+
+        // Validate new password meets requirements
+        if (!newPassword) {
+            showError(document.querySelector('input[name="newPassword"]'), 'New password is required');
+            isValid = false;
+        } else if (!validatePasswordRequirements(newPassword)) {
+            showError(document.querySelector('input[name="newPassword"]'), 'Password does not meet requirements');
+            isValid = false;
+        }
+
+        // Validate password match
+        if (!confirmPassword) {
+            showError(document.querySelector('input[name="confirmPassword"]'), 'Please confirm your new password');
+            isValid = false;
+        } else if (newPassword !== confirmPassword) {
+            showError(document.querySelector('input[name="confirmPassword"]'), 'Passwords do not match');
+            isValid = false;
+        }
+
+        // Validate new password isn't same as current
+        if (currentPassword && newPassword && currentPassword === newPassword) {
+            showError(document.querySelector('input[name="newPassword"]'), 'New password cannot be the same as current password');
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
+    function validatePasswordRequirements(password) {
+        const requirements = [
+            /^.{8,}$/,      // At least 8 characters
+            /[A-Z]/,       // Uppercase letter
+            /[a-z]/,       // Lowercase letter
+            /\d/,          // Number
+            /[@$!%*#?&]/, // Special character
+            /^\S*$/       // No spaces
+        ];
+        
+        return requirements.every(regex => regex.test(password));
     }
 
     // ================== REAL-TIME DATABASE CHECKS ================== //
@@ -568,6 +615,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     const currentPassword = document.querySelector('input[name="currentPassword"]')?.value;
                     return value !== currentPassword;
                 }
+            },
+            'confirmPassword': {
+                errorMsg: 'Passwords do not match',
+                validate: async (value) => {
+                    const newPassword = document.querySelector('input[name="newPassword"]')?.value;
+                    return value === newPassword;
+                }
             }
         };
         
@@ -581,7 +635,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     clearTimeout(debounceTimer);
                     debounceTimer = setTimeout(async () => {
                         const value = input.value.trim();
-                        if (value.length < 2 && fieldName !== 'phone') return;
+                        
+                        // Skip validation for empty confirm password when new password is empty
+                        if (fieldName === 'confirmPassword' && !document.querySelector('input[name="newPassword"]').value) {
+                            return;
+                        }
+                        
+                        // Skip validation for short inputs (except phone and passwords)
+                        if (value.length < 2 && !['phone', 'newPassword', 'confirmPassword'].includes(fieldName)) {
+                            return;
+                        }
                         
                         const isValid = await config.validate(value);
                         
@@ -609,6 +672,22 @@ document.addEventListener('DOMContentLoaded', function() {
     function handleFormSubmit(e) {
         let isValid = true;
         let firstError = null;
+
+        // Special handling for password form
+        if (this.id === 'passwordForm') {
+            if (!validatePasswordForm()) {
+                e.preventDefault();
+                firstError = this.querySelector('.error-field');
+                if (firstError) {
+                    firstError.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center',
+                        inline: 'nearest'
+                    });
+                }
+                return;
+            }
+        }
 
         // Validate all required fields
         this.querySelectorAll('input[required], select[required]').forEach(field => {
