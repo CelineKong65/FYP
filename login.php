@@ -13,7 +13,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $error = "Both email and password are required.";
     } else {
         try {
-            $sql = "SELECT CustID, CustName, CustPassword FROM customer WHERE CustEmail = :email";
+            $sql = "SELECT CustID, CustName, CustPassword, CustomerStatus FROM customer WHERE CustEmail = :email";
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(":email", $email, PDO::PARAM_STR);
             $stmt->execute();
@@ -21,7 +21,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($user) {
-                if ($password === $user["CustPassword"]) {
+                if($user["CustomerStatus"] !== "Active"){
+                    $error = "Your account has been Inactive, please contact our staff for more information. ";
+                }
+                else if ($password === $user["CustPassword"]) {
                     $_SESSION["user_id"] = $user["CustID"];
                     $_SESSION["username"] = $user["CustName"];
                     
@@ -107,6 +110,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
     </section>
 
-    <script src="login.js"></script>
+    <script src="login.js">
+        <?php if (!empty($error) && strpos($error, 'Inactive') != false): ?>
+            alert("<?php echo htmlspecialchars($error); ?>");
+            <?php endif;?>
+    </script>
 </body>
 </html>

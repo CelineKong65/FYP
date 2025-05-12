@@ -306,6 +306,16 @@ body {
     flex: 1;
 }
 
+.password-req li .fa-check-circle {
+    color: #28a745; /* Green color for success */
+}
+.password-req li .fa-circle {
+    color: #6c757d; /* Gray color for incomplete */
+}
+.password-req li.valid {
+    color: #28a745; /* Green text when valid */
+}
+
 .error-message {
     color: #e74c3c;
     font-size: 0.8rem;
@@ -318,4 +328,13 @@ body {
 }
 select.error-field {
     border: 1px solid #e74c3c !important;
+}
+
+.disabled-btn {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+input[readonly] {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
 }
