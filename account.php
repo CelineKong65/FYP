@@ -219,6 +219,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
         $update_query = "UPDATE customer SET CustPassword = ? WHERE CustID = ?";
         $stmt = $conn->prepare($update_query);
         $stmt->execute([$newPassword, $user_id]);
+        
+        $stmt = $conn -> prepare("SELECT * FROM customer WHERE CustID = ?");
+        $stmt->execute([$user_id]);
+        $customer = $stmt -> fetch(PDO::FETCH_ASSOC);
         $success = 'Password updated successfully!';
     }
 }
