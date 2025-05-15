@@ -248,6 +248,9 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <?php if ($isLoggedIn): ?>
                     <li><a href="feedback.php">FEEDBACK</a></li>
                 <?php endif; ?>
+                <?php if ($isLoggedIn): ?>
+                    <li><a href="voucher_list.php">VOUCHER</a></li>
+                <?php endif; ?>
             </ul>
         </nav>
 

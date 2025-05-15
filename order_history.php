@@ -52,7 +52,8 @@ $order_result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <li><a href="account.php"><i class="fas fa-user"></i> Profile</a></li>
             <li class="active"><a href="order_history.php"><i class="fas fa-history"></i> Order History</a></li>
             <li><a href="rate_products.php"><i class="fa fa-star" style="color: white;"></i>Rate</a></li>
-            <li><a href="topup.php"><i class="fa-solid fa-money-bill" style="color: white;"></i>Top Up</a></li>
+            <li><a href="topup.php"><i class="fa-solid fa-money-check-dollar" style="color: white;"></i>Top Up</a></li>
+            <li><a href="my_vouchers.php"><i class="fa-solid fa-ticket" style="color: white;"></i>My Voucher</a></li>
         </ul>
         <div class="sidebar-footer">
             <button class="logout-btn" onclick="window.location.href='logout.php'"><i class="fas fa-sign-out-alt"></i> LOG OUT</button>
