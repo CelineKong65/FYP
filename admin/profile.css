@@ -21,7 +21,7 @@ body {
 .sidebar {
     width: 220px;
     background-color: #0077b6;
-    padding-top: 30px;
+    padding-top: 20px;
     text-align: center;
     border-radius: 20px;
     margin: 30px;
@@ -260,6 +260,16 @@ body {
     margin: 7px 0 0 0;
 }
 
+.error-message {
+    color: #e74c3c;
+    font-size: 0.8rem;
+    margin-top: 5px;
+    display: block;
+}
 .error-field {
-    border: 1px solid red !important;
+    border-color: #e74c3c !important;
+    box-shadow: 0 0 0 1px #e74c3c;
+}
+select.error-field {
+    border: 1px solid #e74c3c !important;
 }

@@ -253,21 +253,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
     <title>Admin Profile</title>
     <script src="https://kit.fontawesome.com/c2f7d169d6.js" crossorigin="anonymous"></script>
     <link rel='stylesheet' href='profile.css'>
-    <style>
-        .error-message {
-    color: #e74c3c;
-    font-size: 0.8rem;
-    margin-top: 5px;
-    display: block;
-}
-.error-field {
-    border-color: #e74c3c !important;
-    box-shadow: 0 0 0 1px #e74c3c;
-}
-select.error-field {
-    border: 1px solid #e74c3c !important;
-}
-    </style>
 </head>
 <body>
     <div class="header">
