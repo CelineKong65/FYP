@@ -30,7 +30,7 @@ $stmt = $conn->prepare("
            END AS IsValid
     FROM voucher_usage vu
     JOIN voucher v ON vu.VoucherID = v.VoucherID
-    WHERE vu.CustID = ?
+    WHERE vu.CustID = ? AND vu.UsedAt IS NULL
     ORDER BY vu.ClaimedAt DESC
 ");
 $stmt->execute([$custID]);
