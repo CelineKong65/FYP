@@ -10,20 +10,44 @@ include 'db_connection.php';
 
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 
+$conn->query("UPDATE voucher SET VorcherStatus = 'Expired' 
+              WHERE ExpireDate IS NOT NULL 
+              AND ExpireDate < CURDATE() 
+              AND VorcherStatus != 'Expired'");
+
 if (!empty($search_query)) {
     $search_param = "%$search_query%";
-    $voucher_query = "SELECT * FROM voucher WHERE VoucherCode LIKE ? 
+    $voucher_query = "SELECT *, 
+                      CASE 
+                          WHEN ExpireDate IS NOT NULL AND ExpireDate < CURDATE() THEN 'Expired'
+                          ELSE VorcherStatus
+                      END AS DisplayStatus
+                      FROM voucher 
+                      WHERE VoucherCode LIKE ? 
                       ORDER BY 
-                          VorcherStatus = 'Active' DESC,
+                          CASE 
+                              WHEN ExpireDate IS NOT NULL AND ExpireDate < CURDATE() THEN 3
+                              WHEN VorcherStatus = 'Active' THEN 1
+                              ELSE 2
+                          END,
                           VoucherCode ASC";
     $stmt = $conn->prepare($voucher_query);
     $stmt->bind_param("s", $search_param);
     $stmt->execute();
     $voucher_result = $stmt->get_result();
 } else {
-    $voucher_query = "SELECT * FROM voucher 
+    $voucher_query = "SELECT *, 
+                      CASE 
+                          WHEN ExpireDate IS NOT NULL AND ExpireDate < CURDATE() THEN 'Expired'
+                          ELSE VorcherStatus
+                      END AS DisplayStatus
+                      FROM voucher 
                       ORDER BY 
-                          VorcherStatus = 'Active' DESC,
+                          CASE 
+                              WHEN ExpireDate IS NOT NULL AND ExpireDate < CURDATE() THEN 3
+                              WHEN VorcherStatus = 'Active' THEN 1
+                              ELSE 2
+                          END,
                           VoucherCode ASC";
     $voucher_result = $conn->query($voucher_query);
 }
@@ -194,6 +218,18 @@ if (isset($_POST['edit_voucher'])) {
     $min_purchase = trim($_POST['min_purchase']);
     $expire_date = $_POST['expire_date'] ?: null;
 
+    $check_expired = $conn->prepare("SELECT VorcherStatus FROM voucher WHERE VoucherID = ?");
+    $check_expired->bind_param("i", $voucher_id);
+    $check_expired->execute();
+    $check_expired->bind_result($status);
+    $check_expired->fetch();
+    $check_expired->close();
+    
+    if ($status === 'Expired') {
+        echo "<script>alert('Cannot edit expired vouchers.'); window.location.href='voucher_view.php';</script>";
+        exit();
+    }
+
     // Validate inputs
     $code_error = validateVoucherCode($voucher_code);
     $value_error = validateDiscountValue($discount_value);
@@ -290,8 +326,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     $voucher_id = (int)$_POST['voucher_id'];
     $currentStatus = strtolower($_POST['current_status']);
     
+    // First check if the voucher is expired
+    $stmt = $conn->prepare("SELECT VorcherStatus FROM voucher WHERE VoucherID = ?");
+    $stmt->bind_param("i", $voucher_id);
+    $stmt->execute();
+    $stmt->bind_result($db_status);
+    $stmt->fetch();
+    $stmt->close();
+    
+    if ($db_status === 'Expired') {
+        header("Location: voucher_view.php");
+        exit();
+    }
+    
     $newStatus = ($currentStatus == 'active') ? 'Inactive' : 'Active';
-
     $stmt = $conn->prepare("UPDATE voucher SET VorcherStatus = ? WHERE VoucherID = ?");
     $stmt->bind_param("si", $newStatus, $voucher_id);
     
@@ -358,7 +406,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                                     <?php
                                         $imageSrc = $voucher['VoucherPicture'] ? '../image/voucher/' . $voucher['VoucherPicture'] : '../image/voucher/default.png';
                                     ?>
-                                    <img src="<?= $imageSrc ?>" alt="<?= $voucher['VoucherPicture'] ?>" style="width: 120px; height: 80px;">
+                                    <img src="<?= $imageSrc ?>" alt="<?= $voucher['VoucherPicture'] ?>" style="height: 80px;">
                                 </td>
                                 <td><?php echo $voucher['VoucherCode']; ?></td>
                                 <td><?php echo $voucher['VoucherDesc']; ?></td>
@@ -373,19 +421,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                                 </td>
                                 <td style="text-align: center;">RM <?php echo number_format($voucher['DiscountValue'], 2); ?></td>
                                 <td style="text-align: center;"><?php echo $voucher['ExpireDate'] ? date('d/m/Y', strtotime($voucher['ExpireDate'])) : 'No expiry'; ?></td>
-                                <td style="text-align: center;" class="<?php echo ($voucher['VorcherStatus'] === 'Active') ? 'status-active' : 'status-inactive'; ?>">
-                                    <?php echo ucfirst($voucher['VorcherStatus']); ?>
+                                <td style="text-align: center;" class="<?php 
+                                    echo ($voucher['DisplayStatus'] === 'Active') ? 'status-active' : 
+                                        ($voucher['DisplayStatus'] === 'Expired' ? 'status-expired' : 'status-inactive'); 
+                                ?>">
+                                    <?php echo ucfirst($voucher['DisplayStatus']); ?>
                                 </td>
                                 <td>
-                                    <button name="edit_voucher" onclick='editVoucher(<?php echo json_encode($voucher); ?>)'>Edit</button>
-                                    <form method="post" action="" style="display: inline;">
-                                        <input type="hidden" name="toggle_status" value="1">
-                                        <input type="hidden" name="voucher_id" value="<?php echo $voucher['VoucherID']; ?>">
-                                        <input type="hidden" name="current_status" value="<?php echo $voucher['VorcherStatus']; ?>">
-                                        <button type="submit" class="btn-status <?php echo ($voucher['VorcherStatus'] == 'Active') ? 'btn-inactive' : 'btn-active'; ?>">
-                                            <?php echo ($voucher['VorcherStatus'] == 'Active') ? 'Deactivate' : 'Activate'; ?>
-                                        </button>
-                                    </form>
+                                    <?php if ($voucher['DisplayStatus'] !== 'Expired'): ?>
+                                        <button name="edit_voucher" onclick='editVoucher(<?php echo json_encode($voucher); ?>)'>Edit</button>
+                                        <form method="post" action="" style="display: inline;">
+                                            <input type="hidden" name="toggle_status" value="1">
+                                            <input type="hidden" name="voucher_id" value="<?php echo $voucher['VoucherID']; ?>">
+                                            <input type="hidden" name="current_status" value="<?php echo $voucher['DisplayStatus']; ?>">
+                                            <button type="submit" class="btn-status <?php echo ($voucher['DisplayStatus'] == 'Active') ? 'btn-inactive' : 'btn-active'; ?>">
+                                                <?php echo ($voucher['DisplayStatus'] == 'Active') ? 'Deactivate' : 'Activate'; ?>
+                                            </button>
+                                        </form>
+                                    <?php else: ?>
+                                        <button class="btn-disabled">Edit</button>
+                                        <button class="btn-disabled">Expired</button>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endwhile; ?>
