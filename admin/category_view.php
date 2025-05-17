@@ -277,7 +277,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
             <thead>
                 <tr>
                     <th style="text-align: center;">ID</th>
-                    <th style="text-align: center;">Image</th>
+                    <th style="text-align: center; center; width: 170px;">Image</th>
                     <th>Category Name</th>
                     <th style="text-align: center;">Status</th>
                     <th class="action"></th>
@@ -288,16 +288,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                     <?php while ($category = $category_result->fetch_assoc()): ?>
                         <tr>
                             <td style="text-align: center;"><?php echo $category['CategoryID']; ?></td>
-                            <?php
-                                $category_image_name = $category['CategoryPicture'];
-                                $image_path = !empty($category_image_name) ? "../image/categories/" . $category_image_name : "";
-                            ?>
                             <td style="text-align: center;">
-                                <?php if (!empty($image_path) && file_exists($image_path)): ?>
-                                    <img src="<?php echo $image_path; ?>" alt="Category Image" style="width: 120px; height: 80px;">
-                                <?php else: ?>
-                                    <span>No Image</span>
-                                <?php endif; ?>
+                                <?php
+                                    $imageSrc = $category['CategoryPicture'] ? '../image/categories/' . $category['CategoryPicture'] : null;
+                                ?>
+                                <img src="<?= $imageSrc ?>" alt="<?= $category['CategoryPicture'] ?>" style="width: 120px; height: 80px;">
                             </td>
                             <td><?php echo $category['CategoryName']; ?></td>
                             <td class="<?php echo ($category['CategoryStatus'] === 'Active') ? 'status-active' : 'status-inactive'; ?>" style="text-align: center;">

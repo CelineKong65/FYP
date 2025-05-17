@@ -232,8 +232,8 @@ img {
     padding: 20px;
     border-radius: 10px;
     margin: auto;
-    margin-top: 200px;
-    width: 490px;
+    margin-top: 170px;
+    width: 520px;
 }
 
 .edit-form, .add-form{
@@ -284,7 +284,7 @@ button[name="add_product"] {
 }
 
 #editModal input, #editModal textarea, #editModal select, #addModal input, #addModal textarea, #addModal select {
-    width: 90%;
+    width: 85%;
     padding: 8px;
     margin-bottom: 13px;
     border: 1px solid #93c5fd;
@@ -293,7 +293,7 @@ button[name="add_product"] {
 }
 
 #editModal select, #addModal select{
-    width: 96%;
+    width: 91%;
 }
 #editModal button[type="submit"], #addModal button[type="submit"] {
     background-color: #1e3a8a;
@@ -361,7 +361,7 @@ input::placeholder{
     border-color: #333;
 }
 
-.edit-content span, .add-content span{
+.edit-form span, .add-form span{
     color:gray;
     font-size: 12px;
 }

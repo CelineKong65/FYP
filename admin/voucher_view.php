@@ -420,15 +420,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                 <textarea name="voucher_desc" id="add-desc"></textarea>
                 <div id="add-desc-error" class="error"></div>
                 
-                <label>Discount Value (RM):<span class="required">*</span></label>
-                <input type="number" name="discount_value" id="add-discount" min="0.01" step="0.01" required
-                       oninput="validateDiscountInRealTime(this.value, 'add')">
-                <div id="add-discount-error" class="error"></div>
-                
                 <label>Minimum Purchase (RM):<span class="required">*</span></label>
                 <input type="number" name="min_purchase" id="add-min-purchase" min="0" step="0.01"
                        oninput="validateMinPurchaseInRealTime(this.value, 'add')">
                 <div id="add-min-purchase-error" class="error"></div>
+                
+                <label>Discount Value (RM):<span class="required">*</span></label>
+                <input type="number" name="discount_value" id="add-discount" min="0.01" step="0.01" required
+                       oninput="validateDiscountInRealTime(this.value, 'add')">
+                <div id="add-discount-error" class="error"></div>
                 
                 <label>Expire Date:</label>
                 <input type="date" name="expire_date" id="add-expire-date">
@@ -460,17 +460,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                 <label>Description:</label>
                 <textarea name="voucher_desc" id="edit-desc"></textarea>
                 <div id="edit-desc-error" class="error"></div>
-
-                <label>Discount Value (RM):<span class="required">*</span></label>
-                <input type="number" name="discount_value" id="edit-discount" min="0.01" step="0.01" required
-                       oninput="validateDiscountInRealTime(this.value, 'edit')">
-                <div id="edit-discount-error" class="error"></div>
                 
                 <label>Minimum Purchase (RM):</label>
                 <input type="number" name="min_purchase" id="edit-min-purchase" min="0" step="0.01"
                        oninput="validateMinPurchaseInRealTime(this.value, 'edit')">
                 <div id="edit-min-purchase-error" class="error"></div>
-                
+
+                <label>Discount Value (RM):<span class="required">*</span></label>
+                <input type="number" name="discount_value" id="edit-discount" min="0.01" step="0.01" required
+                       oninput="validateDiscountInRealTime(this.value, 'edit')">
+                <div id="edit-discount-error" class="error"></div>
+
                 <label>Expire Date:</label>
                 <input type="date" name="expire_date" id="edit-expire-date">
                 

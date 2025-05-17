@@ -273,26 +273,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 <tbody>
                     <?php if ($customer_result->num_rows > 0): ?>
                         <?php while ($customer = $customer_result->fetch_assoc()): ?>
-                            <?php
-                            $cust_id = $customer['CustID'];
-                            $jpgPath = "../image/user/user_{$cust_id}.jpg";
-                            $jpegPath = "../image/user/user_{$cust_id}.jpeg";
-                            $pngPath = "../image/user/user_{$cust_id}.png";
-
-                            if (file_exists($jpgPath)) {
-                                $profile_pic_path = $jpgPath;
-                            } elseif (file_exists($jpegPath)) {
-                                $profile_pic_path = $jpegPath;
-                            } elseif (file_exists($pngPath)) {
-                                $profile_pic_path = $pngPath;
-                            } else {
-                                $profile_pic_path = "../image/user/user.png";
-                            }
-                        ?>
                             <tr>
                                 <td><?php echo $customer['CustID']; ?></td>
                                 <td style="text-align: center;">
-                                    <img src="<?php echo $profile_pic_path; ?>" alt="Profile Picture" class="cust-pic">
+                                    <?php
+                                        $imageSrc = $customer['CustProfilePicture'] ? '../image/user/' . $customer['CustProfilePicture'] : '../image/user/user.png';
+                                    ?>
+                                    <img src="<?= $imageSrc ?>" alt="<?= $customer['CustProfilePicture'] ?>" class="cust-pic">
                                 </td>
                                 <td><?php echo $customer['CustName']; ?></td>
                                 <td><?php echo $customer['CustEmail']; ?></td>
@@ -581,83 +568,83 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
             }
         });
 
-    function checkAvailability(type, value) {
-        const custId = document.getElementById('cust_id')?.value;
-        const errorElement = document.getElementById(`${type}-error`);
-        const inputField = document.getElementById(type);
-        
-        // Clear previous states
-        errorElement.textContent = '';
-        errorElement.style.display = 'none';
-        inputField.classList.remove('error-field', 'valid-field');
+        function checkAvailability(type, value) {
+            const custId = document.getElementById('cust_id')?.value;
+            const errorElement = document.getElementById(`${type}-error`);
+            const inputField = document.getElementById(type);
+            
+            // Clear previous states
+            errorElement.textContent = '';
+            errorElement.style.display = 'none';
+            inputField.classList.remove('error-field', 'valid-field');
 
-        // Check for empty required fields
-        if (!value.trim() && (type === 'name' || type === 'email' || type === 'phone')) {
-            errorElement.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} is required`;
-            errorElement.style.display = 'block';
-            inputField.classList.add('error-field');
-            return;
-        }
-
-        // Validate format
-        let isValidFormat = true;
-        let formatErrorMessage = '';
-        
-        if (type === 'email') {
-            if (!/^[^\s@]+@[^\s@]+\.com$/.test(value)) {
-                isValidFormat = false;
-                formatErrorMessage = "Invalid email format (must contain @ and end with .com)";
-            }
-        } else if (type === 'phone') {
-            if (!/^\d{3}-\d{3,4} \d{4}$/.test(value)) {
-                isValidFormat = false;
-                formatErrorMessage = "Phone must be in XXX-XXX XXXX or XXX-XXXX XXXX format";
-            }
-        }
-
-        if (!isValidFormat) {
-            errorElement.textContent = formatErrorMessage;
-            errorElement.style.display = 'block';
-            inputField.classList.add('error-field');
-            inputField.classList.remove('valid-field'); // Explicitly remove valid state
-            return;
-        }
-
-        // Check availability via AJAX
-        const formData = new FormData();
-        formData.append('check_availability', 'true');
-        formData.append('type', type);
-        formData.append('value', value);
-        formData.append('cust_id', custId);
-
-        fetch(window.location.href, {
-            method: 'POST',
-            body: formData,
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (!data.valid_format) {
-                errorElement.textContent = data.message;
+            // Check for empty required fields
+            if (!value.trim() && (type === 'name' || type === 'email' || type === 'phone')) {
+                errorElement.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} is required`;
                 errorElement.style.display = 'block';
                 inputField.classList.add('error-field');
-                inputField.classList.remove('valid-field');
-            } else if (data.exists) {
-                errorElement.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} already exists`;
+                return;
+            }
+
+            // Validate format
+            let isValidFormat = true;
+            let formatErrorMessage = '';
+            
+            if (type === 'email') {
+                if (!/^[^\s@]+@[^\s@]+\.com$/.test(value)) {
+                    isValidFormat = false;
+                    formatErrorMessage = "Invalid email format (must contain @ and end with .com)";
+                }
+            } else if (type === 'phone') {
+                if (!/^\d{3}-\d{3,4} \d{4}$/.test(value)) {
+                    isValidFormat = false;
+                    formatErrorMessage = "Phone must be in XXX-XXX XXXX or XXX-XXXX XXXX format";
+                }
+            }
+
+            if (!isValidFormat) {
+                errorElement.textContent = formatErrorMessage;
                 errorElement.style.display = 'block';
                 inputField.classList.add('error-field');
-                inputField.classList.remove('valid-field');
-            } else {
-                errorElement.textContent = '';
-                errorElement.style.display = 'none';
-                inputField.classList.remove('error-field');
-                inputField.classList.add('valid-field');
+                inputField.classList.remove('valid-field'); // Explicitly remove valid state
+                return;
             }
-        })
-        .catch(error => {
-            console.error('Error checking availability:', error);
-            inputField.classList.remove('valid-field');
-        });
-    }
+
+            // Check availability via AJAX
+            const formData = new FormData();
+            formData.append('check_availability', 'true');
+            formData.append('type', type);
+            formData.append('value', value);
+            formData.append('cust_id', custId);
+
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.valid_format) {
+                    errorElement.textContent = data.message;
+                    errorElement.style.display = 'block';
+                    inputField.classList.add('error-field');
+                    inputField.classList.remove('valid-field');
+                } else if (data.exists) {
+                    errorElement.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} already exists`;
+                    errorElement.style.display = 'block';
+                    inputField.classList.add('error-field');
+                    inputField.classList.remove('valid-field');
+                } else {
+                    errorElement.textContent = '';
+                    errorElement.style.display = 'none';
+                    inputField.classList.remove('error-field');
+                    inputField.classList.add('valid-field');
+                }
+            })
+            .catch(error => {
+                console.error('Error checking availability:', error);
+                inputField.classList.remove('valid-field');
+            });
+        }
 
         function editCustomer(id, name, email, phone, street, postcode, city, state, profile_picture, status) {
             document.querySelectorAll('.error-message').forEach(el => {
@@ -712,12 +699,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 });
             }
         });
-
-        window.onclick = function(event) {
-            if (event.target == document.getElementById("editModal")) {
-                closeModal();
-            }
-        }    
+ 
     </script>
 </body>
 </html>

@@ -420,27 +420,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 <tbody>
                     <?php if ($admin_result && $admin_result->num_rows > 0): ?>
                         <?php while ($admin = $admin_result->fetch_assoc()): ?>
-                            <?php
-                            $admin_id = $admin['AdminID'];
-                            $jpgPath = "../image/admin/admin_" . $admin_id . ".jpg";
-                            $jpegPath = "../image/admin/admin_" . $admin_id . ".jpeg";
-                            $pngPath = "../image/admin/admin_" . $admin_id . ".png";
-                            $defaultPath = "../image/admin/admin.jpg";
-
-                            if (file_exists($jpgPath)) {
-                                $profile_pic_path = $jpgPath;
-                            } elseif (file_exists($jpegPath)) {
-                                $profile_pic_path = $jpegPath;
-                            } elseif (file_exists($pngPath)) {
-                                $profile_pic_path = $pngPath;
-                            } else {
-                                $profile_pic_path = $defaultPath;
-                            }
-                        ?>
                         <tr>
                             <td style="text-align: center;"><?php echo $admin['AdminID']; ?></td>
                             <td style="text-align: center;">
-                                <img src="<?php echo $profile_pic_path; ?>" alt="Profile Picture" class="profile-pic">
+                                <?php
+                                    $imageSrc = $admin['AdminProfilePicture'] ? '../image/admin/' . $admin['AdminProfilePicture'] : '../image/admin/admin.jpg';
+                                ?>
+                                <img src="<?= $imageSrc ?>" alt="<?= $admin['AdminProfilePicture'] ?>" class="profile-pic">
                             </td>
                             <td><?php echo $admin['AdminName']; ?></td>
                             <td><?php echo $admin['AdminEmail']; ?></td>
@@ -800,17 +786,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
             }
         });
 
-        // Optional: close modal when clicking outside the modal box
-        window.onclick = function(event) {
-            const editModal = document.getElementById('editModal');
-            const addModal = document.getElementById('addModal');
-            if (event.target === editModal) {
-                closeModal();
-            }
-            if (event.target === addModal) {
-                closeAddModal();
-            }
-        };
     </script>
 </body>
 </html>

@@ -276,7 +276,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
             <thead>
                 <tr>
                     <th style="text-align: center;">ID</th>
-                    <th style="text-align: center;">Image</th>
+                    <th style="text-align: center; width: 170px;">Image</th>
                     <th>Brand Name</th>
                     <th style="text-align: center;">Status</th>
                     <th class="action"></th>
@@ -286,17 +286,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                 <?php if ($brand_result->num_rows > 0): ?>
                     <?php while ($brand = $brand_result->fetch_assoc()): ?>
                         <tr>
-                            <td style="text-align: center;"><?php echo $brand['BrandID']; ?></td>
-                            <?php
-                                $brand_image_name = $brand['BrandPicture'];
-                                $image_path = !empty($brand_image_name) ? "../image/brand/" . $brand_image_name : "";
-                            ?>
+                            <td style="text-align: center;"><?php echo $brand['BrandID']; ?></td>             
                             <td style="text-align: center;">
-                                <?php if (!empty($image_path) && file_exists($image_path)): ?>
-                                    <img src="<?php echo $image_path; ?>" alt="Brand Image" style="width: 120px; height: 80px;">
-                                <?php else: ?>
-                                    <span>No Image</span>
-                                <?php endif; ?>
+                                <?php
+                                    $imageSrc = $brand['BrandPicture'] ? '../image/brand/' . $brand['BrandPicture'] : null;
+                                ?>
+                                <img src="<?= $imageSrc ?>" alt="<?= $brand['BrandPicture'] ?>" style="width: 120px; height: 80px;">
                             </td>
                             <td><?php echo $brand['BrandName']; ?></td>
                             <td class="<?php echo ($brand['BrandStatus'] === 'Active') ? 'status-active' : 'status-inactive'; ?>" style="text-align: center;">

@@ -491,15 +491,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name']))
                                 <td style="text-align: center;"><?php echo $product['ProductID']; ?></td>
                                 <td style="display: grid; place-items: center;">
                                     <?php
-                                        $imageName = $product['ProductPicture'] ?? '';
-                                        $imagePath = "../image/" . $imageName;
-
-                                        if (!empty($imageName) && file_exists($imagePath)) {
-                                            echo "<img src='$imagePath' alt='Product Image' width='150' >";
-                                        } else {
-                                            echo "<img src='../image/placeholder.jpg' alt='Image not available' width='150'>";
-                                        }
+                                        $imageSrc = $product['ProductPicture'] ? '../image/' . $product['ProductPicture'] : null;
                                     ?>
+                                    <img src="<?= $imageSrc ?>" alt="<?= $cproduct['ProductPicture'] ?>" style="width: 150px">
                                 </td>
 
                                 <td style="line-height: 1.75;">
@@ -911,15 +905,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name']))
                 addInput.classList.remove('error-field', 'valid-field');
             }
         }
-
-        window.onclick = function(event) {
-            if (event.target == document.getElementById("editModal")) {
-                closeModal();
-            }
-            if (event.target == document.getElementById("addModal")) {
-                closeAddModal();
-            }
-        };
 
         document.addEventListener('DOMContentLoaded', function() {
             const searchInput = document.querySelector('input[name="search"]');

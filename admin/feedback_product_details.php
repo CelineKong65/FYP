@@ -27,9 +27,10 @@ if (!$product) {
 
 // UPDATED: Also select OrderID
 $feedback_query = "
-    SELECT pf.OrderID, pf.Rating, pf.Feedback AS Comment, pf.FeedbackDate, c.CustID, c.CustName
+    SELECT pf.OrderID, pf.Rating, pf.Feedback AS Comment, pf.FeedbackDate, c.CustID, c.CustName,p.ProductPicture
     FROM product_feedback pf
     JOIN customer c ON pf.CustID = c.CustID
+    JOIN product p ON pf.ProductID = p.ProductID
     WHERE pf.ProductID = ?
     ORDER BY pf.FeedbackDate DESC
 ";
@@ -63,17 +64,12 @@ $feedbacks = $stmt->get_result();
                     <tr>
                         <td style="text-align: center; vertical-align: middle;">
                             <?php
-                            $imageName = $product['ProductPicture'];
-                            $imagePath = "../image/" . $imageName;
-                            if (file_exists($imagePath) && !empty($imageName)) {
-                                echo "<img src='{$imagePath}' alt='{$product['ProductName']}' width='150'>";
-                            } else {
-                                echo "<img src='../image/placeholder.jpg' alt='Image not available' width='150'>";
-                            }
+                                $imageSrc = $product['ProductPicture'] ? '../image/' . $product['ProductPicture'] : null;
                             ?>
+                            <img src="<?= $imageSrc ?>" alt="<?= $product['ProductPicture'] ?>" style="width: 150px;">
                         </td>
                         <td class="product-text">
-                            <p><strong>ID:</strong> <?php echo htmlspecialchars($product['ProductID']); ?></p>
+                            <p><strong>Product ID:</strong> <?php echo htmlspecialchars($product['ProductID']); ?></p>
                             <p><strong>Name:</strong> <?php echo htmlspecialchars($product['ProductName']); ?></p>
                             <p><strong>Price:</strong> RM <?php echo number_format($product['ProductPrice'], 2); ?></p>
                             <p><strong>Description:</strong> <?php echo htmlspecialchars($product['ProductDesc']); ?></p>
@@ -86,18 +82,21 @@ $feedbacks = $stmt->get_result();
                 <table>
                     <thead>
                         <tr>
-                            <th style="width: 150px;">Customer</th>
-                            <th style="width: 40px; text-align: center;">Rating</th>
-                            <th style="width: 300px;">Comment</th>
-                            <th style="width: 110px; text-align: center;">Feedback Date</th>
+                            <th style="width: 40px; text-align: center;">No.</th>
+                            <th style="width: 250px;">Customer</th>
+                            <th style="width: 80px; text-align: center;">Rating</th>
+                            <th>Comment</th>
+                            <th style="width: 150px; text-align: center;">Feedback Date</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php 
+                        $counter = 1;
                         if ($feedbacks->num_rows > 0) {
                             while ($feedback = $feedbacks->fetch_assoc()): 
                         ?>
                         <tr>
+                            <td style="text-align: center;"><?php echo $counter++; ?></td>
                             <td><?php echo htmlspecialchars($feedback['CustName']); ?></td>
                             <td style="text-align: center;"><?php echo $feedback['Rating']; ?> / 5</td>
                             <td>
