@@ -15,14 +15,19 @@ if (!isset($_GET['order_id'])) {
 
 $order_id = $_GET['order_id'];
 
-$order_query_sql = "SELECT * FROM orderpayment WHERE OrderID = ?";
+$order_query_sql = "SELECT op.*, v.VoucherCode, v.DiscountValue 
+                    FROM orderpayment op
+                    LEFT JOIN voucher v ON op.VoucherID = v.VoucherID
+                    WHERE op.OrderID = ?";
 $stmt = $conn->prepare($order_query_sql);
 $stmt->bind_param("i", $order_id);
 $stmt->execute();
 $orderpayment = $stmt->get_result()->fetch_assoc();
 
-// Get order details
-$order_details_query = "SELECT * FROM orderdetails WHERE OrderID = ?";
+$order_details_query = "SELECT od.*, p.ProductPicture 
+                        FROM orderdetails od
+                        LEFT JOIN product p ON od.ProductName = p.ProductName
+                        WHERE od.OrderID = ?";
 $stmt = $conn->prepare($order_details_query);
 $stmt->bind_param("i", $order_id);
 $stmt->execute();
@@ -111,18 +116,9 @@ $customer = $stmt->get_result()->fetch_assoc();
                         <td colspan="2">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <?php
-                            $imageName = strtolower(str_replace(' ', '-', $orderdetails['ProductName']));
-                            $jpgPath = "../image/{$imageName}.jpg";
-                            $pngPath = "../image/{$imageName}.png";
-
-                            if (file_exists($jpgPath)) {
-                                echo "<img src='{$jpgPath}' alt='{$orderdetails['ProductName']}' style='width: 70px;'>";
-                            } elseif (file_exists($pngPath)) {
-                                echo "<img src='{$pngPath}' alt='{$orderdetails['ProductName']}' style='width: 70px;'>";
-                            } else {
-                                echo "<img src='../image/placeholder.jpg' alt='Image not available' style='width: 70px;'>";
-                            }
+                                $imageSrc = $orderdetails['ProductPicture'] ? '../image/' . $orderdetails['ProductPicture'] : null;
                             ?>
+                            <img src="<?= $imageSrc ?>" alt="<?= $orderdetails['ProductPicture'] ?>" style="width: 90px;">
                             <div style="margin-left: 20px; text-align: left;">
                                 <strong><?php echo $orderdetails['ProductName']; ?></strong><br>
                                 Size: <?php echo $orderdetails['Size']; ?>
@@ -135,7 +131,13 @@ $customer = $stmt->get_result()->fetch_assoc();
                     </tr>
                     <?php endwhile; ?>
 
-                    <!-- Total Row -->
+                    <?php if ($orderpayment['VoucherID'] !== null): ?>
+                    <tr class="voucher-row">
+                        <td colspan="5" class="total-label">Voucher Discount (<?php echo $orderpayment['VoucherCode']; ?>):</td>
+                        <td class="total-value">-RM <?php echo number_format($orderpayment['DiscountValue'], 2); ?></td>
+                    </tr>
+                    <?php endif; ?>
+
                     <tr class="total-row">
                         <td colspan="5" class="total-label">Total (Incl. Delivery):</td>
                         <td class="total-value">RM <?php echo number_format($orderpayment['TotalPrice'], 2); ?></td>
