@@ -12,6 +12,12 @@ try {
     $brands_stmt = $conn->prepare("SELECT * FROM brand WHERE BrandStatus = 'Active'");
     $brands_stmt->execute();
     $brands = $brands_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Fetch active vouchers
+    $voucher_stmt = $conn->prepare("SELECT * FROM voucher WHERE VorcherStatus = 'Active'");
+    $voucher_stmt->execute();
+    $vouchers = $voucher_stmt->fetchAll(PDO::FETCH_ASSOC);
+
     
     // Fetch top selling products with status checks
     $top_products_stmt = $conn->prepare("
@@ -56,7 +62,7 @@ try {
     <link rel="stylesheet" href="style.css">
     <style>
         .advertisement-box {
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.34);
             padding: 30px;
             border-radius: 10px;
             text-align: center;
@@ -180,33 +186,32 @@ try {
             <a href="register.php"><button class="join-btn">JOIN US</button></a>
         </div>
         <div class="advertisement-box">
-            <h2>Advertisement</h2>
             <div class="slideshow-container">
-                <div class="mySlides fade">
-                    <img src="image/Goggles.png" alt="Goggles" style="width:55%;">
-                </div>
-                <div class="mySlides fade">
-                    <img src="image/Shortboard.jpg" alt="Shortboard" style="width:55%;">
-                </div>
-                <div class="mySlides fade">
-                    <img src="image/Life-Jacket.jpg" alt="Life Jacket" style="width:55%;">
-                </div>
-                <div class="mySlides fade">
-                    <img src="image/Diving-Mask.png" alt="Snorkel Mask" style="width:55%;">
-                </div>
+                <?php if (!empty($vouchers)): ?>
+                    <?php foreach ($vouchers as $index => $voucher): ?>
+                        <div class="mySlides fade">
+                            <img src="image/voucher/<?= htmlspecialchars($voucher['VoucherPicture']) ?>" alt="Voucher <?= $index + 1 ?>" style="width:100%;">
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <p style="color:white;">No active vouchers available</p>
+                <?php endif; ?>
 
                 <!-- Navigation buttons -->
                 <a class="prev" onclick="plusSlides(-1)">&#10094;</a>
                 <a class="next" onclick="plusSlides(1)">&#10095;</a>
             </div>
 
+
             <!-- Dots -->
             <div class="dot-container">
-                <span class="dot" onclick="currentSlide(1)"></span>
-                <span class="dot" onclick="currentSlide(2)"></span>
-                <span class="dot" onclick="currentSlide(3)"></span>
-                <span class="dot" onclick="currentSlide(4)"></span>
+                <?php if (!empty($vouchers)): ?>
+                    <?php foreach ($vouchers as $i => $voucher): ?>
+                        <span class="dot" onclick="currentSlide(<?= $i + 1 ?>)"></span>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
+
             <br>
             <a href="product.php">
                 <button class="product-btn">Shop Now!</button>
