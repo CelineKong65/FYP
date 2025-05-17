@@ -4,10 +4,12 @@ include 'config.php';
 include 'header.php';
 
 // Check if this is a top-up request
-if (isset($_GET['topup']) && $_GET['topup'] == 'success') {
-    $_SESSION['topup_success'] = true;
-    header('Location: payment.php');
-    exit();
+if (isset($_GET['topup'])) {
+    if ($_GET['topup'] == 'success') {
+        $_SESSION['topup_success'] = true;
+        header('Location: payment.php');
+        exit();
+    }
 }
 
 // Retrieve cart items from session
@@ -84,7 +86,17 @@ $fieldErrors = [
     'paymentMethod' => ''
 ];
 
-// Handle voucher application/removal first
+// Check if customer has any available vouchers
+$voucherQuery = "SELECT v.VoucherID, v.VoucherCode, v.DiscountValue, v.MinPurchase 
+                FROM voucher v
+                JOIN voucher_usage vu ON v.VoucherID = vu.VoucherID
+                WHERE vu.CustID = :custID AND vu.UsedAt IS NULL AND v.VorcherStatus = 'Active'";
+$voucherStmt = $conn->prepare($voucherQuery);
+$voucherStmt->bindParam(':custID', $custID, PDO::PARAM_INT);
+$voucherStmt->execute();
+$availableVouchers = $voucherStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Handle voucher application/removal
 $appliedVoucher = null;
 $voucherError = '';
 
@@ -111,6 +123,10 @@ if (isset($_POST['applyVoucher'])) {
             if ($grandTotalWithDelivery < $appliedVoucher['MinPurchase']) {
                 $voucherError = "Minimum purchase of RM " . number_format($appliedVoucher['MinPurchase'], 2) . " required for this voucher";
                 $appliedVoucher = null;
+                unset($_SESSION['applied_voucher']);
+            } else {
+                // Store voucher into session to persist it for final submission
+                $_SESSION['applied_voucher'] = $appliedVoucher;
             }
         } else {
             $voucherError = "Invalid voucher code or already used";
@@ -135,6 +151,7 @@ if (isset($_POST['applyVoucher'])) {
 // Check if voucher should be removed
 if (isset($_POST['removeVoucher'])) {
     $appliedVoucher = null;
+    unset($_SESSION['applied_voucher']);
     // Recalculate total without voucher
     $grandTotalWithDelivery = $subtotal;
     
@@ -154,13 +171,15 @@ if (isset($_POST['removeVoucher'])) {
 }
 
 // If voucher is applied, calculate discounted total
-if ($appliedVoucher) {
+if ($appliedVoucher || isset($_SESSION['applied_voucher'])) {
+    $appliedVoucher = $appliedVoucher ?? $_SESSION['applied_voucher'];
     $discountAmount = $appliedVoucher['DiscountValue'];
     $grandTotalWithDelivery -= $discountAmount;
 }
 
 // Handle form submission (for actual payment)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['applyVoucher']) && !isset($_POST['removeVoucher'])) {
+    $appliedVoucher = $_SESSION['applied_voucher'] ?? null;
     $formFullName = $_POST['fullname'] ?? '';
     $formContact = $_POST['contact'] ?? '';
     $formEmail = $_POST['email'] ?? '';
@@ -174,7 +193,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['applyVoucher']) && !
     $finalCity = $formCity ?: $custCity;
     $finalPostcode = $formPostcode ?: $custPostcode;
     $finalState = $formState ?: $custState;
-
+    
     // Only get card details if payment method is credit card or debit card
     if ($paymentMethod === 'Credit Card' || $paymentMethod === 'Debit Card') {
         $cardName = $_POST['cname'] ?? '';
@@ -353,10 +372,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['applyVoucher']) && !
             // Insert payment information
             $insertQuery = "INSERT INTO orderpayment 
                 (CustID, ReceiverName, ReceiverContact, ReceiverEmail, StreetAddress, City, Postcode, State, 
-                OrderDate, TotalPrice, PaymentMethod, CardName, CardNum, ExpDate, CardCVV) 
+                OrderDate, TotalPrice, PaymentMethod, CardName, CardNum, ExpDate, CardCVV, VoucherID) 
                 VALUES 
                 (:custID, :receiverName, :receiverContact, :receiverEmail, :streetAddress, :city, :postcode, :state, 
-                NOW(), :totalPrice, :paymentMethod, :cardName, :cardNum, :expDate, :cardCVV)";
+                NOW(), :totalPrice, :paymentMethod, :cardName, :cardNum, :expDate, :cardCVV, :voucherID)";
+
                 
             $insertStmt = $conn->prepare($insertQuery);
             $insertStmt->bindParam(':custID', $custID, PDO::PARAM_INT);
@@ -370,6 +390,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['applyVoucher']) && !
             $insertStmt->bindParam(':totalPrice', $grandTotalWithDelivery, PDO::PARAM_STR);
             $insertStmt->bindParam(':paymentMethod', $paymentMethod, PDO::PARAM_STR);
             
+            $voucherIDToBind = $appliedVoucher['VoucherID'] ?? null;
+            $insertStmt->bindParam(':voucherID', $voucherIDToBind, PDO::PARAM_INT);
+
             // For E-wallet, store the remaining balance after payment
             $remainingBalance = ($paymentMethod === 'E-wallet') ? ($eWalletBalance - $grandTotalWithDelivery) : NULL;
            
@@ -388,15 +411,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['applyVoucher']) && !
             // If voucher was applied, mark it as used
             if ($appliedVoucher) {
                 $markVoucherUsedQuery = "UPDATE voucher_usage 
-                                       SET UsedAt = NOW() 
-                                       WHERE VoucherID = :voucherID 
-                                       AND CustID = :custID 
-                                       AND UsedAt IS NULL";
+                                        SET UsedAt = NOW() 
+                                        WHERE VoucherID = :voucherID 
+                                        AND CustID = :custID 
+                                        AND UsedAt IS NULL";
                 $markVoucherStmt = $conn->prepare($markVoucherUsedQuery);
                 $markVoucherStmt->bindParam(':voucherID', $appliedVoucher['VoucherID'], PDO::PARAM_INT);
                 $markVoucherStmt->bindParam(':custID', $custID, PDO::PARAM_INT);
                 $markVoucherStmt->execute();
             }
+
             
             if ($insertStmt->execute()) {
                 $orderID = $conn->lastInsertId();
@@ -449,6 +473,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['applyVoucher']) && !
                 // Clear the session cart
                 unset($_SESSION['cart_items']);
                 unset($_SESSION['subtotal']);
+                unset($_SESSION['applied_voucher']);
                 
                 // Store payment method and balance in session
                 $_SESSION['payment_method'] = $paymentMethod;
@@ -575,58 +600,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['applyVoucher']) && !
                 </div>
 
                 <div class="voucher-section">
-                    <h3>Apply Voucher</h3>
-                    <?php
-                    // Check if customer has any available vouchers
-                    $voucherQuery = "SELECT v.VoucherID, v.VoucherCode, v.DiscountValue, v.MinPurchase 
-                                    FROM voucher v
-                                    JOIN voucher_usage vu ON v.VoucherID = vu.VoucherID
-                                    WHERE vu.CustID = :custID AND vu.UsedAt IS NULL AND v.VorcherStatus = 'Active'";
-                    $voucherStmt = $conn->prepare($voucherQuery);
-                    $voucherStmt->bindParam(':custID', $custID, PDO::PARAM_INT);
-                    $voucherStmt->execute();
-                    $availableVouchers = $voucherStmt->fetchAll(PDO::FETCH_ASSOC);
-                    
-                    // Check if voucher was applied in POST
-                    $appliedVoucher = null;
-                    $voucherError = '';
-                    if (isset($_POST['applyVoucher'])) {
-                        $voucherCode = trim($_POST['voucherCode'] ?? '');
-                        
-                        if (!empty($voucherCode)) {
-                            // Check if this is a valid, claimed and unused voucher for this customer
-                            $checkVoucherQuery = "SELECT v.VoucherID, v.VoucherCode, v.DiscountValue, v.MinPurchase 
-                                                FROM voucher v
-                                                JOIN voucher_usage vu ON v.VoucherID = vu.VoucherID
-                                                WHERE v.VoucherCode = :voucherCode 
-                                                AND vu.CustID = :custID 
-                                                AND vu.UsedAt IS NULL
-                                                AND v.VorcherStatus = 'Active'";
-                            $checkStmt = $conn->prepare($checkVoucherQuery);
-                            $checkStmt->bindParam(':voucherCode', $voucherCode);
-                            $checkStmt->bindParam(':custID', $custID, PDO::PARAM_INT);
-                            $checkStmt->execute();
-                            $appliedVoucher = $checkStmt->fetch(PDO::FETCH_ASSOC);
-                            
-                            if ($appliedVoucher) {
-                                // Check if order meets minimum purchase requirement
-                                if ($grandTotalWithDelivery < $appliedVoucher['MinPurchase']) {
-                                    $voucherError = "Minimum purchase of RM " . number_format($appliedVoucher['MinPurchase'], 2) . " required for this voucher";
-                                    $appliedVoucher = null;
-                                }
-                            } else {
-                                $voucherError = "Invalid voucher code or already used";
-                            }
-                        }
-                    }
-                    
-                    // If voucher is applied, calculate discounted total
-                    if ($appliedVoucher) {
-                        $discountAmount = $appliedVoucher['DiscountValue'];
-                        $grandTotalWithDelivery -= $discountAmount;
-                    }
-                    ?>
-                    
+                    <h3>Apply Voucher</h3>                    
                     <?php if (!empty($availableVouchers)): ?>
                         <div class="available-vouchers">
                             <p>Your available vouchers:</p>
