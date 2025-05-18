@@ -90,19 +90,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES['profile_picture'])) {
         
         $file_ext = pathinfo($_FILES['profile_picture']['name'], PATHINFO_EXTENSION);
         $new_filename = "user_" . $user_id . "." . $file_ext;
-        $target_file = $new_filename;
+        $target_file = $target_dir . $new_filename;
         
         if (move_uploaded_file($_FILES['profile_picture']['tmp_name'], $target_file)) {
             // Delete old profile picture if it exists and isn't the default
             $old_pic = $customer['CustProfilePicture'] ?? '';
-            if ($old_pic && $old_pic != 'image/user/default-profile.jpg' && file_exists($old_pic)) {
+            if ($old_pic && $old_pic != 'default-profile.jpg' && file_exists($target_dir . $old_pic)) {
                 unlink($target_dir . $old_pic);
             }
             
-            // Update database
+            // Update database with just the filename
             $sql = "UPDATE customer SET CustProfilePicture = ? WHERE CustID = ?";
             $stmt = $conn->prepare($sql);
-            $stmt->execute([$target_file, $user_id]);
+            $stmt->execute([$new_filename, $user_id]);
             
             $success = "Profile picture updated successfully!";
             // Refresh customer data
@@ -266,7 +266,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
     
     <div class="main-content">
         <div class="profile-header">
-            <img src="image/user/<?= htmlspecialchars($customer['CustProfilePicture'] ?? 'image/user/default-profile.jpg') ?>" 
+            <img src="image/user/<?= htmlspecialchars($customer['CustProfilePicture'] ?? 'default-profile.jpg') ?>" 
                  alt="Profile Picture" 
                  class="profile-picture"
                  onerror="this.src='image/user/user.png'">
