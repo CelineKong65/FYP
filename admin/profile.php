@@ -93,17 +93,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES['profile_picture'])) {
         $file_ext = $allowed_types[$file_type];
         $new_filename = "admin_" . $admin_id . "." . $file_ext;
         $target_file = $target_dir . $new_filename;
-        $relative_path = "image/admin/" . $new_filename; // For database storage
         
         // Delete old profile picture first (if exists and not default)
         $old_pic = $admin['AdminProfilePicture'] ?? '';
-        if ($old_pic) {
-            // Convert database path to server path if needed
-            $old_file_path = strpos($old_pic, '../') === 0 ? $old_pic : "../" . $old_pic;
-            
-            // Delete if it's not the default image and exists
-            if ($old_file_path != '../image/admin/admin.jpg' && file_exists($old_file_path)) {
-                unlink($old_file_path);
+        if ($old_pic && $old_pic != 'admin.jpg') {
+            $old_file_path = $target_dir . basename($old_pic);
+            if (file_exists($old_file_path)) {
+                @unlink($old_file_path);
             }
             
             // Also delete any other potential formats of the same admin's picture
@@ -111,19 +107,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES['profile_picture'])) {
             $old_files = glob($old_pattern);
             foreach ($old_files as $file) {
                 if ($file != $target_file && file_exists($file)) {
-                    unlink($file);
+                    @unlink($file);
                 }
             }
         }
         
         // Move new file and update database
         if (move_uploaded_file($_FILES['profile_picture']['tmp_name'], $target_file)) {
-            // Update database with relative path
+            // Update database with just the filename
             $sql = "UPDATE admin SET AdminProfilePicture = ? WHERE AdminID = ?";
             $stmt = $conn->prepare($sql);
-            $stmt->execute([$relative_path, $admin_id]);
+            $stmt->execute([$new_filename, $admin_id]);
             
             $success = "Profile picture updated successfully!";
+            // Refresh admin data
             $stmt = $conn->prepare($admin_query);
             $stmt->bind_param("i", $admin_id);
             $stmt->execute();
