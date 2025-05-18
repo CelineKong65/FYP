@@ -92,13 +92,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES['profile_picture'])) {
         $new_filename = "user_" . $user_id . "." . $file_ext;
         $target_file = $target_dir . $new_filename;
         
-        if (move_uploaded_file($_FILES['profile_picture']['tmp_name'], $target_file)) {
-            // Delete old profile picture if it exists and isn't the default
-            $old_pic = $customer['CustProfilePicture'] ?? '';
-            if ($old_pic && $old_pic != 'default-profile.jpg' && file_exists($target_dir . $old_pic)) {
-                unlink($target_dir . $old_pic);
+        $old_pic = $customer['CustProfilePicture'] ?? '';
+        if ($old_pic && $old_pic != 'default-prifle.jpg'){
+            $old_file_path = $target_dir . $old_pic;
+            if(file_exists($old_file_path)){
+                unlink($old_file_path); 
             }
-            
+        }
+
+        if (move_uploaded_file($_FILES['profile_picture']['tmp_name'], $target_file)){
             // Update database with just the filename
             $sql = "UPDATE customer SET CustProfilePicture = ? WHERE CustID = ?";
             $stmt = $conn->prepare($sql);
@@ -272,7 +274,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
                  onerror="this.src='image/user/user.png'">
             <h1 class="profile-title">Welcome, <?= htmlspecialchars($customer['CustName']) ?></h1>
             
-            <form class="upload-form" method="post" enctype="multipart/form-data">
+            <form class="upload-form" method="post" enctype="multipart/form-data" action="">
                 <input type="file" name="profile_picture" id="profile_picture" accept="image/*" required>
                 <label for="profile_picture"><i class="fas fa-camera"></i> Upload a New Photo</label>
                 <button type="submit" style="display: none;" id="upload_submit"></button>
@@ -705,7 +707,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ================== PROFILE PHOTO UPLOAD ================== //
     document.getElementById('profile_picture').addEventListener('change', function() {
         if (this.files && this.files[0]) {
-            document.getElementById('upload_submit').click();
+            this.form.submit();
         }
     });
 });
