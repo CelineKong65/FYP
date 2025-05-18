@@ -197,9 +197,6 @@ try {
                     <p style="color:white;">No active vouchers available</p>
                 <?php endif; ?>
 
-                <!-- Navigation buttons -->
-                <a class="prev" onclick="plusSlides(-1)">&#10094;</a>
-                <a class="next" onclick="plusSlides(1)">&#10095;</a>
             </div>
 
 
