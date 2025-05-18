@@ -12,8 +12,9 @@ body {
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
     margin-top: 150px;
-    margin-bottom: 30px;
-    margin-left: 270px;
+    margin-left: 350px;
+    padding: 20px;
+    min-height: 100vh;
 }
 
 h2 {

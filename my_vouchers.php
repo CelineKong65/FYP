@@ -49,6 +49,16 @@ unset($_SESSION['success'], $_SESSION['error']);
     <link rel="stylesheet" href="">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #f5f5f5;
+}
         /* Sidebar Styles */
 .sidebar {
     width: 250px;
@@ -130,6 +140,11 @@ unset($_SESSION['success'], $_SESSION['error']);
     background-color: #c0392b;
 }
 
+.container {
+    margin-top: 50px;
+    padding: 20px;
+    min-height: 100vh;
+}
 
 .voucher-list {
     margin-left: 270px;
@@ -143,9 +158,9 @@ unset($_SESSION['success'], $_SESSION['error']);
     align-items: flex-start;
     border: 1px solid #ddd;
     border-radius: 10px;
-    padding: 15px;
+    padding: 20px;
     margin-bottom: 20px;
-    background: linear-gradient(to right, #f9f9f9, #ffffff);
+    background-color: white;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     transition: transform 0.2s ease;
 }
@@ -181,8 +196,9 @@ unset($_SESSION['success'], $_SESSION['error']);
 }
 
 .voucher-code {
+    margin-top: 8px;
     font-weight: bold;
-    font-size: 1.3em;
+    font-size: 23px;
     color: #007bff;
     margin-bottom: 5px;
 }
@@ -195,7 +211,7 @@ unset($_SESSION['success'], $_SESSION['error']);
 .discount-value {
     color: #28a745;
     font-weight: bold;
-    font-size: 1.1em;
+    font-size: 20px;
     margin-bottom: 8px;
 }
 
@@ -257,10 +273,10 @@ unset($_SESSION['success'], $_SESSION['error']);
                         <div class="voucher-details">
                             <div class="voucher-code"><?= htmlspecialchars($voucher['VoucherCode']) ?></div>
                             <div class="voucher-desc"><?= htmlspecialchars($voucher['VoucherDesc']) ?></div>
-                            <div class="discount-value">RM<?= number_format($voucher['DiscountValue'], 2) ?> OFF</div>
+                            <div class="discount-value">RM <?= number_format($voucher['DiscountValue'], 2) ?> OFF</div>
                             
                             <?php if ($voucher['MinPurchase'] > 0): ?>
-                                <div>Min. Purchase: RM<?= number_format($voucher['MinPurchase'], 2) ?></div>
+                                <div>Min. Purchase: RM <?= number_format($voucher['MinPurchase'], 2) ?></div>
                             <?php endif; ?>
                             
                             <?php if ($voucher['ExpireDate']): ?>
@@ -284,6 +300,10 @@ unset($_SESSION['success'], $_SESSION['error']);
         <?php endif; ?>
     </div>
     
-    <?php include 'footer.php'; ?>
+    
 </body>
 </html>
+
+<?php 
+include 'footer.php';
+?>
