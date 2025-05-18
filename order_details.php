@@ -1,5 +1,5 @@
 <?php
-include 'config.php';
+include 'config.php'; 
 include 'header.php';
 
 if (!isset($_SESSION['user_id'])) {
@@ -15,24 +15,22 @@ if (!isset($_GET['order_id'])) {
 $order_id = $_GET['order_id'];
 
 try {
-    // Get order payment information
-    $order_query_sql = "SELECT * FROM orderpayment WHERE OrderID = ?";
+    $order_query_sql = "SELECT op.*, v.VoucherCode, v.DiscountValue 
+                        FROM orderpayment op
+                        LEFT JOIN voucher v ON op.VoucherID = v.VoucherID
+                        WHERE op.OrderID = ?";
     $stmt = $conn->prepare($order_query_sql);
     $stmt->execute([$order_id]);
     $orderpayment = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$orderpayment) {
-        header("Location: order_view.php");
-        exit();
-    }
-
-    // Get order details
-    $order_details_query = "SELECT * FROM orderdetails WHERE OrderID = ?";
+    $order_details_query = "SELECT od.*, p.ProductPicture 
+                            FROM orderdetails od
+                            LEFT JOIN product p ON od.ProductName = p.ProductName
+                            WHERE od.OrderID = ?";
     $stmt = $conn->prepare($order_details_query);
     $stmt->execute([$order_id]);
     $order_details = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Get customer information
     $cust_id = $orderpayment['CustID'];
     $customer_query = "SELECT CustID, CustName, CustEmail FROM customer WHERE CustID = ?";
     $stmt = $conn->prepare($customer_query);
@@ -50,14 +48,14 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order Details</title>
-    <link rel="stylesheet" href="order_details.css">
+    <link rel='stylesheet' href='order_details.css'>
 </head>
 <body>
     <div class="order-details-container">
         <div class="main-content">
             <div class="order-header">
                 <button name="back" class="view-details-btn" onclick="window.location.href='order_history.php'">Back</button>
-                <h2>Order Details - #<?php echo htmlspecialchars($order_id); ?></h2>
+                <h2>Order Details - #<?php echo $order_id; ?></h2>
                 <button name="print" onclick="printOrder()">Print</button>
             </div>
             
@@ -89,10 +87,12 @@ try {
 
         </div>
 
+
             <div class="order_item">
                 <h3>Order Summary</h3>
                 <table>
                 <tbody>
+
                     <tr>
                         <th>No.</th>
                         <th colspan="2">Product</th>
@@ -104,45 +104,43 @@ try {
                     <!-- Order Items -->
                     <?php 
                     $counter = 1;
-                    foreach ($order_details as $orderdetail): 
-                        $total_item = $orderdetail['ProductPrice'] * $orderdetail['Quantity'];
+                    foreach ($order_details as $orderdetails): 
+                        $total_item = $orderdetails['ProductPrice'] * $orderdetails['Quantity'];
                     ?>
                     <tr>
                         <td><?php echo $counter++; ?></td>
                         <td colspan="2">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <?php
-                            $imageName = strtolower(str_replace(' ', '-', $orderdetail['ProductName']));
-                            $jpgPath = "image/{$imageName}.jpg";
-                            $pngPath = "image/{$imageName}.png";
-
-                            if (file_exists($jpgPath)) {
-                                echo "<img src='{$jpgPath}' alt='".htmlspecialchars($orderdetail['ProductName'])."' style='width: 70px;'>";
-                            } elseif (file_exists($pngPath)) {
-                                echo "<img src='{$pngPath}' alt='".htmlspecialchars($orderdetail['ProductName'])."' style='width: 70px;'>";
-                            } else {
-                                echo "<img src='image/placeholder.jpg' alt='Image not available' style='width: 70px;'>";
-                            }
+                                $imageSrc = $orderdetails['ProductPicture'] ? 'image/' . htmlspecialchars($orderdetails['ProductPicture']) : null;
                             ?>
+                            <img src="<?= $imageSrc ?>" alt="<?= htmlspecialchars($orderdetails['ProductPicture']) ?>" style="width: 90px;">
                             <div style="margin-left: 20px; text-align: left;">
-                                <strong><?php echo htmlspecialchars($orderdetail['ProductName']); ?></strong><br>
-                                Size: <?php echo htmlspecialchars($orderdetail['Size']); ?>
+                                <strong><?php echo htmlspecialchars($orderdetails['ProductName']); ?></strong><br>
+                                Size: <?php echo htmlspecialchars($orderdetails['Size']); ?>
                             </div>
                         </div>
                         </td>
-                        <td><?php echo number_format($orderdetail['ProductPrice'], 2); ?></td>
-                        <td>&times <?php echo htmlspecialchars($orderdetail['Quantity']); ?></td>
+                        <td><?php echo number_format($orderdetails['ProductPrice'], 2); ?></td>
+                        <td>&times <?php echo htmlspecialchars($orderdetails['Quantity']); ?></td>
                         <td style="text-align: right;"><?php echo number_format($total_item, 2); ?></td>
                     </tr>
                     <?php endforeach; ?>
 
-                    <!-- Total Row -->
+                    <?php if ($orderpayment['VoucherID'] !== null): ?>
+                    <tr class="voucher-row">
+                        <td colspan="5" class="total-label">Voucher Discount (<?php echo htmlspecialchars($orderpayment['VoucherCode']); ?>):</td>
+                        <td class="total-value">-RM <?php echo number_format($orderpayment['DiscountValue'], 2); ?></td>
+                    </tr>
+                    <?php endif; ?>
+
                     <tr class="total-row">
                         <td colspan="5" class="total-label">Total (Incl. Delivery):</td>
                         <td class="total-value">RM <?php echo number_format($orderpayment['TotalPrice'], 2); ?></td>
                     </tr>
                 </tbody>
                 </table>
+
             </div>
         </div>
     </div>
@@ -154,5 +152,3 @@ try {
     </script>
 </body>
 </html>
-
-<?php include 'footer.php'; ?>
