@@ -250,6 +250,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
     <title>Admin Profile</title>
     <script src="https://kit.fontawesome.com/c2f7d169d6.js" crossorigin="anonymous"></script>
     <link rel='stylesheet' href='profile.css'>
+    <style>
+        .disabled-btn {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+input[readonly] {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+}
+    </style>
 </head>
 <body>
     <div class="header">
@@ -353,10 +363,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
                     <div class="form-group">
                         <label for="current_password" class="required">Current Password</label>
                         <div class="pass-field">
-                            <input type="password" name="currentPassword" id="currentPassword" value="<?= htmlspecialchars($admin['AdminPassword'] ?? 'Not provided') ?>" required>
+                            <input type="password" name="currentPassword" id="currentPassword" value="<?= htmlspecialchars($admin['AdminPassword'] ?? 'Not provided') ?>" required
+                                   class="<?= isset($errors['currentPassword']) ? 'error-field' : '' ?>">
                             <i class="fas fa-eye" id="show-current-password"></i>
                         </div>
-                        <div id="currentPassword-error" class="error"></div>
+                        <?php if (isset($errors['currentPassword'])): ?>
+                            <div class="error-message"><?= htmlspecialchars($errors['currentPassword']) ?></div>
+                        <?php endif; ?>
                     </div>
                     
                     <div class="form-group">
@@ -397,8 +410,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ================== PASSWORD FEATURES ================== //
     function setupPasswordToggle(passwordInputId, eyeIconId) {
         const eyeIcon = document.getElementById(eyeIconId);
-        const passwordInput = document.getElementById(passwordInputId) || 
-                            document.querySelector(`input[name="${passwordInputId}"]`);
+        const passwordInput = document.getElementById(passwordInputId);
         
         if (eyeIcon && passwordInput) {
             eyeIcon.addEventListener('click', function() {
@@ -414,18 +426,45 @@ document.addEventListener('DOMContentLoaded', function() {
     setupPasswordToggle('newPassword', 'show-new-password');
     setupPasswordToggle('confirmPassword', 'show-confirm-password');
 
-    // Password strength meter
+    // Make current password display-only but viewable
+    const currentPasswordInput = document.querySelector('input[name="currentPassword"]');
+    if (currentPasswordInput) {
+        currentPasswordInput.readOnly = true; // Make it non-editable
+        currentPasswordInput.type = 'password'; // Start masked
+        const eyeIcon = document.getElementById('show-current-password');
+        if (eyeIcon) {
+            eyeIcon.style.cursor = 'pointer'; // Show it's clickable
+        }
+    }
+
+    function validatePasswordRequirements(password) {
+        const requirements = [
+            /^.{8,}$/,      // At least 8 characters
+            /[A-Z]/,         // Uppercase letter
+            /[a-z]/,         // Lowercase letter
+            /\d/,            // Number
+            /[@$!%*#?&]/,    // Special character
+            /^\S*$/          // No spaces
+        ];
+        return requirements.every(regex => regex.test(password));
+    }
+
+    // DOM elements
     const passwordInput = document.getElementById('newPassword');
     const passwordRequirements = document.getElementById('passwordRequirements');
+    const confirmPasswordInput = document.getElementById('confirmPassword');
+    const passwordForm = document.getElementById('passwordForm');
+    const updatePasswordBtn = document.querySelector('button[name="update_password"]');
+    const requirementItems = document.querySelectorAll('.password-req li');
+
     if (passwordInput && passwordRequirements) {
-        const requirementList = document.querySelectorAll('.password-req li');
         const requirements = [
-            {regex: /^.{8,}$/, index: 0},        // At least 8 characters
-            {regex: /[A-Z]/, index: 1},           // Uppercase letter
-            {regex: /[a-z]/, index: 2},           // Lowercase letter
-            {regex: /\d/, index: 3},              // Number
-            {regex: /[@$!%*#?&]/, index: 4},     // Special character
-            {regex: /^\S*$/, index: 5}            // No spaces
+            {regex: /^.{8,}$/, index: 0}, // At least 8 characters
+            {regex: /[A-Z]/, index: 1},    // Uppercase letter
+            {regex: /[a-z]/, index: 2},    // Lowercase letter
+            {regex: /\d/, index: 3},       // Number
+            {regex: /[@$!%*#?&]/, index: 4}, // Special character
+            {regex: /^\S*$/, index: 5}     // No spaces
         ];
 
         // Show requirements on focus
@@ -442,295 +481,139 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 200);
         });
 
-        // Real-time password validation
-        passwordInput.addEventListener('input', function(e) {
-            const value = e.target.value;
+        // Real-time validation for new password
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
             
             // Update requirement indicators
-            requirements.forEach(item => {
-                const isValid = item.regex.test(value);
-                const requirementItem = requirementList[item.index];
-                requirementItem.firstElementChild.className = isValid ? 
-                    "fas fa-check-circle" : "fas fa-circle";
-                requirementItem.classList.toggle('valid', isValid);
+            requirements.forEach(req => {
+                const item = requirementItems[req.index];
+                const icon = item.querySelector('i');
+                const isValid = req.regex.test(password);
+                
+                icon.className = isValid ? 'fas fa-check-circle text-success' : 'fas fa-circle';
+                item.classList.toggle('valid', isValid);
             });
+
+            validatePasswordFields();
+        });
+
+        // Real-time validation for confirm password
+        confirmPasswordInput.addEventListener('input', function() {
+            validatePasswordFields();
+        });
+
+        function validatePasswordFields() {
+            const newPassword = passwordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+            const currentPassword = currentPasswordInput?.value;
+            
+            // Clear previous errors
+            clearError(passwordInput);
+            clearError(confirmPasswordInput);
+            
+            // Validate new password requirements
+            if (newPassword && !validatePasswordRequirements(newPassword)) {
+                showError(passwordInput, 'Password must contain: 8+ chars, uppercase, lowercase, number, special char');
+                disableUpdateButton();
+                return;
+            }
+            
+            // Check if new password matches current password
+            if (newPassword && currentPassword && newPassword === currentPassword) {
+                showError(passwordInput, 'New password cannot be the same as current password');
+                disableUpdateButton();
+                return;
+            }
+            
+            // Check if passwords match
+            if (newPassword && confirmPassword && newPassword !== confirmPassword) {
+                showError(confirmPasswordInput, 'Passwords do not match');
+                disableUpdateButton();
+                return;
+            }
+            
+            // If all validations pass
+            if (newPassword && confirmPassword && 
+                newPassword === confirmPassword && 
+                validatePasswordRequirements(newPassword) &&
+                (!currentPassword || newPassword !== currentPassword)) {
+                enableUpdateButton();
+            } else {
+                disableUpdateButton();
+            }
+        }
+
+        function disableUpdateButton() {
+            if (updatePasswordBtn) {
+                updatePasswordBtn.disabled = true;
+                updatePasswordBtn.classList.add('disabled-btn');
+            }
+        }
+
+        function enableUpdateButton() {
+            if (updatePasswordBtn) {
+                updatePasswordBtn.disabled = false;
+                updatePasswordBtn.classList.remove('disabled-btn');
+            }
+        }
+
+        // Initial validation
+        validatePasswordFields();
+    }
+
+    // Form submission handler for password form
+    if (passwordForm) {
+        passwordForm.addEventListener('submit', function(e) {
+            if (!validatePasswordForm()) {
+                e.preventDefault();
+                const firstError = this.querySelector('.error-field');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
         });
     }
 
-    // ================== VALIDATION SYSTEM ================== //
-    // Initialize validation
-    initValidation();
-    setupRealTimeValidation();
-
-    function initValidation() {
-        // Form submission handling
-        document.querySelectorAll('form').forEach(form => {
-            form.addEventListener('submit', handleFormSubmit);
-        });
-
-        // Real-time field validation
-        document.querySelectorAll('input[required], select[required]').forEach(field => {
-            field.addEventListener('blur', validateField);
-            field.addEventListener('input', validateField);
-        });
-
-        // Special field validations
-        document.querySelector('input[name="email"]')?.addEventListener('blur', validateEmail);
-        document.querySelector('input[name="phone"]')?.addEventListener('input', validatePhoneNumber);
-    }
-
-    // ================== PASSWORD FORM VALIDATION ================== //
     function validatePasswordForm() {
-        const currentPassword = document.querySelector('input[name="currentPassword"]')?.value.trim();
-        const newPassword = document.querySelector('input[name="newPassword"]')?.value.trim();
-        const confirmPassword = document.querySelector('input[name="confirmPassword"]')?.value.trim();
+        const newPassword = passwordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
+        const currentPassword = currentPasswordInput?.value;
         let isValid = true;
+        
+        // Clear all errors first
+        clearError(passwordInput);
+        clearError(confirmPasswordInput);
 
-        // Clear previous errors
-        clearError(document.querySelector('input[name="currentPassword"]'));
-        clearError(document.querySelector('input[name="newPassword"]'));
-        clearError(document.querySelector('input[name="confirmPassword"]'));
-
-        // Validate current password
-        if (!currentPassword) {
-            showError(document.querySelector('input[name="currentPassword"]'), 'Current password is required');
+        // Validate new password exists
+        if (!newPassword.trim()) {
+            showError(passwordInput, 'New password is required');
+            isValid = false;
+        }
+        // Validate password requirements
+        else if (!validatePasswordRequirements(newPassword)) {
+            showError(passwordInput, 'Password must contain: 8+ chars, uppercase, lowercase, number, special char');
+            isValid = false;
+        }
+        // Check if matches current password
+        else if (currentPassword && newPassword === currentPassword) {
+            showError(passwordInput, 'New password cannot be the same as current password');
             isValid = false;
         }
 
-        // Validate new password meets requirements
-        if (!newPassword) {
-            showError(document.querySelector('input[name="newPassword"]'), 'New password is required');
+        // Validate confirm password
+        if (!confirmPassword.trim()) {
+            showError(confirmPasswordInput, 'Please confirm your password');
             isValid = false;
-        } else if (!validatePasswordRequirements(newPassword)) {
-            showError(document.querySelector('input[name="newPassword"]'), 'Password does not meet requirements');
-            isValid = false;
-        }
-
-        // Validate password match
-        if (!confirmPassword) {
-            showError(document.querySelector('input[name="confirmPassword"]'), 'Please confirm your new password');
-            isValid = false;
-        } else if (newPassword !== confirmPassword) {
-            showError(document.querySelector('input[name="confirmPassword"]'), 'Passwords do not match');
-            isValid = false;
-        }
-
-        // Validate new password isn't same as current
-        if (currentPassword && newPassword && currentPassword === newPassword) {
-            showError(document.querySelector('input[name="newPassword"]'), 'New password cannot be the same as current password');
+        } else if (confirmPassword !== newPassword) {
+            showError(confirmPasswordInput, 'Passwords do not match');
             isValid = false;
         }
 
         return isValid;
     }
 
-    function validatePasswordRequirements(password) {
-        const requirements = [
-            /^.{8,}$/,      // At least 8 characters
-            /[A-Z]/,       // Uppercase letter
-            /[a-z]/,       // Lowercase letter
-            /\d/,          // Number
-            /[@$!%*#?&]/, // Special character
-            /^\S*$/       // No spaces
-        ];
-        
-        return requirements.every(regex => regex.test(password));
-    }
-
-    // ================== REAL-TIME DATABASE CHECKS ================== //
-    async function checkFieldAvailability(fieldName, fieldValue, adminId) {
-        return new Promise((resolve) => {
-            if (!fieldValue) {
-                resolve(true); // Skip empty fields
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('ajax_check', '1');
-            formData.append('field', fieldName);
-            formData.append('value', fieldValue);
-            formData.append('user_id', adminId);
-
-            fetch(window.location.href, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                resolve(data.available);
-            })
-            .catch(() => {
-                resolve(true); // Assume available if error occurs
-            });
-        });
-    }
-
-    function setupRealTimeValidation() {
-        const adminId = <?= json_encode($admin_id) ?>;
-        const DEBOUNCE_DELAY = 500; // 0.5 second delay after typing stops
-        
-        // Fields to validate in real-time
-        const fieldsToValidate = {
-            'name': {
-                errorMsg: 'Name already exists',
-                validate: async (value) => await checkFieldAvailability('AdminName', value, adminId)
-            },
-            'email': {
-                errorMsg: 'Email already exists',
-                validate: async (value) => {
-                    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.com$/i;
-                    if (!emailRegex.test(value)) return true; // Let other validation handle format
-                    return await checkFieldAvailability('AdminEmail', value, adminId);
-                }
-            },
-            'phone': {
-                errorMsg: 'Phone number already exists',
-                validate: async (value) => {
-                    const cleanPhone = value.replace(/[-\s]/g, '');
-                    if (!/^\d{3}-\d{3,4} \d{4}$/.test(cleanPhone)) return true;
-                    return await checkFieldAvailability('AdminPhoneNum', cleanPhone, adminId);
-                }
-            },
-            'newPassword': {
-                errorMsg: 'New password cannot match current password',
-                validate: async (value) => {
-                    const currentPassword = document.querySelector('input[name="currentPassword"]')?.value;
-                    return value !== currentPassword;
-                }
-            },
-            'confirmPassword': {
-                errorMsg: 'Passwords do not match',
-                validate: async (value) => {
-                    const newPassword = document.querySelector('input[name="newPassword"]')?.value;
-                    return value === newPassword;
-                }
-            }
-        };
-        
-        // Setup real-time validation for all fields
-        Object.entries(fieldsToValidate).forEach(([fieldName, config]) => {
-            const input = document.querySelector(`input[name="${fieldName}"]`);
-            let debounceTimer;
-            
-            if (input) {
-                input.addEventListener('input', () => {
-                    clearTimeout(debounceTimer);
-                    debounceTimer = setTimeout(async () => {
-                        const value = input.value.trim();
-                        
-                        // Skip validation for empty confirm password when new password is empty
-                        if (fieldName === 'confirmPassword' && !document.querySelector('input[name="newPassword"]').value) {
-                            return;
-                        }
-                        
-                        // Skip validation for short inputs (except phone and passwords)
-                        if (value.length < 2 && !['phone', 'newPassword', 'confirmPassword'].includes(fieldName)) {
-                            return;
-                        }
-                        
-                        const isValid = await config.validate(value);
-                        
-                        if (!isValid) {
-                            showError(input, config.errorMsg);
-                        } else {
-                            clearError(input);
-                        }
-                    }, DEBOUNCE_DELAY);
-                });
-                
-                // Also validate when leaving the field
-                input.addEventListener('blur', async () => {
-                    const value = input.value.trim();
-                    const isValid = await config.validate(value);
-                    
-                    if (!isValid) {
-                        showError(input, config.errorMsg);
-                    }
-                });
-            }
-        });
-    }
-
-    function handleFormSubmit(e) {
-        let isValid = true;
-        let firstError = null;
-
-        // Special handling for password form
-        if (this.id === 'passwordForm') {
-            if (!validatePasswordForm()) {
-                e.preventDefault();
-                firstError = this.querySelector('.error-field');
-                if (firstError) {
-                    firstError.scrollIntoView({ 
-                        behavior: 'smooth', 
-                        block: 'center',
-                        inline: 'nearest'
-                    });
-                }
-                return;
-            }
-        }
-
-        // Validate all required fields
-        this.querySelectorAll('input[required], select[required]').forEach(field => {
-            if (!validateField({ target: field })) {
-                isValid = false;
-                if (!firstError) firstError = field;
-            }
-        });
-
-        // Check for any remaining error messages
-        this.querySelectorAll('.error-message').forEach(errorElement => {
-            if (errorElement.textContent.trim() !== '') {
-                isValid = false;
-                if (!firstError) {
-                    firstError = errorElement.previousElementSibling || 
-                                errorElement.parentElement.querySelector('input, select');
-                }
-            }
-        });
-
-        if (!isValid) {
-            e.preventDefault();
-            firstError?.scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'center',
-                inline: 'nearest'
-            });
-        }
-    }
-
-    function validateField(e) {
-        const field = e.target;
-        const value = field.tagName === 'SELECT' ? field.value : field.value.trim();
-        
-        // Required field validation
-        if (field.required && value === '') {
-            const fieldName = field.name;
-            let message = 'Cannot be empty';
-            
-            showError(field, message);
-            return false;
-        }
-        
-        clearError(field);
-        return true;
-    }
-
-    function validateEmail() {
-        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.com$/i;
-        if (!emailRegex.test(this.value)) {
-            showError(this, 'Invalid email format. Must end with .com');
-        }
-    }
-
-    function validatePhoneNumber() {
-        // Validate format
-        if (phone && !/^\d{3}-\d{3,4} \d{4}$/.test(phone)) {
-            showError(this, 'Format: XXX-XXX XXXX or XXX-XXXX XXXX');
-        }
-    }
-
+    // ================== GENERAL VALIDATION FUNCTIONS ================== //
     function showError(field, message) {
         field.classList.add('error-field');
         let errorElement = field.nextElementSibling;
@@ -753,26 +636,57 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ================== PROFILE PHOTO UPLOAD ================== //
-    document.getElementById('profile_picture')?.addEventListener('change', function() {
-        if (this.files && this.files[0]) {
-            // Validate image before upload
-            const file = this.files[0];
-            const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    const profilePictureInput = document.getElementById('profile_picture');
+    if (profilePictureInput) {
+        profilePictureInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                document.getElementById('upload_submit').click();
+            }
+        });
+    }
+
+    // ================== PROFILE FORM VALIDATION ================== //
+    const profileForm = document.getElementById('profileForm');
+    if (profileForm) {
+        profileForm.addEventListener('submit', function(e) {
+            let isValid = true;
             
-            if (!validTypes.includes(file.type)) {
-                showError(this, 'Only JPG, JPEG & PNG files are allowed');
-                return;
+            // Validate name
+            const nameInput = document.getElementById('name');
+            if (!nameInput.value.trim()) {
+                showError(nameInput, 'Full name is required');
+                isValid = false;
             }
             
-            if (file.size > 5000000) { // 5MB max
-                showError(this, 'File size must be less than 5MB');
-                return;
+            // Validate email
+            const emailInput = document.getElementById('email');
+            if (!emailInput.value.trim()) {
+                showError(emailInput, 'Email is required');
+                isValid = false;
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value)) {
+                showError(emailInput, 'Please enter a valid email address');
+                isValid = false;
             }
             
-            // Submit the form if validation passes
-            document.getElementById('upload_submit').click();
-        }
-    });
+            // Validate phone
+            const phoneInput = document.getElementById('phone');
+            if (!phoneInput.value.trim()) {
+                showError(phoneInput, 'Phone number is required');
+                isValid = false;
+            } else if (!/^(\d{3}-\d{3} \d{4}|\d{3}-\d{4} \d{4})$/.test(phoneInput.value)) {
+                showError(phoneInput, 'Please enter a valid phone number (XXX-XXX XXXX or XXX-XXXX XXXX)');
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+                const firstError = this.querySelector('.error-field');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        });
+    }
 });
 </script>
 </body>
