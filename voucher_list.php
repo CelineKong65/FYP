@@ -46,7 +46,7 @@ unset($_SESSION['error']);
         max-width: 900px;
         margin: 40px auto;
         padding: 0 20px;
-        margin-bottom: 100px;
+        min-height: 100vh;
     }
 
     h1 {
