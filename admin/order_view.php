@@ -64,6 +64,19 @@ if (isset($_POST['edit_status'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order List</title>
     <link rel='stylesheet' href='order_view.css'>
+    <style>
+    .btn-disabled {
+        background-color: #cccccc !important;
+        color: #666666 !important;
+        cursor: not-allowed !important;
+        opacity: 0.6 !important;
+    }
+
+    .btn-disabled:hover {
+        background-color: #cccccc !important;
+        color: #666666 !important;
+    }
+    </style>
 </head>
 <body>
     <div class="header">
@@ -113,7 +126,11 @@ if (isset($_POST['edit_status'])) {
                                 </td>                               
                                 <td style="text-align: center;">RM <?php echo number_format($orderpayment['TotalPrice'], 2); ?></td>
                                 <td>
-                                    <button type="button" name="change_status" onclick="editStatus('<?php echo $orderpayment['OrderID']; ?>', '<?php echo $orderpayment['OrderStatus']; ?>')">Edit Status</button>
+                                    <?php if ($orderpayment['OrderStatus'] === 'Delivered'): ?>
+                                        <button type="button" name="change_status" class="btn-disabled" onclick="editStatus('<?php echo $orderpayment['OrderID']; ?>', '<?php echo $orderpayment['OrderStatus']; ?>')">Edit Status</button>
+                                    <?php else: ?>
+                                        <button type="button" name="change_status" onclick="editStatus('<?php echo $orderpayment['OrderID']; ?>', '<?php echo $orderpayment['OrderStatus']; ?>')">Edit Status</button>
+                                    <?php endif; ?>
                                     <button name="view_details" onclick="window.location.href='order_details.php?order_id=<?php echo $orderpayment['OrderID']; ?>'">View Details</button>
                                 </td>
                             </tr>
@@ -151,6 +168,7 @@ if (isset($_POST['edit_status'])) {
 
     <script>
         function editStatus(id, currentStatus) {
+            if (currentStatus === 'Delivered') return;
             document.getElementById("editOrderID").value = id;
             document.getElementById("editOrderStatus").value = currentStatus;
             document.getElementById("editModal").style.display = "block";
