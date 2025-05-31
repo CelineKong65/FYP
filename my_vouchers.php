@@ -20,7 +20,7 @@ if (!$customer) {
 
 // Get all vouchers claimed by the customer
 $stmt = $conn->prepare("
-    SELECT v.VoucherID, v.VoucherCode, v.VoucherDesc, v.DiscountValue, 
+    SELECT vu.UsageID, v.VoucherID, v.VoucherCode, v.VoucherDesc, v.DiscountValue, 
            v.MinPurchase, v.ExpireDate, v.VoucherPicture, vu.ClaimedAt, 
            CASE 
                WHEN v.ExpireDate IS NULL THEN 1
@@ -44,195 +44,215 @@ unset($_SESSION['success'], $_SESSION['error']);
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Vouchers - Watersport Equipment Shop</title>
-    <link rel="stylesheet" href="">
+    <title>My Vouchers</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    background-color: #f5f5f5;
-}
+       body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: #f5f5f5;
+        }
+        
         /* Sidebar Styles */
-.sidebar {
-    width: 250px;
-    height: 100%;
-    background-color: #007BFF;
-    position: fixed;
-    top: 0;
-    left: 0;
-    padding-top: 80px;
-    color: white;
-    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-}
+        .sidebar {
+            width: 250px;
+            height: 100%;
+            background-color: #007BFF;
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding-top: 80px;
+            color: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
 
-.sidebar-header {
-    padding: 20px;
-    text-align: center;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-}
+        .sidebar-header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
 
-.sidebar-header h2 {
-    margin: 0;
-    color: white;
-    font-size: 1.5rem;
-}
+        .sidebar-header h2 {
+            margin: 0;
+            color: white;
+            font-size: 1.5rem;
+        }
 
-.sidebar-menu {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
 
-.sidebar-menu li {
-    padding: 15px 20px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    transition: background-color 0.3s;
-}
+        .sidebar-menu li {
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            transition: background-color 0.3s;
+        }
 
-.sidebar-menu li:hover {
-    background-color: rgba(255,255,255,0.1);
-}
+        .sidebar-menu li:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
 
-.sidebar-menu li.active {
-    background-color: rgba(255,255,255,0.2);
-}
+        .sidebar-menu li.active {
+            background-color: rgba(255,255,255,0.2);
+        }
 
-.sidebar-menu li a {
-    color: white;
-    text-decoration: none;
-    display: block;
-}
+        .sidebar-menu li a {
+            color: white;
+            text-decoration: none;
+            display: block;
+        }
 
-.sidebar-menu li i {
-    margin-right: 10px;
-    width: 20px;
-    text-align: center;
-}
+        .sidebar-menu li i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
 
-.sidebar-footer {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    padding: 20px;
-    text-align: center;
-}
+        .sidebar-footer {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            padding: 20px;
+            text-align: center;
+        }
 
-.logout-btn {
-    background-color: #e74c3c;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    width: 100%;
-    font-weight: bold;
-    transition: background-color 0.3s;
-}
+        .logout-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
 
-.logout-btn:hover {
-    background-color: #c0392b;
-}
+        .logout-btn:hover {
+            background-color: #c0392b;
+        }
 
-.container {
-    margin-top: 50px;
-    padding: 20px;
-    min-height: 100vh;
-}
+        .container {
+            margin-top: 50px;
+            padding: 20px;
+            min-height: 100vh;
+        }
 
-.voucher-list {
-    margin-left: 270px;
-    padding: 20px;
-    margin-top: 100px;
-    margin-bottom: 50px;
-}
+        .voucher-list {
+            margin-left: 270px;
+            padding: 20px;
+            margin-top: 100px;
+            margin-bottom: 50px;
+        }
 
-.voucher-card {
-    display: flex;
-    align-items: flex-start;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 20px;
-    background-color: white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s ease;
-}
+        .voucher-card {
+            display: flex;
+            align-items: flex-start;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease;
+            position: relative;
+        }
 
-.voucher-card:hover {
-    transform: translateY(-3px);
-}
+        .voucher-card:hover {
+            transform: translateY(-3px);
+        }
 
-.voucher-card.valid {
-    border-left: 5px solid #28a745;
-}
+        .voucher-card.valid {
+            border-left: 5px solid #28a745;
+        }
 
-.voucher-card.expired {
-    border-left: 5px solid #dc3545;
-    opacity: 0.7;
-}
+        .voucher-card.expired {
+            border-left: 5px solid #dc3545;
+            opacity: 0.7;
+        }
 
-.voucher-image {
-    flex: 0 0 320px;
-    margin-right: 15px;
-}
+        .voucher-image {
+            flex: 0 0 320px;
+            margin-right: 15px;
+        }
 
-.voucher-image img {
-    width: 100%;
-    height: auto;
-    border-radius: 8px;
-    object-fit: cover;
-    border: 1px solid #ccc;
-}
+        .voucher-image img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid #ccc;
+        }
 
-.voucher-details {
-    flex: 1;
-}
+        .voucher-details {
+            flex: 1;
+        }
 
-.voucher-code {
-    margin-top: 8px;
-    font-weight: bold;
-    font-size: 23px;
-    color: #007bff;
-    margin-bottom: 5px;
-}
+        .voucher-code {
+            margin-top: 8px;
+            font-weight: bold;
+            font-size: 23px;
+            color: #007bff;
+            margin-bottom: 5px;
+        }
 
-.voucher-desc {
-    margin-bottom: 10px;
-    color: #333;
-}
+        .voucher-desc {
+            margin-bottom: 10px;
+            color: #333;
+        }
 
-.discount-value {
-    color: #28a745;
-    font-weight: bold;
-    font-size: 20px;
-    margin-bottom: 8px;
-}
+        .discount-value {
+            color: #28a745;
+            font-weight: bold;
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
 
-.text-danger {
-    color: #dc3545;
-    font-weight: bold;
-}
+        .text-danger {
+            color: #dc3545;
+            font-weight: bold;
+        }
 
+        .alert {
+            margin-top: 150px;
+            margin-left: 500px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            max-width: 900px;
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            text-align: center;
+        }
 
-.alert {
-    margin-left: 270px;
-    padding: 15px 20px;
-    border-radius: 8px;
-    max-width: 900px;
-}
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
 
-.alert-info a {
-    color: #007bff;
-    text-decoration: underline;
-}
+        .voucher-details a.delete-button {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 6px 12px;
+            border-radius: 5px;
+            background-color: #dc3545;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
 
+        .voucher-details a.delete-button:hover {
+            background-color: #bd2130;
+        }
     </style>
 </head>
 <body>
@@ -255,42 +275,39 @@ body {
         <?php if ($success_message): ?>
             <div class="alert alert-success"><?= htmlspecialchars($success_message) ?></div>
         <?php endif; ?>
-        
+
         <?php if ($error_message): ?>
             <div class="alert alert-danger"><?= htmlspecialchars($error_message) ?></div>
         <?php endif; ?>
-        
+
         <?php if (count($vouchers) > 0): ?>
             <div class="voucher-list">
                 <?php foreach ($vouchers as $voucher): ?>
                     <div class="voucher-card <?= $voucher['IsValid'] ? 'valid' : 'expired' ?>">
                         <?php if (!empty($voucher['VoucherPicture'])): ?>
                             <div class="voucher-image">
-                                <img src="image/voucher/<?= htmlspecialchars($voucher['VoucherPicture']) ?>" alt="Voucher Image">
+                                <img src="image/voucher/<?= htmlspecialchars($voucher['VoucherPicture']) ?>" alt="Voucher">
                             </div>
                         <?php endif; ?>
 
                         <div class="voucher-details">
                             <div class="voucher-code"><?= htmlspecialchars($voucher['VoucherCode']) ?></div>
-                            <div class="voucher-desc"><?= htmlspecialchars($voucher['VoucherDesc']) ?></div>
+                            <div><?= htmlspecialchars($voucher['VoucherDesc']) ?></div>
                             <div class="discount-value">RM <?= number_format($voucher['DiscountValue'], 2) ?> OFF</div>
-                            
                             <?php if ($voucher['MinPurchase'] > 0): ?>
                                 <div>Min. Purchase: RM <?= number_format($voucher['MinPurchase'], 2) ?></div>
                             <?php endif; ?>
-                            
                             <?php if ($voucher['ExpireDate']): ?>
                                 <div>Expires: <?= date('d M Y', strtotime($voucher['ExpireDate'])) ?></div>
                             <?php endif; ?>
-                            
                             <div>Claimed: <?= date('d M Y H:i', strtotime($voucher['ClaimedAt'])) ?></div>
-                            
+
                             <?php if (!$voucher['IsValid']): ?>
                                 <div class="text-danger">This voucher has expired</div>
+                                <a href="delete_voucher.php?id=<?= $voucher['UsageID'] ?>" class="delete-button" onclick="return confirm('Are you sure you want to delete this expired voucher?')">Delete</a>
                             <?php endif; ?>
                         </div>
                     </div>
-
                 <?php endforeach; ?>
             </div>
         <?php else: ?>
@@ -298,12 +315,9 @@ body {
                 You haven't claimed any vouchers yet. <a href="voucher_list.php">Browse available vouchers</a>
             </div>
         <?php endif; ?>
+
     </div>
-    
-    
 </body>
 </html>
 
-<?php 
-include 'footer.php';
-?>
+<?php include 'footer.php'; ?>

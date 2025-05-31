@@ -134,6 +134,7 @@ unset($_SESSION['error']);
         color: #31708f;
         background-color: #d9edf7;
         border-left: 5px solid #31708f;
+        text-align: center;
     }
 
     .back-link {
