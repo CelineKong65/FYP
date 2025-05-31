@@ -604,25 +604,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['applyVoucher']) && !
                     <?php if (!empty($availableVouchers)): ?>
                         <div class="available-vouchers">
                             <p>Your available vouchers:</p>
-                            <ul>
-                                <?php foreach ($availableVouchers as $voucher): ?>
-                                    <li>
-                                        <strong><?= htmlspecialchars($voucher['VoucherCode']) ?></strong> - 
-                                        RM <?= number_format($voucher['DiscountValue'], 2) ?> off
-                                        <?php if ($voucher['MinPurchase'] > 0): ?>
-                                            (Min. purchase RM <?= number_format($voucher['MinPurchase'], 2) ?>)
-                                        <?php endif; ?>
-                                    </li>
-                                <?php endforeach; ?>
-                            </ul>
+                            <form method="POST" action="payment.php" class="voucher-form">
+                                <select name="voucherCode" class="voucher-select">
+                                    <option value="">-- Select a voucher --</option>
+                                    <?php foreach ($availableVouchers as $voucher): ?>
+                                        <option value="<?= htmlspecialchars($voucher['VoucherCode']) ?>"
+                                            <?= (isset($_POST['voucherCode']) && $_POST['voucherCode'] == $voucher['VoucherCode']) ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($voucher['VoucherCode']) ?> - 
+                                            RM <?= number_format($voucher['DiscountValue'], 2) ?> off
+                                            <?php if ($voucher['MinPurchase'] > 0): ?>
+                                                (Min. purchase RM <?= number_format($voucher['MinPurchase'], 2) ?>)
+                                            <?php endif; ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <button type="submit" name="applyVoucher" class="apply-voucher-btn">Apply</button>
+                            </form>
                         </div>
+                    <?php else: ?>
+                        <p>You don't have any available vouchers.</p>
                     <?php endif; ?>
-                    
-                    <form method="POST" action="payment.php" class="voucher-form">
-                        <input type="text" name="voucherCode" placeholder="Enter voucher code" 
-                            value="<?= isset($_POST['voucherCode']) ? htmlspecialchars($_POST['voucherCode']) : '' ?>">
-                        <button type="submit" name="applyVoucher" class="apply-voucher-btn">Apply</button>
-                    </form>
                     
                     <?php if (!empty($voucherError)): ?>
                         <div class="voucher-error"><?= htmlspecialchars($voucherError) ?></div>
