@@ -158,10 +158,10 @@
                             <a href="https://www.instagram.com/?hl=en" target="_blank">
                                 <img src="image/instagram.png" alt="Instagram">
                             </a>
-                            <a href="#" target="_blank">
+                            <a href="https://x.com/" target="_blank">
                                 <img src="image/twitter.png" alt="Twitter">
                             </a>
-                            <a href="#" target="_blank">
+                            <a href="https://www.wasap.my/60102282675/WaterSport" target="_blank">
                                 <img src="image/whatsapp.png" alt="WhatsApp">
                             </a>
                         </div>
