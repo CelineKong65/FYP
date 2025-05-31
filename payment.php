@@ -1,7 +1,7 @@
 <?php
 ob_start();
-include 'config.php';
 include 'header.php';
+include 'config.php';
 
 // Check if this is a top-up request
 if (isset($_GET['topup'])) {
@@ -87,10 +87,12 @@ $fieldErrors = [
 ];
 
 // Check if customer has any available vouchers
-$voucherQuery = "SELECT v.VoucherID, v.VoucherCode, v.DiscountValue, v.MinPurchase 
+$voucherQuery = "SELECT v.VoucherID, v.VoucherCode, v.DiscountValue, v.MinPurchase, v.ExpireDate 
                 FROM voucher v
                 JOIN voucher_usage vu ON v.VoucherID = vu.VoucherID
-                WHERE vu.CustID = :custID AND vu.UsedAt IS NULL AND v.VorcherStatus = 'Active'";
+                WHERE vu.CustID = :custID AND vu.UsedAt IS NULL 
+                AND v.VorcherStatus = 'Active'
+                AND (v.ExpireDate IS NULL OR v.ExpireDate >= CURDATE())";
 $voucherStmt = $conn->prepare($voucherQuery);
 $voucherStmt->bindParam(':custID', $custID, PDO::PARAM_INT);
 $voucherStmt->execute();
@@ -104,14 +106,17 @@ if (isset($_POST['applyVoucher'])) {
     $voucherCode = trim($_POST['voucherCode'] ?? '');
     
     if (!empty($voucherCode)) {
-        // Check if this is a valid, claimed and unused voucher for this customer
-        $checkVoucherQuery = "SELECT v.VoucherID, v.VoucherCode, v.DiscountValue, v.MinPurchase 
+        // Check voucher validity (with additional checks)
+        $checkVoucherQuery = "SELECT v.VoucherID, v.VoucherCode, v.DiscountValue, v.MinPurchase, v.ExpireDate 
                             FROM voucher v
                             JOIN voucher_usage vu ON v.VoucherID = vu.VoucherID
                             WHERE v.VoucherCode = :voucherCode 
                             AND vu.CustID = :custID 
                             AND vu.UsedAt IS NULL
-                            AND v.VorcherStatus = 'Active'";
+                            AND v.VorcherStatus = 'Active'
+                            AND (v.ExpireDate IS NULL OR v.ExpireDate >= CURDATE())
+                            FOR UPDATE"; // Lock the row to prevent changes during validation
+        
         $checkStmt = $conn->prepare($checkVoucherQuery);
         $checkStmt->bindParam(':voucherCode', $voucherCode);
         $checkStmt->bindParam(':custID', $custID, PDO::PARAM_INT);
@@ -119,17 +124,17 @@ if (isset($_POST['applyVoucher'])) {
         $appliedVoucher = $checkStmt->fetch(PDO::FETCH_ASSOC);
         
         if ($appliedVoucher) {
-            // Check if order meets minimum purchase requirement
+            // Additional check for minimum purchase
             if ($grandTotalWithDelivery < $appliedVoucher['MinPurchase']) {
                 $voucherError = "Minimum purchase of RM " . number_format($appliedVoucher['MinPurchase'], 2) . " required for this voucher";
                 $appliedVoucher = null;
-                unset($_SESSION['applied_voucher']);
             } else {
-                // Store voucher into session to persist it for final submission
+                // Store with timestamp to detect changes
+                $appliedVoucher['validated_at'] = time();
                 $_SESSION['applied_voucher'] = $appliedVoucher;
             }
         } else {
-            $voucherError = "Invalid voucher code or already used";
+            $voucherError = "Invalid voucher code, already used, or expired";
         }
     }
     
@@ -146,6 +151,31 @@ if (isset($_POST['applyVoucher'])) {
     $cardNum = $_POST['ccnum'] ?? $cardNum;
     $cardExpDate = $_POST['expdate'] ?? $cardExpDate;
     $cardCVV = $_POST['cvv'] ?? $cardCVV;
+}
+
+// Revalidate applied voucher on every page load
+if (isset($_SESSION['applied_voucher'])) {
+    $appliedVoucher = $_SESSION['applied_voucher'];
+    
+    $revalidateQuery = "SELECT v.VoucherID 
+                       FROM voucher v
+                       WHERE v.VoucherID = :voucherID
+                       AND v.VorcherStatus = 'Active'
+                       AND (v.ExpireDate IS NULL OR v.ExpireDate >= CURDATE())";
+    
+    $stmt = $conn->prepare($revalidateQuery);
+    $stmt->bindParam(':voucherID', $appliedVoucher['VoucherID'], PDO::PARAM_INT);
+    $stmt->execute();
+    
+    if (!$stmt->fetch()) {
+        // Voucher is no longer valid
+        unset($_SESSION['applied_voucher']);
+        $appliedVoucher = null;
+        
+        // Refresh the page to update the UI
+        header("Refresh:0");
+        exit();
+    }
 }
 
 // Check if voucher should be removed
@@ -615,6 +645,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['applyVoucher']) && !
                                             <?php if ($voucher['MinPurchase'] > 0): ?>
                                                 (Min. purchase RM <?= number_format($voucher['MinPurchase'], 2) ?>)
                                             <?php endif; ?>
+                                            <?php if ($voucher['ExpireDate']): ?>
+                                                - Expires on <?= date('d M Y', strtotime($voucher['ExpireDate'])) ?>
+                                            <?php endif; ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -791,6 +824,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['applyVoucher']) && !
         </div>
     </div>
     <script>
+        // Check for voucher validity periodically
+function checkVoucherValidity() {
+    const voucherApplied = <?= isset($_SESSION['applied_voucher']) ? 'true' : 'false' ?>;
+    
+    if (voucherApplied) {
+        // Check every 30 seconds
+        setTimeout(() => {
+            fetch(window.location.href, {
+                headers: {
+                    'X-Voucher-Check': 'true'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                const voucherStillApplied = doc.querySelector('.voucher-success') !== null;
+                
+                if (!voucherStillApplied) {
+                    window.location.reload();
+                }
+            });
+        }, 30000);
+    }
+}
+
+// Run on page load
+window.addEventListener('load', function() {
+    checkVoucherValidity();
+    
+    // Also check when coming back to the page
+    window.addEventListener('focus', checkVoucherValidity);
+});
     // Function to validate required fields
 function validateRequiredField(fieldId, fieldName) {
     const field = document.getElementById(fieldId);
