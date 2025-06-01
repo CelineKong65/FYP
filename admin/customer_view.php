@@ -470,6 +470,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 }
             });
 
+            const name = document.getElementById('name').value.trim();
+            if (name && !/^[a-zA-Z\s]+$/.test(name)) {
+                document.getElementById('name-error').textContent = 'Name should contain only letters and spaces';
+                document.getElementById('name-error').style.display = 'block';
+                document.getElementById('name').classList.add('error-field');
+                document.getElementById('name').classList.remove('valid-field');
+                isValid = false;
+            }
+
             // Validate email format
             const email = document.getElementById('email').value.trim();
             if (email && !/^[^\s@]+@[^\s@]+\.com$/.test(email)) {
@@ -519,7 +528,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                         this.classList.remove('valid-field');
                     } else {
                         // Additional validation for specific fields
-                        if (field === 'email' && !/^[^\s@]+@[^\s@]+\.com$/.test(value)) {
+                        if (field === 'name' && !/^[a-zA-Z\s]+$/.test(value)) {
+                            errorElement.textContent = 'Name should contain only letters and spaces';
+                            errorElement.style.display = 'block';
+                            this.classList.add('error-field');
+                            this.classList.remove('valid-field');
+                        } else if (field === 'email' && !/^[^\s@]+@[^\s@]+\.com$/.test(value)) {
                             errorElement.textContent = 'Invalid email format (must end with .com)';
                             errorElement.style.display = 'block';
                             this.classList.add('error-field');
@@ -590,7 +604,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
             let isValidFormat = true;
             let formatErrorMessage = '';
             
-            if (type === 'email') {
+            if (type === 'name') {
+                if (!/^[a-zA-Z\s]+$/.test(value)) {
+                    isValidFormat = false;
+                    formatErrorMessage = "Name should contain only letters and spaces";
+                }
+            } else if (type === 'email') {
                 if (!/^[^\s@]+@[^\s@]+\.com$/.test(value)) {
                     isValidFormat = false;
                     formatErrorMessage = "Invalid email format (must contain @ and end with .com)";

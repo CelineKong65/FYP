@@ -580,6 +580,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 }
             });
 
+            // Validate name format (letters and spaces only)
+            const name = document.getElementById(prefix + 'name').value.trim();
+            if (name && !/^[a-zA-Z\s]+$/.test(name)) {
+                document.getElementById(prefix + 'name-error').textContent = 'Name should contain only letters and spaces';
+                document.getElementById(prefix + 'name-error').style.display = 'block';
+                document.getElementById(prefix + 'name').classList.add('error-field');
+                document.getElementById(prefix + 'name').classList.remove('valid-field');
+                isValid = false;
+            }
+
             // Validate email format
             const email = document.getElementById(prefix + 'email').value.trim();
             if (email && !/^[^\s@]+@[^\s@]+\.com$/.test(email)) {
@@ -603,7 +613,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
             return isValid;
         }
 
-        // Function to check availability of name, email, phone
         function checkAvailability(type, value, adminId = 0) {
             const prefix = adminId === 0 ? 'add-' : '';
             const errorElement = document.getElementById(prefix + type + '-error');
@@ -623,7 +632,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
             let isValidFormat = true;
             let formatErrorMessage = '';
             
-            if (type === 'email') {
+            if (type === 'name') {
+                if (!/^[a-zA-Z\s]+$/.test(value)) {
+                    isValidFormat = false;
+                    formatErrorMessage = "Name should contain only letters and spaces";
+                }
+            } else if (type === 'email') {
                 if (!/^[^\s@]+@[^\s@]+\.com$/.test(value)) {
                     isValidFormat = false;
                     formatErrorMessage = "Invalid email format (must contain @ and end with .com)";
@@ -679,6 +693,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
             e.preventDefault();
             
             if (!validateForm('edit')) {
+                e.preventDefault();
+                alert('Please fix all errors before submitting.');
                 return;
             }
 
@@ -708,6 +724,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
             e.preventDefault();
             
             if (!validateForm('add')) {
+                e.preventDefault();
+                alert('Please fix all errors before submitting.');
                 return;
             }
 
