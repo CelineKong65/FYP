@@ -156,9 +156,9 @@ if (isset($_POST['update_admin'])) {
         exit();
     }
 
-    $update_query = "UPDATE admin SET AdminName = ?, AdminEmail = ?, AdminPhoneNum = ?, AdminProfilePicture = ? WHERE AdminID = ?";
+    $update_query = "UPDATE admin SET AdminName = ?, AdminEmail = ?, AdminPhoneNum = ?, AdminPosition = ?, AdminProfilePicture = ? WHERE AdminID = ?";
     $stmt = $conn->prepare($update_query);
-    $stmt->bind_param("ssssi", $name, $email, $phone, $image_name, $admin_id);
+    $stmt->bind_param("sssssi", $name, $email, $phone, $position, $image_name, $admin_id);
     
     if ($stmt->execute()) {
         echo json_encode(['success' => true, 'message' => 'Admin updated successfully!']);
@@ -751,7 +751,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
             });
         });
 
-        // In the openEditModal function in JavaScript (which is called when clicking Edit):
         function openEditModal(adminData) {
             clearAllErrors();
 
@@ -760,12 +759,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
             document.getElementById('email').value = adminData.email;
             document.getElementById('phone').value = adminData.phone;
 
-            // Display position as text instead of editable dropdown
-            const positionHTML = `
-                <input type="text" value="${adminData.position}" readonly class="readonly-input">
-                <input type="hidden" name="position" value="${adminData.position}">
-            `;
-            document.getElementById('position-container').innerHTML = positionHTML;
+            // Check if the admin being edited is a superadmin
+            const isEditingSuperadmin = (adminData.position === 'superadmin');
+
+            // If editing a superadmin → Make position READ-ONLY
+            if (isEditingSuperadmin) {
+                const positionHTML = `
+                    <input type="text" value="superadmin" readonly class="readonly-input">
+                    <input type="hidden" name="position" value="superadmin">
+                `;
+                document.getElementById('position-container').innerHTML = positionHTML;
+            } 
+            // If editing a regular admin → Show DROPDOWN (superadmins can change position)
+            else {
+                const positionHTML = `
+                    <select name="position" id="position" required>
+                        <option value="admin" selected>admin</option>
+                        <option value="superadmin">superadmin</option>
+                    </select>
+                `;
+                document.getElementById('position-container').innerHTML = positionHTML;
+            }
 
             document.getElementById('editModal').style.display = 'block';
         }
