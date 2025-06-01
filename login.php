@@ -88,14 +88,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <button type="submit">Continue</button>
                     </form>
                 </div>
-            
-                <div class="option">
-                    <h4>Or continue with</h4>
-                    <div class="social-icon">
-                        <img src="image/facebook.png" alt="facebook">
-                        <img src="image/google.png" alt="google">
-                    </div>
-                </div>
+        
                 <section class="bar">
                     <div class="register">
                         <h3>Don't have an account?</h3>
