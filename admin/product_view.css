@@ -361,7 +361,7 @@ input::placeholder{
     border-color: #333;
 }
 
-.edit-form span, .add-form span{
+span{
     color:gray;
     font-size: 12px;
 }

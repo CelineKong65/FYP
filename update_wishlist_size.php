@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id']) || !isset($_POST['wish_id']) || !isset($_POST['
 }
 
 $wishID = $_POST['wish_id'];
-$newSize = $_POST['new_size'] === 'Standard Only' ? null : $_POST['new_size'];
+$newSize = ($_POST['new_size'] === 'Standard Only' || $_POST['new_size'] === 'NULL') ? null : $_POST['new_size'];
 
 // Update the size in the wishlist
 $updateQuery = "UPDATE wishlist SET Size = :size WHERE WishID = :wish_id";

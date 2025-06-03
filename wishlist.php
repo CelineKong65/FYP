@@ -36,11 +36,13 @@ foreach ($wishlistItems as &$item) {
     $sizeStmt->execute();
     $item['sizes'] = $sizeStmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Get stock for the currently selected size
-    $currentSizeQuery = "SELECT Stock FROM product_size WHERE ProductID = :product_id AND (Size = :size OR (Size IS NULL AND :size IS NULL))";
+    // Get stock for the currently selected size (handling NULL sizes properly)
+    $currentSizeQuery = "SELECT Stock FROM product_size WHERE ProductID = :product_id AND 
+                        (Size = :size OR (Size IS NULL AND (:size IS NULL OR :size = 'Standard Only')))";
     $currentSizeStmt = $conn->prepare($currentSizeQuery);
     $currentSizeStmt->bindParam(':product_id', $item['ProductID'], PDO::PARAM_INT);
-    $currentSizeStmt->bindParam(':size', $item['Size']);
+    $currentSize = ($item['Size'] === 'Standard Only' || $item['Size'] === null) ? null : $item['Size'];
+    $currentSizeStmt->bindParam(':size', $currentSize);
     $currentSizeStmt->execute();
     $currentStock = $currentSizeStmt->fetchColumn();
     $item['current_stock'] = $currentStock !== false ? $currentStock : 0;
@@ -92,12 +94,14 @@ unset($item); // Break the reference
                                 <input type="hidden" name="wish_id" value="<?php echo $item['WishID']; ?>">
                                 <select name="new_size" onchange="updateStockStatus(<?php echo $item['WishID']; ?>, this); document.getElementById('sizeForm-<?php echo $item['WishID']; ?>').submit()" style="padding:5px; margin-top:5px;">
                                     <?php foreach ($item['sizes'] as $sizeOption): 
-                                        $selected = ($sizeOption['Size'] === $item['Size']) ? 'selected' : '';
+                                        $sizeValue = $sizeOption['Size'] ?? 'Standard Only';
+                                        $selected = (($item['Size'] === null && $sizeValue === 'Standard Only')) || 
+                                                   ($item['Size'] === $sizeOption['Size']) ? 'selected' : '';
                                         $isOutOfStock = $sizeOption['Stock'] <= 0;
                                         $disabled = $isOutOfStock ? 'disabled' : '';
                                         $sizeText = $sizeOption['Size'] ?? 'Standard Only';
                                     ?>
-                                        <option value="<?= htmlspecialchars($sizeOption['Size'] ?? 'Standard Only') ?>" 
+                                        <option value="<?= htmlspecialchars($sizeValue) ?>" 
                                                 <?= $selected ?> <?= $disabled ?>
                                                 data-stock="<?= $sizeOption['Stock'] ?>">
                                             <?= htmlspecialchars($sizeText) ?> (<?= $sizeOption['Stock'] ?>)
@@ -118,7 +122,7 @@ unset($item); // Break the reference
                                 <!-- Add to Cart Form -->
                                 <form action="add_to_cart.php" method="POST" style="display:inline;">
                                     <input type="hidden" name="productID" value="<?php echo $item['ProductID']; ?>">
-                                    <input type="hidden" name="size" value="<?php echo htmlspecialchars($item['Size'] ?? 'Standard Only'); ?>">
+                                    <input type="hidden" name="size" value="<?php echo htmlspecialchars($item['Size'] ?? null); ?>">
                                     <input type="hidden" name="qty" value="1">
                                     <button type="submit" id="add-to-cart-<?php echo $item['WishID']; ?>" <?php echo ($item['current_stock'] <= 0) ? 'disabled' : ''; ?>>Add to Cart</button>
                                 </form>
@@ -132,29 +136,20 @@ unset($item); // Break the reference
     </div>
     <script>
         function updateStockStatus(wishId, sizeSelect) {
-            // Get the selected option
             const selectedOption = sizeSelect.options[sizeSelect.selectedIndex];
+            const stock = parseInt(selectedOption.getAttribute('data-stock') || '0');
             
-            // Extract the stock value from the option text (assuming format "Size (stock)")
-            const stockMatch = selectedOption.text.match(/\((\d+)\)/);
-            const stock = stockMatch ? parseInt(stockMatch[1]) : 0;
-            
-            // Find the stock info element for this row
             const stockInfo = document.querySelector(`#stock-info-${wishId}`);
+            const addToCartBtn = document.querySelector(`#add-to-cart-${wishId}`);
             
-            // Update the stock status
             if (stock > 0) {
                 stockInfo.textContent = 'In Stock';
                 stockInfo.className = 'stock-info in-stock';
+                if (addToCartBtn) addToCartBtn.disabled = false;
             } else {
                 stockInfo.textContent = 'Out of Stock';
                 stockInfo.className = 'stock-info out-of-stock';
-            }
-            
-            // Also update the Add to Cart button status
-            const addToCartBtn = document.querySelector(`#add-to-cart-${wishId}`);
-            if (addToCartBtn) {
-                addToCartBtn.disabled = stock <= 0;
+                if (addToCartBtn) addToCartBtn.disabled = true;
             }
         }
     </script>
