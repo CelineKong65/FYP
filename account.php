@@ -130,6 +130,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
     // Validate fields
     if (empty($custName)) {
         $errors['custName'] = "Full name is required";
+    } elseif (!preg_match("/^[a-zA-Z\s]+$/", $custName)) {
+        $errors['custName'] = "Name can only contain letters and spaces";
     } else {
         // Check if name is already taken
         $stmt = $conn->prepare("SELECT CustID FROM customer WHERE CustName = ? AND CustID != ?");
@@ -711,6 +713,31 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+const nameInput = document.querySelector('input[name="custName"]');
+
+if (nameInput) {
+    nameInput.addEventListener('input', function() {
+        const value = this.value;
+        const errorElement = this.nextElementSibling?.classList.contains('error-message') ? 
+            this.nextElementSibling : 
+            this.parentNode.querySelector('.error-message');
+        
+        // Remove non-letter characters in real-time
+        this.value = value.replace(/[^a-zA-Z\s]/g, '');
+        
+        // Show error if invalid characters were attempted
+        if (/[^a-zA-Z\s]/.test(value)) {
+            if (errorElement) {
+                errorElement.textContent = 'Name can only contain letters and spaces';
+                this.classList.add('error-field');
+            }
+        } else if (errorElement) {
+            errorElement.textContent = '';
+            this.classList.remove('error-field');
+        }
+    });
+}
 </script>
 </body>
 </html>

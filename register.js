@@ -1,4 +1,3 @@
-// register.js
 document.addEventListener('DOMContentLoaded', function() {
     const passwordInput = document.querySelector(".pass-field input");
     const eyeIcon = document.querySelector(".pass-field i");
@@ -31,10 +30,62 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-   // Real-time check for username
+// Name validation functions
+    function validateName(inputElement) {
+        const value = inputElement.value.trim();
+        const errorElement = document.getElementById('custName-error');
+        
+        if (!value) {
+            errorElement.textContent = 'Name is required';
+            errorElement.style.display = 'block';
+            inputElement.classList.add('error');
+            return false;
+        }
+        
+        if (!/^[a-zA-Z\s]+$/.test(value)) {
+            errorElement.textContent = 'Name can only contain letters and spaces';
+            errorElement.style.display = 'block';
+            inputElement.classList.add('error');
+            return false;
+        }
+        
+        errorElement.textContent = '';
+        errorElement.style.display = 'none';
+        inputElement.classList.remove('error');
+        return true;
+    }
+
+    // Real-time check for username
     if (nameInput) {
+        // Real-time validation on input
+        nameInput.addEventListener('input', function() {
+            const value = this.value;
+            const errorElement = document.getElementById('custName-error');
+            
+            // First, prevent non-letter characters from being entered
+            this.value = value.replace(/[^a-zA-Z\s]/g, '');
+            
+            // Then validate
+            if (value !== this.value) { // If we modified the input
+                errorElement.textContent = 'Name can only contain letters and spaces';
+                errorElement.style.display = 'block';
+                this.classList.add('error');
+            } else if (this.value.trim() === '') {
+                errorElement.textContent = '';
+                errorElement.style.display = 'none';
+                this.classList.remove('error');
+            } else {
+                errorElement.textContent = '';
+                errorElement.style.display = 'none';
+                this.classList.remove('error');
+            }
+        });
+
+        // Check availability on blur
         nameInput.addEventListener('blur', function() {
-            checkAvailability('username', this.value, 'custName-error');
+            if (this.value.trim() && !this.classList.contains('error')) {
+                checkAvailability('username', this.value, 'custName-error');
+            }
         });
     }
 
@@ -214,4 +265,3 @@ document.addEventListener('DOMContentLoaded', function() {
         return true;
     }
 });
-

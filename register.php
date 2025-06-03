@@ -58,7 +58,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $step == 1) {
     $custEmail = $_POST['custEmail'];
     $custPhoneNum = $_POST['custPhoneNum'];
 
-    // Validate password format (still needs server-side check)
+    // Validate for Customer name only accept letter and empty space
+    if(empty($custName)) {
+        $errors['custName'] = "Full name is required";
+    } elseif (!preg_match("/^[a-zA-Z\s]+$/", $custName)) {
+        $errors['custName'] = "Name can only contain letters and spaces";
+    } else {
+        // Existing username availability check
+        $stmt = $conn->prepare("SELECT CustName FROM customer WHERE CustName = ?");
+        $stmt->execute([$custName]);
+        $exists = $stmt->rowCount() > 0;
+        if ($exists) {
+            $errors['custName'] = "Username already exists";
+        }
+    }
+    
+    // Validate password format
     if (!preg_match("/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])\S{8,}$/", $custPassword)) {
         $errors['custPassword'] = "Password must follow requirements";
     }

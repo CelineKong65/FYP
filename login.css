@@ -211,40 +211,6 @@ header {
     color: #505050;
 }
 
-.option{
-    display: flex;
-    flex-direction: column;
-    padding-top: 30px; 
-}
-
-.option h4{
-    font-size: 13pt;
-    font-weight: 700;
-    position: relative;
-    margin-bottom: 10px;
-}
-
-.social-icon{
-    gap: 10px;
-    display: flex; 
-}
-
-.social-icon img{
-    width: 40px;
-    padding: 5px;
-    background-color: #007BFF;
-    border-radius: 10px;
-    border: 2px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    cursor: pointer;
-    transition: 0.3s ease;
-}
-
-.social-icon img:hover{
-    transition: 0.3s ease;
-    background-color: #007bff94;
-}
-
 .register{
     margin-top: 30px;
 }
