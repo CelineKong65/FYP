@@ -224,3 +224,41 @@ table tr:hover {
     justify-content: flex-end;
     padding-top: 15px;
 }
+
+.btn-disabled {
+    background-color: #cccccc !important;
+    color: #666666 !important;
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+}
+
+.btn-disabled:hover {
+    background-color: #cccccc !important;
+    color: #666666 !important;
+}
+.pagination {
+    text-align: center;
+    margin-top: 20px;
+    padding: 20px;
+}
+
+.pagination .page {
+    display: inline-block;
+    padding: 8px 12px;
+    margin: 0 5px;
+    text-decoration: none;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.pagination .page:hover {
+    background-color: #007BFF;
+    color: #fff;
+}
+
+.pagination .page.active {
+    background-color: #333;
+    color: #fff;
+    border-color: #333;
+}

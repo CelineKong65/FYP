@@ -250,16 +250,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
     <title>Admin Profile</title>
     <script src="https://kit.fontawesome.com/c2f7d169d6.js" crossorigin="anonymous"></script>
     <link rel='stylesheet' href='profile.css'>
-    <style>
-        .disabled-btn {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-input[readonly] {
-    background-color: #f5f5f5;
-    cursor: not-allowed;
-}
-    </style>
 </head>
 <body>
     <div class="header">
@@ -655,6 +645,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const nameInput = document.getElementById('name');
             if (!nameInput.value.trim()) {
                 showError(nameInput, 'Full name is required');
+                isValid = false;  
+            } else if (!/^[a-zA-Z\s]+$/.test(nameInput.value)){
+                showError(nameInput, 'Name should contain only letters and spaces');
                 isValid = false;
             }
             

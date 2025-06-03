@@ -1,5 +1,4 @@
 <?php
-
 session_start();
 
 if (!isset($_SESSION['AdminID'])) {
@@ -9,29 +8,76 @@ if (!isset($_SESSION['AdminID'])) {
 
 include 'db_connection.php';
 
+// Pagination logic
+$ordersPerPage = 10; // Number of orders per page
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$offset = ($page - 1) * $ordersPerPage;
+
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 
+// Base query for counting total orders
+$count_query = "SELECT COUNT(*) FROM orderpayment o";
+
+// Base query for fetching orders
+$order_query = "
+    SELECT o.OrderID, o.ReceiverName, o.ReceiverContact, o.StreetAddress, o.City, o.Postcode, o.State, 
+           o.OrderDate, o.OrderStatus, o.TotalPrice 
+    FROM orderpayment o 
+";
+
+$where_clauses = [];
+$params = [];
+$types = '';
+
+// Search filter
 if (!empty($search_query)) {
-    $stmt = $conn->prepare("
-        SELECT o.OrderID, o.ReceiverName, o.ReceiverContact, o.StreetAddress, o.City, o.Postcode, o.State, 
-               o.OrderDate, o.OrderStatus, o.TotalPrice 
-        FROM orderpayment o 
-        WHERE (o.ReceiverName LIKE ? OR o.ReceiverContact LIKE ? OR o.OrderID LIKE ?)
-        ORDER BY o.OrderDate DESC
-    ");
+    $where_clauses[] = "(o.ReceiverName LIKE ? OR o.ReceiverContact LIKE ? OR o.OrderID LIKE ?)";
     $searchTerm = '%' . $search_query . '%';
-    $stmt->bind_param("sss", $searchTerm, $searchTerm, $searchTerm);
-    $stmt->execute();
-    $order_result = $stmt->get_result();
-} else {
-    $stmt = $conn->prepare("
-        SELECT o.OrderID, o.ReceiverName, o.ReceiverContact, o.StreetAddress, o.City, o.Postcode, o.State, 
-               o.OrderDate, o.OrderStatus, o.TotalPrice 
-        FROM orderpayment o 
-        ORDER BY o.OrderDate DESC
-    ");
-    $stmt->execute();
-    $order_result = $stmt->get_result();
+    $params[] = $searchTerm;
+    $params[] = $searchTerm;
+    $params[] = $searchTerm;
+    $types .= 'sss';
+}
+
+if (!empty($where_clauses)) {
+    $order_query .= " WHERE " . implode(" AND ", $where_clauses);
+    $count_query .= " WHERE " . implode(" AND ", $where_clauses);
+}
+
+$order_query .= " ORDER BY o.OrderDate DESC";
+
+// Add LIMIT clause for pagination
+$order_query .= " LIMIT ? OFFSET ?";
+$types .= 'ii'; // Add types for limit and offset
+$params[] = $ordersPerPage;
+$params[] = $offset;
+
+// Get total number of orders for pagination
+$stmt_count = $conn->prepare($count_query);
+if (!empty($where_clauses)) {
+    // Remove last 2 types (limit and offset) for count query
+    $count_types = substr($types, 0, -2);
+    // Remove last 2 params (limit and offset) for count query
+    $count_params = array_slice($params, 0, -2);
+    
+    $stmt_count->bind_param($count_types, ...$count_params);
+}
+$stmt_count->execute();
+$totalOrders = $stmt_count->get_result()->fetch_row()[0];
+$stmt_count->close();
+
+$totalPages = ceil($totalOrders / $ordersPerPage);
+
+// Prepare and execute the order query
+$stmt = $conn->prepare($order_query);
+if (!empty($params)) {
+    $stmt->bind_param($types, ...$params);
+}
+$stmt->execute();
+$order_result = $stmt->get_result();
+
+if ($order_result === false) {
+    die("Error getting results: " . $conn->error);
 }
 
 if (isset($_POST['edit_status'])) {
@@ -54,7 +100,6 @@ if (isset($_POST['edit_status'])) {
         echo "<script>alert('Failed to update order status.'); window.location.href='order_view.php';</script>";
     }
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -64,19 +109,6 @@ if (isset($_POST['edit_status'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order List</title>
     <link rel='stylesheet' href='order_view.css'>
-    <style>
-    .btn-disabled {
-        background-color: #cccccc !important;
-        color: #666666 !important;
-        cursor: not-allowed !important;
-        opacity: 0.6 !important;
-    }
-
-    .btn-disabled:hover {
-        background-color: #cccccc !important;
-        color: #666666 !important;
-    }
-    </style>
 </head>
 <body>
     <div class="header">
@@ -142,6 +174,19 @@ if (isset($_POST['edit_status'])) {
                     <?php endif; ?>
                 </tbody>
             </table>
+            <div class="pagination">
+                <?php if ($page > 1): ?>
+                    <a href="?page=<?= $page - 1 ?><?= !empty($selected_category) ? '&category=' . $selected_category : '' ?><?= !empty($search_query) ? '&search=' . urlencode($search_query) : '' ?>" class="page">Previous</a>
+                <?php endif; ?>
+
+                <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                    <a href="?page=<?= $i ?><?= !empty($selected_category) ? '&category=' . $selected_category : '' ?><?= !empty($search_query) ? '&search=' . urlencode($search_query) : '' ?>" class="page <?= $i === $page ? 'active' : '' ?>"><?= $i ?></a>
+                <?php endfor; ?>
+
+                <?php if ($page < $totalPages): ?>
+                    <a href="?page=<?= $page + 1 ?><?= !empty($selected_category) ? '&category=' . $selected_category : '' ?><?= !empty($search_query) ? '&search=' . urlencode($search_query) : '' ?>" class="page">Next</a>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 
