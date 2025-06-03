@@ -126,17 +126,64 @@ $faqs = [
         <div class="container">
             <h2 class="section-title">Our Store Locations</h2>
             <div class="store-cards">
-                <?php foreach ($stores as $store): ?>
                 <div class="store-card">
-                    <div class="store-img" style="background-image: url('store-<?= strtolower(str_replace(' ', '-', explode(' ', $store['name'])[0])) ?>.jpg')"></div>
+                    <div class="store-map">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3988.4486768626625!2d103.7774187!3d1.5013337999999998!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31da6ce180efcfb5%3A0x4cfa3e126a713ab5!2sThe%20Mall%2C%20Mid%20Valley%20Southkey!5e0!3m2!1sen!2smy!4v1748962672287!5m2!1sen!2smy" 
+                                width="1000" 
+                                height="600" 
+                                style="border:0;" 
+                                allowfullscreen="" 
+                                loading="lazy" 
+                                referrerpolicy="no-referrer-when-downgrade">
+                        </iframe>
+                    </div>
                     <div class="store-info">
-                        <h3><?= htmlspecialchars($store['name']) ?></h3>
-                        <p><a href="<?= $store['link']?>"><?= ($store['address'])?></a></p>
-                        <p class="store-hours"><?= htmlspecialchars($store['hours']) ?></p>
-                        <p>Tel: <a href="tel:<?= str_replace(' ', '', $store['phone']) ?>"><?= htmlspecialchars($store['phone']) ?></a></p>
+                        <h3>Johor Bahru Flagship Store</h3>
+                        <p>
+                            <i class="fas fa-map-marker-alt"></i> 
+                            <a href="https://maps.app.goo.gl/tKUkBDz8KKBz249a6" target="_blank">
+                                1, Persiaran Southkey 1, Southkey, 80150 Johor Bahru
+                            </a>
+                        </p>
+                        <p class="store-hours">
+                            <i class="far fa-clock"></i> Mon-Sun: 10:00 AM - 10:00 PM
+                        </p>
+                        <p>
+                            <i class="fas fa-phone"></i> 
+                            <a href="tel:+60398765432">+60 3-9876 5432</a>
+                        </p>
                     </div>
                 </div>
-                <?php endforeach; ?>
+
+                <div class="store-card">
+                    <div class="store-map">
+                        <iframe 
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d7973.675311319753!2d102.2463583!3d2.2148518000000004!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31d1f02e9b962b61%3A0xd4f66b8c4369e6fc!2sAEON%20MALL%20Bandaraya%20Melaka!5e0!3m2!1sen!2smy!4v1748961671207!5m2!1sen!2smy" 
+                            width="100%" 
+                            height="200" 
+                            style="border:0;" 
+                            allowfullscreen 
+                            loading="lazy"
+                            referrerpolicy="no-referrer-when-downgrade">
+                        </iframe>
+                    </div>
+                    <div class="store-info">
+                        <h3>Bandaraya Melaka Aeon Waterfront Store</h3>
+                        <p>
+                            <i class="fas fa-map-marker-alt"></i> 
+                            <a href="https://maps.app.goo.gl/ERbKqSWDiKcLHPp99" target="_blank">
+                                2, Jalan Lagenda, Taman 1 Lagenda, 75400 Melaka
+                            </a>
+                        </p>
+                        <p class="store-hours">
+                            <i class="far fa-clock"></i> Mon-Sun: 10:00 AM - 9:00 PM
+                        </p>
+                        <p>
+                            <i class="fas fa-phone"></i> 
+                            <a href="tel:+6041234567">+60 4-123 4567</a>
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
