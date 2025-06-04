@@ -26,7 +26,7 @@ $orderpayment = $stmt->get_result()->fetch_assoc();
 
 $order_details_query = "SELECT od.*, p.ProductPicture 
                         FROM orderdetails od
-                        LEFT JOIN product p ON od.ProductName = p.ProductName
+                        LEFT JOIN product p ON od.ProductID = p.ProductID
                         WHERE od.OrderID = ?";
 $stmt = $conn->prepare($order_details_query);
 $stmt->bind_param("i", $order_id);
@@ -118,7 +118,7 @@ $customer = $stmt->get_result()->fetch_assoc();
                             <?php
                                 $imageSrc = $orderdetails['ProductPicture'] ? '../image/' . $orderdetails['ProductPicture'] : null;
                             ?>
-                            <img src="<?= $imageSrc ?>" alt="<?= $orderdetails['ProductPicture'] ?>" style="width: 90px;">
+                            <img src="<?= $imageSrc ?>" alt="<?= $orderdetails['ProductName'] ?>" style="width: 90px;">
                             <div style="margin-left: 20px; text-align: left;">
                                 <strong><?php echo $orderdetails['ProductName']; ?></strong><br>
                                 Size: <?php echo $orderdetails['Size']; ?>
