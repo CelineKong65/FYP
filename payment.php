@@ -461,22 +461,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['applyVoucher']) && !
                     $size = $item['Size'];
                     $quantity = $item['Quantity'];
                     
-                    // Get the product price from the database
-                    $priceQuery = "SELECT ProductPrice FROM product WHERE ProductName = :productName";
-                    $priceStmt = $conn->prepare($priceQuery);
-                    $priceStmt->bindParam(':productName', $productName, PDO::PARAM_STR);
-                    $priceStmt->execute();
-                    $productPrice = $priceStmt->fetchColumn();
+                    // Get the product ID and price from the database
+                    $productQuery = "SELECT ProductID, ProductPrice FROM product WHERE ProductName = :productName";
+                    $productStmt = $conn->prepare($productQuery);
+                    $productStmt->bindParam(':productName', $productName, PDO::PARAM_STR);
+                    $productStmt->execute();
+                    $productData = $productStmt->fetch(PDO::FETCH_ASSOC);
 
-                    if ($productPrice === false) {
-                        throw new Exception("Could not find price for product: " . $productName);
+                    if (!$productData) {
+                        throw new Exception("Could not find product: " . $productName);
                     }
 
-                    // Insert order details
-                    $detailQuery = "INSERT INTO orderdetails (OrderID, ProductName, Size, Quantity, ProductPrice)
-                                    VALUES (:orderID, :productName, :size, :quantity, :productPrice)";
+                    $productID = $productData['ProductID'];
+                    $productPrice = $productData['ProductPrice'];
+
+                    // Insert order details with ProductID
+                    $detailQuery = "INSERT INTO orderdetails (OrderID, ProductID, ProductName, Size, Quantity, ProductPrice)
+                                    VALUES (:orderID, :productID, :productName, :size, :quantity, :productPrice)";
                     $detailStmt = $conn->prepare($detailQuery);
                     $detailStmt->bindParam(':orderID', $orderID, PDO::PARAM_INT);
+                    $detailStmt->bindParam(':productID', $productID, PDO::PARAM_INT);
                     $detailStmt->bindParam(':productName', $productName, PDO::PARAM_STR);
                     $detailStmt->bindParam(':size', $size, PDO::PARAM_STR);
                     $detailStmt->bindParam(':quantity', $quantity, PDO::PARAM_INT);
