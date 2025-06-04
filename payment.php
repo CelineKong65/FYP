@@ -819,7 +819,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['applyVoucher']) && !
                     </div>
                 </div>
 
-                <button type="submit" class="checkout-btn">Continue to checkout</button>
+                <button type="submit" class="checkout-btn">Place Order</button>
             </form>
         </div>
     </div>
