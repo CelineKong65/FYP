@@ -265,7 +265,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         <h2>Product Categories</h2>
 
         <form method="GET" action="" class="search">
-            <input type="text" name="search" placeholder="Search category" value="<?php echo htmlspecialchars($search_query); ?>">
+            <input type="text" name="search" placeholder="Search by category name" value="<?php echo htmlspecialchars($search_query); ?>">
             <button type="submit" class="search">Search</button>
         </form>
 
