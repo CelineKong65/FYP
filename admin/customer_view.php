@@ -117,17 +117,6 @@ if (isset($_POST['update_customer'])) {
     }
     $stmt->close();
 
-    $stmt = $conn->prepare("SELECT CustID FROM customer WHERE CustName = ? AND CustID != ?");
-    $stmt->bind_param("si", $name, $cust_id);
-    $stmt->execute();
-    $stmt->store_result();
-
-    if ($stmt->num_rows > 0) {
-        echo "<script>alert('Name already exists. Please use a different name.'); window.location.href='customer_view.php';</script>";
-        exit();
-    }
-    $stmt->close();
-
     $stmt = $conn->prepare("SELECT CustID FROM customer WHERE CustPhoneNum = ? AND CustID != ?");
     $stmt->bind_param("si", $phone, $cust_id);
     $stmt->execute();
@@ -187,15 +176,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
     $is_valid_format = true;
     $error_message = '';
 
-    if ($type === 'name') {
-        $sql = "SELECT CustID FROM customer WHERE CustName = ? AND CustID != ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("si", $value, $cust_id);
-        $stmt->execute();
-        $stmt->store_result();
-        $exists = $stmt->num_rows > 0;
-        $stmt->close();
-    } elseif ($type === 'email') {
+    if ($type === 'email') {
         if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
             $is_valid_format = false;
             $error_message = "Invalid email format";
@@ -435,6 +416,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 document.getElementById('state-error').textContent = 'State is required';
                 document.getElementById('state-error').style.display = 'block';
                 state.classList.add('error-field');
+                isValid = false;
+            }
+
+            if (streetVal && !/^[a-zA-Z0-9\s\-,.]+$/.test(streetVal)) {
+                document.getElementById('street-error').textContent = 'Street address should contain only letters, numbers, spaces, hyphens, commas and periods';
+                document.getElementById('street-error').style.display = 'block';
+                street.classList.add('error-field');
+                isValid = false;
+            }
+
+            if (cityVal && !/^[a-zA-Z\s]+$/.test(cityVal)) {
+                document.getElementById('city-error').textContent = 'City should contain only letters and spaces';
+                document.getElementById('city-error').style.display = 'block';
+                city.classList.add('error-field');
                 isValid = false;
             }
 
