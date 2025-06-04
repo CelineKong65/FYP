@@ -229,6 +229,22 @@ $products = $stmt->fetchAll();
                     }
                 ?>
             </ul>
+            <h2>Brands</h2>
+            <ul>
+                <?php
+                    $brandQuery = $conn->prepare("SELECT BrandID, BrandName FROM brand WHERE BrandStatus = 'Active'");
+                    $brandQuery->execute();
+                    $brands = $brandQuery->fetchAll();
+
+                    if ($brands) {
+                        foreach ($brands as $brand) {
+                            echo "<li><a href='brand.php?id=" . htmlspecialchars($brand['BrandID']) . "'>" . htmlspecialchars($brand['BrandName']) . "</a></li>";
+                        }
+                    } else {
+                        echo "<li>No active brands found.</li>";
+                    }
+                ?>
+            </ul>
         </div>
 
         <div class="products-wrapper">

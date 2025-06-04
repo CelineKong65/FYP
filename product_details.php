@@ -341,40 +341,43 @@ $reviewCount = $avgData['review_count'] ?: 0;
             background: darkblue;
         }
 
+        /* Categories Section */
         .categories {
+            flex: 1;
             background-color: #fff;
             padding: 20px;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            width: 400px; 
-            min-height: 440px; 
+            display: flex;
+            flex-direction: column;
         }
 
         .categories h2 {
+            margin-top: 10px;
             font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 15px;
-            transform: translate(10%,8%);
+            margin-bottom: 5px;
+            padding: 5px 25px;
+            transform: translateX(0%)
         }
 
         .categories ul {
             list-style: none;
             padding: 0;
             margin: 0;
-            transform: translate(10%,20%);
+            overflow-y: auto; /* Scroll if content overflows */
+            flex-grow: 1; /* Take up remaining space */
         }
 
         .categories ul li {
-            margin-bottom: 15px;
-            text-align: left;
+            margin-bottom: 10px;
         }
 
         .categories ul li a {
             text-decoration: none;
             color: #333;
             font-size: 18px;
-            display: block; 
-            padding: 5px 0;
+            display: block;
+            padding: 5px 25px;
         }
 
         .categories ul li a:hover {
@@ -612,6 +615,22 @@ $reviewCount = $avgData['review_count'] ?: 0;
                             }
                         } else {
                             echo "<li>No active categories found.</li>";
+                        }
+                    ?>
+                </ul>
+                <h2>Brands</h2>
+                <ul>
+                    <?php
+                        $brandQuery = $conn->prepare("SELECT BrandID, BrandName FROM brand WHERE BrandStatus = 'Active'");
+                        $brandQuery->execute();
+                        $brands = $brandQuery->fetchAll();
+
+                        if ($brands) {
+                            foreach ($brands as $brand) {
+                                echo "<li><a href='brand.php?id=" . htmlspecialchars($brand['BrandID']) . "'>" . htmlspecialchars($brand['BrandName']) . "</a></li>";
+                            }
+                        } else {
+                            echo "<li>No active brands found.</li>";
                         }
                     ?>
                 </ul>

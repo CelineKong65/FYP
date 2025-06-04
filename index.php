@@ -250,9 +250,10 @@ try {
                         'image/brand/' . htmlspecialchars($row['BrandPicture']) : 
                         'image/brand/default-brand.jpg';
                     ?>
-                    <div class="brand-item">
-                            <img src="<?= $brandImage ?>" alt="<?= $brandName ?>">
-                    </div>
+                    <a href="brand.php?id=<?= $brandId ?>" class="brand-item">
+                        <img src="<?= $brandImage ?>" alt="<?= $brandName ?>">
+                        <p><?= $brandName ?></p>
+                    </a>
                 <?php endforeach; ?>
             <?php else: ?>
                 <p>No brands found</p>

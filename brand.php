@@ -2,12 +2,12 @@
 include 'config.php';
 include 'header.php';
 
-// Get category ID from the URL
-$categoryID = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+// Get brand ID from the URL
+$brandID = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
-// If no valid category is selected, redirect or show a message
-if ($categoryID <= 0) {
-    echo "<p style='text-align:center;color:red;'>Invalid category selected.</p>";
+// If no valid brand is selected, redirect or show a message
+if ($brandID <= 0) {
+    echo "<p style='text-align:center;color:red;'>Invalid brand selected.</p>";
     include 'footer.php';
     exit;
 }
@@ -17,40 +17,40 @@ $productsPerPage = 6;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($page - 1) * $productsPerPage;
 
-// Get total products in selected category with active brands
+// Get total products for selected brand
 $stmt = $conn->prepare("
     SELECT COUNT(*) 
     FROM product p
     JOIN brand b ON p.BrandID = b.BrandID
-    WHERE p.CategoryID = :categoryID 
+    WHERE p.BrandID = :brandID 
     AND p.ProductStatus = 'Active'
     AND b.BrandStatus = 'Active'
 ");
-$stmt->bindParam(':categoryID', $categoryID, PDO::PARAM_INT);
+$stmt->bindParam(':brandID', $brandID, PDO::PARAM_INT);
 $stmt->execute();
 $totalProducts = $stmt->fetchColumn();
 $totalPages = ceil($totalProducts / $productsPerPage);
 
-// Get category name
-$categoryName = "Products";
-$catStmt = $conn->prepare("SELECT CategoryName FROM category WHERE CategoryID = :categoryID");
-$catStmt->bindParam(':categoryID', $categoryID, PDO::PARAM_INT);
-$catStmt->execute();
-if ($row = $catStmt->fetch()) {
-    $categoryName = $row['CategoryName'];
+// Get brand name
+$brandName = "Products";
+$brandStmt = $conn->prepare("SELECT BrandName FROM brand WHERE BrandID = :brandID");
+$brandStmt->bindParam(':brandID', $brandID, PDO::PARAM_INT);
+$brandStmt->execute();
+if ($row = $brandStmt->fetch()) {
+    $brandName = $row['BrandName'];
 }
 
-// Fetch products in the selected category with active brands
+// Fetch products for the selected brand
 $stmt = $conn->prepare("
     SELECT p.* 
     FROM product p
     JOIN brand b ON p.BrandID = b.BrandID
-    WHERE p.CategoryID = :categoryID 
+    WHERE p.BrandID = :brandID 
     AND p.ProductStatus = 'Active'
     AND b.BrandStatus = 'Active'
     LIMIT :limit OFFSET :offset
 ");
-$stmt->bindParam(':categoryID', $categoryID, PDO::PARAM_INT);
+$stmt->bindParam(':brandID', $brandID, PDO::PARAM_INT);
 $stmt->bindValue(':limit', $productsPerPage, PDO::PARAM_INT);
 $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();
@@ -61,7 +61,7 @@ $products = $stmt->fetchAll();
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title><?= htmlspecialchars($categoryName) ?> Products</title>
+    <title><?= htmlspecialchars($brandName) ?> Products</title>
     <link rel="stylesheet" href="category.css">
     <style>
       body {
@@ -81,7 +81,7 @@ $products = $stmt->fetchAll();
     min-height: 80vh; 
 }
 
-.categories {
+.brands {
     flex: 1;
     background-color: #fff;
     padding: 20px;
@@ -91,14 +91,14 @@ $products = $stmt->fetchAll();
     flex-direction: column;
 }
 
-.categories h2 {
+.brands h2 {
     margin-top: 10px;
     font-size: 24px;
     margin-bottom: 5px;
     padding: 5px 25px;
 }
 
-.categories ul {
+.brands ul {
     list-style: none;
     padding: 0;
     margin: 0;
@@ -106,11 +106,11 @@ $products = $stmt->fetchAll();
     flex-grow: 1; 
 }
 
-.categories ul li {
+.brands ul li {
     margin-bottom: 10px;
 }
 
-.categories ul li a {
+.brands ul li a {
     text-decoration: none;
     color: #333;
     font-size: 18px;
@@ -118,7 +118,7 @@ $products = $stmt->fetchAll();
     padding: 5px 25px;
 }
 
-.categories ul li a:hover {
+.brands ul li a:hover {
     color: #007BFF;
 }
 
@@ -222,14 +222,14 @@ $products = $stmt->fetchAll();
 .pagination .page:hover {
     background-color: #007BFF;
     color: #fff;
-    border-color: #007BFF;
+    border-color: #007BFF;
 }
     </style>
 </head>
 <body>
 
 <div class="container-shop">
-    <div class="categories">
+    <div class="brands">
         <h2>Categories</h2>
         <ul>
             <?php
@@ -280,7 +280,7 @@ $products = $stmt->fetchAll();
                     </div>
                 <?php endforeach; ?>
             <?php else: ?>
-                <p style="text-align:center;">No products available in this category.</p>
+                <p style="text-align:center; grid-column: 1 / -1;">No products available for this brand.</p>
             <?php endif; ?>
         </div>
     </div>
@@ -289,15 +289,15 @@ $products = $stmt->fetchAll();
 <!-- Pagination -->
 <div class="pagination" style="text-align: center; margin: 20px 0;">
     <?php if ($page > 1): ?>
-        <a href="?id=<?= $categoryID ?>&page=<?= $page - 1 ?>" class="page">Previous</a>
+        <a href="?id=<?= $brandID ?>&page=<?= $page - 1 ?>" class="page">Previous</a>
     <?php endif; ?>
 
     <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-        <a href="?id=<?= $categoryID ?>&page=<?= $i ?>" class="page <?= ($i == $page) ? 'active' : '' ?>"><?= $i ?></a>
+        <a href="?id=<?= $brandID ?>&page=<?= $i ?>" class="page <?= ($i == $page) ? 'active' : '' ?>"><?= $i ?></a>
     <?php endfor; ?>
 
     <?php if ($page < $totalPages): ?>
-        <a href="?id=<?= $categoryID ?>&page=<?= $page + 1 ?>" class="page">Next</a>
+        <a href="?id=<?= $brandID ?>&page=<?= $page + 1 ?>" class="page">Next</a>
     <?php endif; ?>
 </div>
 
