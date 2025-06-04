@@ -79,7 +79,7 @@ if (isset($_POST['update_admin'])) {
         $allowed_types = ['jpg', 'jpeg', 'png'];
 
         if (!in_array($image_extension, $allowed_types)) {
-            echo json_encode(['success' => false, 'message' => 'Invalid file format. Only JPG, JPEG, and PNG allowed.']);
+            echo "<script>alert('Invalid file format. Only JPG, JPEG, and PNG allowed.'); window.location.href='admin_view.php';</script>";
             exit();
         }
 
@@ -99,7 +99,7 @@ if (isset($_POST['update_admin'])) {
         $target_file = $target_dir . $image_name;
 
         if (!move_uploaded_file($profile_picture['tmp_name'], $target_file)) {
-            echo json_encode(['success' => false, 'message' => 'Failed to upload image.']);
+            echo "<script>alert('Failed to upload image.'); window.location.href='admin_view.php';</script>";
             exit();
         }
     } else {
@@ -111,18 +111,6 @@ if (isset($_POST['update_admin'])) {
         $stmt->close();
     }
 
-    $check_name_query = "SELECT AdminID FROM admin WHERE AdminName = ? AND AdminID != ?";
-    $stmt = $conn->prepare($check_name_query);
-    $stmt->bind_param("si", $name, $admin_id);
-    $stmt->execute();
-    $stmt->store_result();
-    
-    if ($stmt->num_rows > 0) {
-        echo json_encode(['success' => false, 'message' => 'Admin name already exists. Please use a different name.']);
-        exit();
-    }
-    $stmt->close();  
-
     $check_email_query = "SELECT AdminID FROM admin WHERE AdminEmail = ? AND AdminID != ?";
     $stmt = $conn->prepare($check_email_query);
     $stmt->bind_param("si", $email, $admin_id);
@@ -130,7 +118,7 @@ if (isset($_POST['update_admin'])) {
     $stmt->store_result();
 
     if ($stmt->num_rows > 0) {
-        echo json_encode(['success' => false, 'message' => 'Email already exists. Please use a different email.']);
+        echo "<script>alert('Email already exists. Please use a different email.'); window.location.href='admin_view.php';</script>";
         exit();
     }
     $stmt->close();
@@ -141,18 +129,18 @@ if (isset($_POST['update_admin'])) {
     $stmt->execute();
     $stmt->store_result();
     if ($stmt->num_rows > 0) {
-        echo json_encode(['success' => false, 'message' => 'Phone number already exists. Please use a different phone number.']);
+        echo "<script>alert('Phone number already exists. Please use a different phone number.'); window.location.href='admin_view.php';</script>";
         exit();
     }
     $stmt->close();
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/\.com$/', $email)) {
-        echo json_encode(['success' => false, 'message' => 'Invalid email format (must end with .com)']);
+        echo "<script>alert('Invalid email format (must end with .com)'); window.location.href='admin_view.php';</script>";
         exit();
     }
 
     if (!preg_match('/^\d{3}-\d{3,4} \d{4}$/', $phone)) {
-        echo json_encode(['success' => false, 'message' => 'Contact number must be in XXX-XXX XXXX or XXX-XXXX XXXX format']);
+        echo "<script>alert('Contact number must be in XXX-XXX XXXX or XXX-XXXX XXXX format'); window.location.href='admin_view.php';</script>";
         exit();
     }
 
@@ -161,10 +149,11 @@ if (isset($_POST['update_admin'])) {
     $stmt->bind_param("sssssi", $name, $email, $phone, $position, $image_name, $admin_id);
     
     if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => 'Admin updated successfully!']);
+        echo "<script>alert('Admin updated successfully!'); window.location.href='admin_view.php';</script>";
     } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to update admin.']);
+        echo "<script>alert('Failed to update admin: " . addslashes($conn->error) . "'); window.location.href='admin_view.php';</script>";
     }
+
     $stmt->close();
     exit();
 }
@@ -179,18 +168,6 @@ if (isset($_POST['add_admin'])) {
     // Generate random 8-character password
     $password = generateRandomPassword(8);
 
-    $check_name_query = "SELECT AdminID FROM admin WHERE AdminName = ?";
-    $stmt = $conn->prepare($check_name_query);
-    $stmt->bind_param("s", $name);
-    $stmt->execute();
-    $stmt->store_result();
-
-    if ($stmt->num_rows > 0) {
-        echo json_encode(['success' => false, 'message' => 'Admin name already exists. Please use a different name.']);
-        exit();
-    }
-    $stmt->close();
-
     $check_email_query = "SELECT AdminID FROM admin WHERE AdminEmail = ?";
     $stmt = $conn->prepare($check_email_query);
     $stmt->bind_param("s", $email);
@@ -198,7 +175,7 @@ if (isset($_POST['add_admin'])) {
     $stmt->store_result();
     
     if ($stmt->num_rows > 0) {
-        echo json_encode(['success' => false, 'message' => 'Email already exists. Please use a different email.']);
+        echo "<script>alert('Email already exists. Please use a different email.'); window.location.href='admin_view.php';</script>";
         exit();
     }
     $stmt->close();
@@ -209,18 +186,18 @@ if (isset($_POST['add_admin'])) {
     $stmt->execute();
     $stmt->store_result();
     if ($stmt->num_rows > 0) {
-        echo json_encode(['success' => false, 'message' => 'Phone number already exists. Please use a different phone number.']);
+        echo "<script>alert('Phone number already exists. Please use a different phone number.'); window.location.href='admin_view.php';</script>";
         exit();
     }
     $stmt->close();
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/\.com$/', $email)) {
-        echo json_encode(['success' => false, 'message' => 'Invalid email format (must end with .com)']);
+        echo "<script>alert('Invalid email format (must end with .com)'); window.location.href='admin_view.php';</script>";
         exit();
     }
 
     if (!preg_match('/^\d{3}-\d{3,4} \d{4}$/', $phone)) {
-        echo json_encode(['success' => false, 'message' => 'Contact number must be in XXX-XXX XXXX or XXX-XXXX XXXX format']);
+        echo "<script>alert('Contact number must be in XXX-XXX XXXX or XXX-XXXX XXXX format'); window.location.href='admin_view.php';</script>";
         exit();
     }
 
@@ -280,12 +257,12 @@ if (isset($_POST['add_admin'])) {
             ";
 
             $mail->send();
-            echo json_encode(['success' => true, 'message' => 'Admin added successfully! Password has been sent to the admin\'s email.']);
+            echo "<script>alert('Admin added successfully! Password has been sent to the admin\'s email.'); window.location.href='admin_view.php';</script>";
         } catch (Exception $e) {
-            echo json_encode(['success' => true, 'message' => 'Admin added successfully but failed to send password email.']);
+            echo "<script>alert('Admin added successfully but failed to send password email.'); window.location.href='admin_view.php';</script>";
         }
     } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to add admin.']);
+        echo "<script>alert('Failed to add admin.'); window.location.href='admin_view.php';</script>";
     }
     $stmt->close();
     exit();
@@ -325,15 +302,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
     $is_valid_format = true;
     $error_message = '';
 
-    if ($type === 'name') {
-        $sql = "SELECT AdminID FROM admin WHERE AdminName = ? AND AdminID != ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("si", $value, $admin_id);
-        $stmt->execute();
-        $stmt->store_result();
-        $exists = $stmt->num_rows > 0;
-        $stmt->close();
-    } elseif ($type === 'email') {
+    if ($type === 'email') {
         if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
             $is_valid_format = false;
             $error_message = "Invalid email format";
@@ -547,28 +516,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
     </div>
 
     <script>
-        // Function to clear all error messages
-        function clearAllErrors() {
-            document.querySelectorAll('.error-message').forEach(el => {
-                el.textContent = '';
-                el.style.display = 'none';
-            });
-            document.querySelectorAll('.error-field, .valid-field').forEach(el => {
-                el.classList.remove('error-field', 'valid-field');
-            });
-        }
-
-        // Function to validate form
-        function validateForm(formType) {
+        // Common validation function for both add and edit forms
+        function validateForm(formType = 'edit') {
             let isValid = true;
+            const prefix = formType === 'add' ? 'add-' : '';
             const requiredFields = ['name', 'email', 'phone'];
-            const prefix = formType === 'edit' ? '' : 'add-';
             
-            // Check basic required fields
+            // Check all required fields
             requiredFields.forEach(field => {
                 const fieldId = prefix + field;
                 const fieldValue = document.getElementById(fieldId).value.trim();
-                const errorElement = document.getElementById(fieldId + '-error');
+                const errorElement = document.getElementById(`${fieldId}-error`);
                 const inputField = document.getElementById(fieldId);
                 
                 if (!fieldValue) {
@@ -580,7 +538,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 }
             });
 
-            // Validate name format (letters and spaces only)
+            // Validate name format
             const name = document.getElementById(prefix + 'name').value.trim();
             if (name && !/^[a-zA-Z\s]+$/.test(name)) {
                 document.getElementById(prefix + 'name-error').textContent = 'Name should contain only letters and spaces';
@@ -613,22 +571,126 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
             return isValid;
         }
 
-        function checkAvailability(type, value, adminId = 0) {
-            const prefix = adminId === 0 ? 'add-' : '';
-            const errorElement = document.getElementById(prefix + type + '-error');
-            const inputField = document.getElementById(prefix + type);
+        // Add event listeners for real-time validation (edit form)
+        ['name', 'email', 'phone'].forEach(field => {
+            document.getElementById(field).addEventListener('blur', function() {
+                validateField(field, this.value.trim(), '');
+            });
+        });
+
+        // Add event listeners for real-time validation (add form)
+        ['name', 'email', 'phone'].forEach(field => {
+            document.getElementById('add-' + field).addEventListener('blur', function() {
+                validateField(field, this.value.trim(), 'add-');
+            });
+        });
+
+        // Common field validation function
+        function validateField(field, value, prefix = '') {
+            const fieldId = prefix + field;
+            const errorElement = document.getElementById(`${fieldId}-error`);
+            const inputField = document.getElementById(fieldId);
             
             errorElement.textContent = '';
             errorElement.style.display = 'none';
             inputField.classList.remove('error-field', 'valid-field');
 
-            if (!value.trim() && (type === 'name' || type === 'email' || type === 'phone')) {
+            if (!value) {
+                errorElement.textContent = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
+                errorElement.style.display = 'block';
+                inputField.classList.add('error-field');
+                return;
+            }
+
+            // Additional validation for specific fields
+            if (field === 'name' && !/^[a-zA-Z\s]+$/.test(value)) {
+                errorElement.textContent = 'Name should contain only letters and spaces';
+                errorElement.style.display = 'block';
+                inputField.classList.add('error-field');
+            } else if (field === 'email' && !/^[^\s@]+@[^\s@]+\.com$/.test(value)) {
+                errorElement.textContent = 'Invalid email format (must end with .com)';
+                errorElement.style.display = 'block';
+                inputField.classList.add('error-field');
+            } else if (field === 'phone' && !/^\d{3}-\d{3,4} \d{4}$/.test(value)) {
+                errorElement.textContent = 'Phone must be in XXX-XXX XXXX or XXX-XXXX XXXX format';
+                errorElement.style.display = 'block';
+                inputField.classList.add('error-field');
+            } else {
+                inputField.classList.add('valid-field');
+                // For email and phone, also check availability
+                if (field === 'email' || field === 'phone') {
+                    checkAvailability(field, value, prefix);
+                }
+            }
+        }
+
+        // Form submission handler for edit form
+        document.getElementById('editAdminForm').addEventListener('submit', function(e) {
+            if (!validateForm('edit')) {
+                e.preventDefault();
+                alert('Please fix all errors before submitting.');
+                return;
+            }
+
+            const errorMessages = document.querySelectorAll('#editModal .error-message');
+            let hasErrors = false;
+            
+            errorMessages.forEach(error => {
+                if (error.textContent && error.style.display !== 'none') {
+                    hasErrors = true;
+                }
+            });
+
+            if (hasErrors) {
+                e.preventDefault();
+                alert('Please fix all errors before submitting.');
+            }
+        });
+
+        // Form submission handler for add form
+        document.getElementById('addAdminForm').addEventListener('submit', function(e) {
+            if (!validateForm('add')) {
+                e.preventDefault();
+                alert('Please fix all errors before submitting.');
+                return;
+            }
+
+            const errorMessages = document.querySelectorAll('#addModal .error-message');
+            let hasErrors = false;
+            
+            errorMessages.forEach(error => {
+                if (error.textContent && error.style.display !== 'none') {
+                    hasErrors = true;
+                }
+            });
+
+            if (hasErrors) {
+                e.preventDefault();
+                alert('Please fix all errors before submitting.');
+            }
+        });
+
+        // Common availability check function
+        function checkAvailability(type, value, prefix = '') {
+            const adminId = prefix === '' ? document.getElementById('admin_id')?.value : 0;
+            const fieldId = prefix + type;
+            const errorElement = document.getElementById(`${fieldId}-error`);
+            const inputField = document.getElementById(fieldId);
+            
+            // Clear previous states
+            errorElement.textContent = '';
+            errorElement.style.display = 'none';
+            inputField.classList.remove('error-field', 'valid-field');
+
+            // Check for empty required fields
+            if (!value.trim()) {
                 errorElement.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} is required`;
                 errorElement.style.display = 'block';
                 inputField.classList.add('error-field');
                 return;
             }
 
+            // Validate format
             let isValidFormat = true;
             let formatErrorMessage = '';
             
@@ -653,9 +715,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 errorElement.textContent = formatErrorMessage;
                 errorElement.style.display = 'block';
                 inputField.classList.add('error-field');
+                inputField.classList.remove('valid-field');
                 return;
             }
 
+            // Check availability via AJAX
             const formData = new FormData();
             formData.append('check_availability', 'true');
             formData.append('type', type);
@@ -672,10 +736,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                     errorElement.textContent = data.message;
                     errorElement.style.display = 'block';
                     inputField.classList.add('error-field');
+                    inputField.classList.remove('valid-field');
                 } else if (data.exists) {
                     errorElement.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} already exists`;
                     errorElement.style.display = 'block';
                     inputField.classList.add('error-field');
+                    inputField.classList.remove('valid-field');
                 } else {
                     errorElement.textContent = '';
                     errorElement.style.display = 'none';
@@ -685,130 +751,88 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
             })
             .catch(error => {
                 console.error('Error checking availability:', error);
+                inputField.classList.remove('valid-field');
             });
         }
 
-        // Handle form submissions with AJAX
-        document.getElementById('editAdminForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            if (!validateForm('edit')) {
-                e.preventDefault();
-                alert('Please fix all errors before submitting.');
-                return;
-            }
-
-            const formData = new FormData(this);
-            formData.append('update_admin', 'true');
-
-            fetch(window.location.href, {
-                method: 'POST',
-                body: formData,
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                    window.location.reload();
-                } else {
-                    alert(data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while updating admin.');
-            });
-        });
-
-        document.getElementById('addAdminForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            if (!validateForm('add')) {
-                e.preventDefault();
-                alert('Please fix all errors before submitting.');
-                return;
-            }
-
-            const formData = new FormData(this);
-            formData.append('add_admin', 'true');
-
-            fetch(window.location.href, {
-                method: 'POST',
-                body: formData,
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                    window.location.reload();
-                } else {
-                    alert(data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while adding admin.');
-            });
-        });
-
+        // Function to open edit modal
         function openEditModal(adminData) {
-            clearAllErrors();
-
+            // Clear all errors first
+            document.querySelectorAll('#editModal .error-message').forEach(el => {
+                el.textContent = '';
+                el.style.display = 'none';
+            });
+            document.querySelectorAll('#editModal .error-field, #editModal .valid-field').forEach(el => {
+                el.classList.remove('error-field', 'valid-field');
+            });
+            
+            // Set form values
             document.getElementById('admin_id').value = adminData.id;
             document.getElementById('name').value = adminData.name;
             document.getElementById('email').value = adminData.email;
             document.getElementById('phone').value = adminData.phone;
-
-            // Check if the admin being edited is a superadmin
-            const isEditingSuperadmin = (adminData.position === 'superadmin');
-
-            // If editing a superadmin → Make position READ-ONLY
-            if (isEditingSuperadmin) {
-                const positionHTML = `
+            
+            // Handle position field based on admin type
+            const positionContainer = document.getElementById('position-container');
+            if (adminData.position === 'superadmin') {
+                positionContainer.innerHTML = `
                     <input type="text" value="superadmin" readonly class="readonly-input">
                     <input type="hidden" name="position" value="superadmin">
                 `;
-                document.getElementById('position-container').innerHTML = positionHTML;
-            } 
-            // If editing a regular admin → Show DROPDOWN (superadmins can change position)
-            else {
-                const positionHTML = `
+            } else {
+                positionContainer.innerHTML = `
                     <select name="position" id="position" required>
-                        <option value="admin" selected>admin</option>
-                        <option value="superadmin">superadmin</option>
+                        <option value="admin" ${adminData.position === 'admin' ? 'selected' : ''}>admin</option>
+                        <option value="superadmin" ${adminData.position === 'superadmin' ? 'selected' : ''}>superadmin</option>
                     </select>
                 `;
-                document.getElementById('position-container').innerHTML = positionHTML;
             }
 
+            // Show the modal
             document.getElementById('editModal').style.display = 'block';
         }
 
-        // Close Edit Modal
+        // Function to close edit modal
         function closeModal() {
             document.getElementById('editModal').style.display = 'none';
-            document.getElementById('editAdminForm').reset();
-            clearAllErrors();
         }
 
-        // Open Add Modal
+        // Function to open add modal
         function openAddModal() {
-            clearAllErrors();
+            // Clear all errors and fields
+            document.querySelectorAll('#addModal .error-message').forEach(el => {
+                el.textContent = '';
+                el.style.display = 'none';
+            });
+            document.querySelectorAll('#addModal .error-field, #addModal .valid-field').forEach(el => {
+                el.classList.remove('error-field', 'valid-field');
+            });
             document.getElementById('addAdminForm').reset();
+            
+            // Show the modal
             document.getElementById('addModal').style.display = 'block';
         }
 
-        // Close Add Modal
+        // Function to close add modal
         function closeAddModal() {
             document.getElementById('addModal').style.display = 'none';
-            document.getElementById('addAdminForm').reset();
-            clearAllErrors();
         }
 
+        // Event listeners for modals
         document.addEventListener('DOMContentLoaded', function() {
+            // Close modals when clicking outside
+            window.addEventListener('click', function(event) {
+                if (event.target === document.getElementById('editModal')) {
+                    closeModal();
+                }
+                if (event.target === document.getElementById('addModal')) {
+                    closeAddModal();
+                }
+            });
+            
+            // Search functionality
             const searchInput = document.querySelector('input[name="search"]');
             const searchForm = document.querySelector('.search');
-            
             if (searchInput && searchForm) {
                 searchInput.addEventListener('input', function() {
                     if (this.value.trim() === '') {
@@ -817,7 +841,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 });
             }
         });
-
     </script>
 </body>
 </html>
