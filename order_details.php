@@ -25,7 +25,7 @@ try {
 
     $order_details_query = "SELECT od.*, p.ProductPicture 
                             FROM orderdetails od
-                            LEFT JOIN product p ON od.ProductName = p.ProductName
+                            LEFT JOIN product p ON od.ProductID = p.ProductID
                             WHERE od.OrderID = ?";
     $stmt = $conn->prepare($order_details_query);
     $stmt->execute([$order_id]);
@@ -114,7 +114,7 @@ try {
                             <?php
                                 $imageSrc = $orderdetails['ProductPicture'] ? 'image/' . htmlspecialchars($orderdetails['ProductPicture']) : null;
                             ?>
-                            <img src="<?= $imageSrc ?>" alt="<?= htmlspecialchars($orderdetails['ProductPicture']) ?>" style="width: 90px;">
+                             <img src="<?= $imageSrc ?>" alt="<?= $orderdetails['ProductName'] ?>" style="width: 90px;">
                             <div style="margin-left: 20px; text-align: left;">
                                 <strong><?php echo htmlspecialchars($orderdetails['ProductName']); ?></strong><br>
                                 Size: <?php echo htmlspecialchars($orderdetails['Size']); ?>
