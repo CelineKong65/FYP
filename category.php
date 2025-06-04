@@ -64,174 +64,253 @@ $products = $stmt->fetchAll();
     <title><?= htmlspecialchars($categoryName) ?> Products</title>
     <link rel="stylesheet" href="category.css">
     <style>
-      body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f4f4f4;
-}
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
 
-.container-shop {
-    display: flex;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 150px 20px 20px;
-    gap: 20px;
-    align-items: stretch; 
-    min-height: 80vh; 
-}
+        .container-shop {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 150px 20px 20px;
+            gap: 20px;
+            align-items: stretch; 
+            min-height: 80vh; 
+        }
 
-.categories {
-    flex: 1;
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-direction: column;
-}
+        .categories {
+            flex: 1;
+            background-color: #fff;
+            padding: 20px 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+            max-height: 80vh; /* keep sidebar from growing too tall */
+        }
 
-.categories h2 {
-    margin-top: 10px;
-    font-size: 24px;
-    margin-bottom: 5px;
-    padding: 5px 25px;
-}
+        .categories h2 {
+            margin: 0 0 12px 0;
+            font-size: 22px;
+            font-weight: 700;
+            padding-left: 10px;
+            cursor: pointer;
+            color: #222;
+            letter-spacing: 0.02em;
+        }
 
-.categories ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    overflow-y: auto; 
-    flex-grow: 1; 
-}
+        .categories ul {
+            list-style: none;
+            padding-left: 10px;
+            margin: 0;
+            overflow-y: auto; /* enable vertical scrolling */
+            flex-grow: 1;
+            scrollbar-width: thin;
+            scrollbar-color: #007BFF #f0f0f0;
+            transition: max-height 0.4s ease;
+        }
 
-.categories ul li {
-    margin-bottom: 10px;
-}
+        /* For WebKit browsers */
+        .categories ul::-webkit-scrollbar {
+            width: 8px;
+        }
 
-.categories ul li a {
-    text-decoration: none;
-    color: #333;
-    font-size: 18px;
-    display: block;
-    padding: 5px 25px;
-}
+        .categories ul::-webkit-scrollbar-track {
+            background: #f0f0f0;
+            border-radius: 4px;
+        }
 
-.categories ul li a:hover {
-    color: #007BFF;
-}
+        .categories ul::-webkit-scrollbar-thumb {
+            background-color: #007BFF;
+            border-radius: 4px;
+        }
 
-/* Products Section */
-.products-wrapper {
-    flex: 3;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
+        .categories ul li {
+            margin-bottom: 10px;
+        }
 
-.products {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    align-content: start;
-    flex: 1;
-}
+        .categories ul li a {
+            display: block;
+            text-decoration: none;
+            color: #444;
+            font-size: 17px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
 
-.product {
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    padding: 40px;
-    text-align: center;
-    height: auto;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
-}
+        .categories ul li a:hover,
+        .categories ul li a:focus {
+            color: #fff;
+            background-color: #007BFF;
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.6);
+        }
+        
 
-.product h3 {
-    margin-top: 10px; 
-    margin-bottom: 5px; 
-    font-size: 18px; 
-    font-weight: bold; 
-}
+        /* Sidebar toggle headers (Category/Brand) */
+        .category-header, .brand-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .brand-header h2 {
+            margin-top: 15px; 
+        }
 
-.product p {
-    color: red; 
-    font-size: 16px; 
-    font-weight: bold; 
-    margin: 0; 
-}
+        .arrow-icon {
+            width: 22px;
+            height: 22px;
+            opacity: 0.7;
+            transition: transform 0.4s ease, opacity 0.3s ease;
+        }
 
-.product-image {
-    position: relative;
-    overflow: hidden;
-    border-radius: 5px;
-}
+        .arrow-icon:hover {
+            opacity: 1;
+        }
 
-.product-image img {
-    width: 100%;
-    height: auto;
-    transition: transform 0.3s ease;
-}
+        .rotate {
+            transform: rotate(180deg);
+        }
 
-/* View Details Button */
-.view-details {
-    position: absolute;
-    bottom: -50px;
-    left: 0;
-    right: 0;
-    background-color: rgba(0, 123, 255, 0.8);
-    color: white;
-    text-align: center;
-    padding: 10px;
-    font-size: 16px;
-    font-weight: bold;
-    transition: bottom 0.3s ease;
-    cursor: pointer;
-}
+        /* Smooth expand/collapse for the lists */
+        .hidden {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, opacity 0.3s ease;
+            opacity: 0;
+        }
 
-/* Hover Effect */
-.product:hover .view-details {
-    bottom: 0;
-}
+        .categories ul:not(.hidden) {
+            max-height: 300px; /* max height for the open lists */
+            opacity: 1;
+        }
 
-.product:hover img {
-    transform: scale(1.1);
-}
+        /* Products Section */
+        .products-wrapper {
+            flex: 3;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
 
-/* Pagination Section */
-.pagination {
-    text-align: center;
-    margin-top: 30px;
-    padding: 20px;
-}
+        .products {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            align-content: start;
+            flex: 1;
+        }
 
-.pagination .page {
-    display: inline-block;
-    padding: 8px 12px;
-    margin: 0 5px;
-    text-decoration: none;
-    color: #333;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-}
+        .product {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 40px;
+            text-align: center;
+            height: auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-.pagination .page:hover {
-    background-color: #007BFF;
-    color: #fff;
-    border-color: #007BFF;
-}
+        .product h3 {
+            margin-top: 10px; 
+            margin-bottom: 5px; 
+            font-size: 18px; 
+            font-weight: bold; 
+        }
+
+        .product p {
+            color: red; 
+            font-size: 16px; 
+            font-weight: bold; 
+            margin: 0; 
+        }
+
+        .product-image {
+            position: relative;
+            overflow: hidden;
+            border-radius: 5px;
+        }
+
+        .product-image img {
+            width: 100%;
+            height: auto;
+            transition: transform 0.3s ease;
+        }
+
+        /* View Details Button */
+        .view-details {
+            position: absolute;
+            bottom: -50px;
+            left: 0;
+            right: 0;
+            background-color: rgba(0, 123, 255, 0.8);
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            transition: bottom 0.3s ease;
+            cursor: pointer;
+        }
+
+        /* Hover Effect */
+        .product:hover .view-details {
+            bottom: 0;
+        }
+
+        .product:hover img {
+            transform: scale(1.1);
+        }
+
+        /* Pagination Section */
+        .pagination {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+        }
+
+        .pagination .page {
+            display: inline-block;
+            padding: 8px 12px;
+            margin: 0 5px;
+            text-decoration: none;
+            color: #333;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .pagination .page:hover {
+            background-color: #007BFF;
+            color: #fff;
+            border-color: #007BFF;
+        }
+
     </style>
 </head>
 <body>
 
 <div class="container-shop">
     <div class="categories">
-        <h2>Categories</h2>
-        <ul>
+        <!-- Category Toggle -->
+        <div class="category-header" onclick="toggleList('category-list', 'category-arrow')">
+            <h2>Categories</h2>
+            <img src="image/arrow-down-sign-to-navigate.png" alt="arrow" class="arrow-icon" id="category-arrow">
+        </div>
+        <ul id="category-list" class="hidden"> 
             <?php
                 $catQuery = $conn->prepare("SELECT CategoryID, CategoryName FROM category WHERE CategoryStatus = 'active'");
                 $catQuery->execute();
@@ -246,8 +325,13 @@ $products = $stmt->fetchAll();
                 }
             ?>
         </ul>
-        <h2>Brands</h2>
-        <ul>
+
+        <!-- Brand Toggle -->
+        <div class="brand-header" onclick="toggleList('brand-list', 'brand-arrow')">
+            <h2>Brands</h2>
+            <img src="image/arrow-down-sign-to-navigate.png" alt="arrow" class="arrow-icon" id="brand-arrow">
+        </div>
+        <ul id="brand-list" class="hidden"> 
             <?php
                 $brandQuery = $conn->prepare("SELECT BrandID, BrandName FROM brand WHERE BrandStatus = 'Active'");
                 $brandQuery->execute();
@@ -300,6 +384,15 @@ $products = $stmt->fetchAll();
         <a href="?id=<?= $categoryID ?>&page=<?= $page + 1 ?>" class="page">Next</a>
     <?php endif; ?>
 </div>
+
+<script>
+    function toggleList(listId, arrowId) {
+        const list = document.getElementById(listId);
+        const arrow = document.getElementById(arrowId);
+        list.classList.toggle("hidden");
+        arrow.classList.toggle("rotate");
+    }
+</script>
 
 </body>
 </html>

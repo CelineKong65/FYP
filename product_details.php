@@ -342,30 +342,54 @@ $reviewCount = $avgData['review_count'] ?: 0;
         }
 
         /* Categories Section */
+        /* Sidebar Categories Styles */
         .categories {
             flex: 1;
             background-color: #fff;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 20px 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             display: flex;
             flex-direction: column;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+            max-height: 80vh; /* keep sidebar from growing too tall */
         }
 
         .categories h2 {
-            margin-top: 10px;
-            font-size: 24px;
-            margin-bottom: 5px;
-            padding: 5px 25px;
-            transform: translateX(0%)
+            margin: 0 0 12px 0;
+            font-size: 22px;
+            font-weight: 700;
+            padding-left: 10px;
+            cursor: pointer;
+            color: #222;
+            letter-spacing: 0.02em;
         }
 
         .categories ul {
             list-style: none;
-            padding: 0;
+            padding-left: 10px;
             margin: 0;
-            overflow-y: auto; /* Scroll if content overflows */
-            flex-grow: 1; /* Take up remaining space */
+            overflow-y: auto; /* enable vertical scrolling */
+            flex-grow: 1;
+            scrollbar-width: thin;
+            scrollbar-color: #007BFF #f0f0f0;
+            transition: max-height 0.4s ease;
+        }
+
+        /* For WebKit browsers */
+        .categories ul::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .categories ul::-webkit-scrollbar-track {
+            background: #f0f0f0;
+            border-radius: 4px;
+        }
+
+        .categories ul::-webkit-scrollbar-thumb {
+            background-color: #007BFF;
+            border-radius: 4px;
         }
 
         .categories ul li {
@@ -373,16 +397,66 @@ $reviewCount = $avgData['review_count'] ?: 0;
         }
 
         .categories ul li a {
-            text-decoration: none;
-            color: #333;
-            font-size: 18px;
             display: block;
-            padding: 5px 25px;
+            text-decoration: none;
+            color: #444;
+            font-size: 17px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        .categories ul li a:hover {
-            color: #007BFF;
+        .categories ul li a:hover,
+        .categories ul li a:focus {
+            color: #fff;
+            background-color: #007BFF;
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.6);
         }
+
+        /* Sidebar toggle headers (Category/Brand) */
+        .category-header, .brand-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .brand-header h2 {
+            margin-top: 15px; 
+        }
+
+        .arrow-icon {
+            width: 22px;
+            height: 22px;
+            opacity: 0.7;
+            transition: transform 0.4s ease, opacity 0.3s ease;
+        }
+
+        .arrow-icon:hover {
+            opacity: 1;
+        }
+
+        .rotate {
+            transform: rotate(180deg);
+        }
+
+        /* Smooth expand/collapse for the lists */
+        .hidden {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, opacity 0.3s ease;
+            opacity: 0;
+        }
+
+        .categories ul:not(.hidden) {
+            max-height: 300px; /* max height for the open lists */
+            opacity: 1;
+        }
+
 
         .product-details {
             display: flex;
@@ -602,8 +676,12 @@ $reviewCount = $avgData['review_count'] ?: 0;
     <div class="center-wrapper">
         <div class="container-product-details">
             <div class="categories">
-                <h2>Categories</h2>
-                <ul>
+               <!-- Category Toggle -->
+                <div class="category-header" onclick="toggleList('category-list', 'category-arrow')">
+                    <h2>Categories</h2>
+                    <img src="image/arrow-down-sign-to-navigate.png" alt="arrow" class="arrow-icon" id="category-arrow">
+                </div>
+                <ul id="category-list" class="hidden"> 
                     <?php
                         $catQuery = $conn->prepare("SELECT CategoryID, CategoryName FROM category WHERE CategoryStatus = 'active'");
                         $catQuery->execute();
@@ -618,8 +696,13 @@ $reviewCount = $avgData['review_count'] ?: 0;
                         }
                     ?>
                 </ul>
-                <h2>Brands</h2>
-                <ul>
+
+                <!-- Brand Toggle -->
+                <div class="brand-header" onclick="toggleList('brand-list', 'brand-arrow')">
+                    <h2>Brands</h2>
+                    <img src="image/arrow-down-sign-to-navigate.png" alt="arrow" class="arrow-icon" id="brand-arrow">
+                </div>
+                <ul id="brand-list" class="hidden"> 
                     <?php
                         $brandQuery = $conn->prepare("SELECT BrandID, BrandName FROM brand WHERE BrandStatus = 'Active'");
                         $brandQuery->execute();
@@ -817,6 +900,12 @@ $reviewCount = $avgData['review_count'] ?: 0;
                 }
             });
         });
+        function toggleList(listId, arrowId) {
+            const list = document.getElementById(listId);
+            const arrow = document.getElementById(arrowId);
+            list.classList.toggle("hidden");
+            arrow.classList.toggle("rotate");
+        }
     </script>
 </body>
 </html>
