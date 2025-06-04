@@ -87,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ];
         } elseif ($dataType === 'contacts') {
             $columns = [
-                'Contact_id' => ['width' => 15, 'title' => 'ID', 'align' => 'C'],
+                'Contact_ID' => ['width' => 15, 'title' => 'ID', 'align' => 'C'],
                 'CustName' => ['width' => 40, 'title' => 'Name', 'align' => 'L'],
                 'CustEmail' => ['width' => 50, 'title' => 'Email', 'align' => 'L'],
                 'Subject' => ['width' => 50, 'title' => 'Subject', 'align' => 'L'],
@@ -109,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'FeedbackID' => ['width' => 15, 'title' => 'ID', 'align' => 'C'],
                 'CustName' => ['width' => 50, 'title' => 'Customer Name', 'align' => 'L'],
                 'Rating' => ['width' => 15, 'title' => 'Rating', 'align' => 'C'],
-                'Feedback' => ['width' => 100, 'title' => 'Comment', 'align' => 'L'],
+                'Feedback' => ['width' => 150, 'title' => 'Comment', 'align' => 'L'],
                 'FeedbackDate' => ['width' => 35, 'title' => 'Date', 'align' => 'C']
             ];
         } elseif ($dataType === 'sales_report') {
@@ -261,7 +261,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ];
         } elseif ($dataType === 'contacts') {
             $columns = [
-                'Contact_id' => ['width' => 15, 'title' => 'ID'],
+                'Contact_ID' => ['width' => 15, 'title' => 'ID'],
                 'CustName' => ['width' => 40, 'title' => 'Name'],
                 'CustEmail' => ['width' => 50, 'title' => 'Email'],
                 'Subject' => ['width' => 50, 'title' => 'Subject'],
@@ -283,7 +283,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'FeedbackID' => ['width' => 15, 'title' => 'ID'],
                 'CustName' => ['width' => 50, 'title' => 'Customer Name'],
                 'Rating' => ['width' => 15, 'title' => 'Rating'],
-                'Feedback' => ['width' => 100, 'title' => 'Comment'],
+                'Feedback' => ['width' => 150, 'title' => 'Comment'],
                 'FeedbackDate' => ['width' => 35, 'title' => 'Date']
             ];
         } elseif ($dataType === 'sales_report') {
