@@ -425,7 +425,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <option value="contacts">Contact Records</option>
                     <option value="product_feedback">Product Feedback</option>
                     <option value="rating_feedback">Rating Feedback</option>
-                    <option value="sales_report">Sales Report</option>
+                    <option value="sales_report">Monthly Sales Report</option>
                     <option value="top_selling">Top Selling Products</option>
                 </select>
 

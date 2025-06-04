@@ -118,7 +118,7 @@ while ($row = $product_sales_result->fetch_assoc()) {
                 </div>
                 
                 <div class="chart-box">
-                    <h3 class="chart-title">Top Selling Products</h3>
+                    <h3 class="chart-title">Top 5 Selling Products</h3>
                     <canvas id="productSalesChart"></canvas>
                 </div>
 

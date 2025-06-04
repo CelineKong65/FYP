@@ -48,7 +48,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port = 587;
 
-            $mail->setFrom('lawrencetan20050429@gmail.com', 'Water_Sport');//Your Gmail
+            $mail->setFrom('lawrencetan20050429@gmail.com', 'KPL_WaterSport_Equipment');//Your Gmail
 
             $mail->addAddress($email);
 
