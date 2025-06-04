@@ -10,24 +10,24 @@ include 'db_connection.php';
 
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-$conn->query("UPDATE voucher SET VorcherStatus = 'Expired' 
+$conn->query("UPDATE voucher SET VoucherStatus = 'Expired' 
               WHERE ExpireDate IS NOT NULL 
               AND ExpireDate < CURDATE() 
-              AND VorcherStatus != 'Expired'");
+              AND VoucherStatus != 'Expired'");
 
 if (!empty($search_query)) {
     $search_param = "%$search_query%";
     $voucher_query = "SELECT *, 
                       CASE 
                           WHEN ExpireDate IS NOT NULL AND ExpireDate < CURDATE() THEN 'Expired'
-                          ELSE VorcherStatus
+                          ELSE VoucherStatus
                       END AS DisplayStatus
                       FROM voucher 
                       WHERE VoucherCode LIKE ? 
                       ORDER BY 
                           CASE 
                               WHEN ExpireDate IS NOT NULL AND ExpireDate < CURDATE() THEN 3
-                              WHEN VorcherStatus = 'Active' THEN 1
+                              WHEN VoucherStatus = 'Active' THEN 1
                               ELSE 2
                           END,
                           VoucherCode ASC";
@@ -39,13 +39,13 @@ if (!empty($search_query)) {
     $voucher_query = "SELECT *, 
                       CASE 
                           WHEN ExpireDate IS NOT NULL AND ExpireDate < CURDATE() THEN 'Expired'
-                          ELSE VorcherStatus
+                          ELSE VoucherStatus
                       END AS DisplayStatus
                       FROM voucher 
                       ORDER BY 
                           CASE 
                               WHEN ExpireDate IS NOT NULL AND ExpireDate < CURDATE() THEN 3
-                              WHEN VorcherStatus = 'Active' THEN 1
+                              WHEN VoucherStatus = 'Active' THEN 1
                               ELSE 2
                           END,
                           VoucherCode ASC";
@@ -218,7 +218,7 @@ if (isset($_POST['edit_voucher'])) {
     $min_purchase = trim($_POST['min_purchase']);
     $expire_date = $_POST['expire_date'] ?: null;
 
-    $check_expired = $conn->prepare("SELECT VorcherStatus FROM voucher WHERE VoucherID = ?");
+    $check_expired = $conn->prepare("SELECT VoucherStatus FROM voucher WHERE VoucherID = ?");
     $check_expired->bind_param("i", $voucher_id);
     $check_expired->execute();
     $check_expired->bind_result($status);
@@ -327,7 +327,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     $currentStatus = strtolower($_POST['current_status']);
     
     // First check if the voucher is expired
-    $stmt = $conn->prepare("SELECT VorcherStatus FROM voucher WHERE VoucherID = ?");
+    $stmt = $conn->prepare("SELECT VoucherStatus FROM voucher WHERE VoucherID = ?");
     $stmt->bind_param("i", $voucher_id);
     $stmt->execute();
     $stmt->bind_result($db_status);
@@ -340,7 +340,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     }
     
     $newStatus = ($currentStatus == 'active') ? 'Inactive' : 'Active';
-    $stmt = $conn->prepare("UPDATE voucher SET VorcherStatus = ? WHERE VoucherID = ?");
+    $stmt = $conn->prepare("UPDATE voucher SET VoucherStatus = ? WHERE VoucherID = ?");
     $stmt->bind_param("si", $newStatus, $voucher_id);
     
     if ($stmt->execute()) {
