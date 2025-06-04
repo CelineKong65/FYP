@@ -25,7 +25,7 @@ try {
         SELECT VoucherID, ExpireDate 
         FROM voucher 
         WHERE VoucherID = ? 
-        AND VorcherStatus = 'Active'
+        AND VoucherStatus = 'Active'
         AND (ExpireDate IS NULL OR ExpireDate >= CURDATE())
     ");
     $stmt->execute([$voucherID]);
