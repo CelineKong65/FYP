@@ -91,7 +91,7 @@ $voucherQuery = "SELECT v.VoucherID, v.VoucherCode, v.DiscountValue, v.MinPurcha
                 FROM voucher v
                 JOIN voucher_usage vu ON v.VoucherID = vu.VoucherID
                 WHERE vu.CustID = :custID AND vu.UsedAt IS NULL 
-                AND v.VorcherStatus = 'Active'
+                AND v.VoucherStatus = 'Active'
                 AND (v.ExpireDate IS NULL OR v.ExpireDate >= CURDATE())";
 $voucherStmt = $conn->prepare($voucherQuery);
 $voucherStmt->bindParam(':custID', $custID, PDO::PARAM_INT);
@@ -113,7 +113,7 @@ if (isset($_POST['applyVoucher'])) {
                             WHERE v.VoucherCode = :voucherCode 
                             AND vu.CustID = :custID 
                             AND vu.UsedAt IS NULL
-                            AND v.VorcherStatus = 'Active'
+                            AND v.VoucherStatus = 'Active'
                             AND (v.ExpireDate IS NULL OR v.ExpireDate >= CURDATE())
                             FOR UPDATE"; // Lock the row to prevent changes during validation
         
@@ -160,7 +160,7 @@ if (isset($_SESSION['applied_voucher'])) {
     $revalidateQuery = "SELECT v.VoucherID 
                        FROM voucher v
                        WHERE v.VoucherID = :voucherID
-                       AND v.VorcherStatus = 'Active'
+                       AND v.VoucherStatus = 'Active'
                        AND (v.ExpireDate IS NULL OR v.ExpireDate >= CURDATE())";
     
     $stmt = $conn->prepare($revalidateQuery);

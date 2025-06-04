@@ -14,7 +14,7 @@ try {
     $brands = $brands_stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Fetch active vouchers
-    $voucher_stmt = $conn->prepare("SELECT * FROM voucher WHERE VorcherStatus = 'Active'");
+    $voucher_stmt = $conn->prepare("SELECT * FROM voucher WHERE VoucherStatus = 'Active'");
     $voucher_stmt->execute();
     $vouchers = $voucher_stmt->fetchAll(PDO::FETCH_ASSOC);
 

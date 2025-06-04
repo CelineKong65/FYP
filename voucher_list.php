@@ -17,7 +17,7 @@ $stmt = $conn->prepare("
     WHERE v.VoucherID NOT IN (
         SELECT VoucherID FROM voucher_usage WHERE CustID = ?
     )
-    AND v.VorcherStatus = 'Active'
+    AND v.VoucherStatus = 'Active'
     AND (v.ExpireDate IS NULL OR v.ExpireDate >= CURDATE())
 ");
 $stmt->execute([$custID]);
