@@ -504,7 +504,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                 <input type="hidden" name="voucher_id" id="editVoucherID">
                 <input type="hidden" name="edit_voucher" value="1">
                 
-                <label>Category Image:<span class="required">*</span><span> (.jpg, .jpeg or .png only)</span></label>
+                <label>Category Image:<span> (.jpg, .jpeg or .png only)</span></label>
                 <input class="img" type="file" name="voucher_picture" id="edit-voucher-picture" accept=".jpg,.jpeg,.png">
                 
                 <label>Voucher Code:<span class="required">*</span></label>
