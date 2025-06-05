@@ -403,6 +403,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sales Report</title>
     <link rel='stylesheet' href='sales_report.css'>
+    <style>
+        .required{
+    color: red;
+}
+    </style>
 </head>
 <body>
     <div class="header">
@@ -418,7 +423,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h2>Sales Report</h2>
         
             <form action="" method="POST" id="exportForm">
-                <label for="dataType">List Type:</label>
+                <label for="dataType">Report Type:<span class="required">*</span></label>
                 <select name="dataType" id="dataType" class="bcm-dropdown" required>
                     <option value="" disabled selected>--- Select a list ---</option>
                     <option value="orders">Order List</option>
@@ -429,15 +434,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <option value="top_selling">Top Selling Products</option>
                 </select>
 
-                <label for="startDate">Start Date:</label>
+                <label for="startDate">Start Date:<span class="required">*</span></label>
                 <input type="date" id="startDate" name="start_date" class="bcm-input" required>
                 <div id="startDateError" class="error-message"></div>
 
-                <label for="endDate">End Date:</label>
+                <label for="endDate">End Date:<span class="required">*</span></label>
                 <input type="date" id="endDate" name="end_date" class="bcm-input" required>
                 <div id="endDateError" class="error-message"></div>
 
-                <label for="exportFormat">Export Format:</label>
+                <label for="exportFormat">Export Format:<span class="required">*</span></label>
                 <select name="export_format" id="exportFormat" class="bcm-dropdown" required>
                     <option value="" disabled selected>--- Select format ---</option>
                     <option value="pdf">PDF</option>
