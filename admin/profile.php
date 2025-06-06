@@ -207,21 +207,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
     if ($new_password !== $confirm_password) {
         $errors['confirmPassword'] = 'New passwords do not match';
     }
-    
-    $password_query = "SELECT AdminPassword FROM admin WHERE AdminID = ?";
-    $stmt = $conn->prepare($password_query);
-    $stmt->bind_param("i", $admin_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $db_password = $result->fetch_assoc()['AdminPassword'];
-    
-    if ($current_password !== $db_password) {
-        $errors['currentPassword'] = 'Current password is incorrect';
-    }
-    
-    if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/', $new_password)) {
-        $errors['newPassword'] = 'New password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.';
-    }
 
     if (empty($errors)) {
         $update_query = "UPDATE admin SET AdminPassword = ? WHERE AdminID = ?";
@@ -396,291 +381,315 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
 
     </div>
    <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // ================== PASSWORD FEATURES ================== //
-    function setupPasswordToggle(passwordInputId, eyeIconId) {
-        const eyeIcon = document.getElementById(eyeIconId);
-        const passwordInput = document.getElementById(passwordInputId);
-        
-        if (eyeIcon && passwordInput) {
-            eyeIcon.addEventListener('click', function() {
-                const type = passwordInput.type === 'password' ? 'text' : 'password';
-                passwordInput.type = type;
-                this.className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
-            });
-        }
-    }
-
-    // Initialize password toggles
-    setupPasswordToggle('currentPassword', 'show-current-password');
-    setupPasswordToggle('newPassword', 'show-new-password');
-    setupPasswordToggle('confirmPassword', 'show-confirm-password');
-
-    // Make current password display-only but viewable
-    const currentPasswordInput = document.querySelector('input[name="currentPassword"]');
-    if (currentPasswordInput) {
-        currentPasswordInput.readOnly = true; // Make it non-editable
-        currentPasswordInput.type = 'password'; // Start masked
-        const eyeIcon = document.getElementById('show-current-password');
-        if (eyeIcon) {
-            eyeIcon.style.cursor = 'pointer'; // Show it's clickable
-        }
-    }
-
-    function validatePasswordRequirements(password) {
-        const requirements = [
-            /^.{8,}$/,      // At least 8 characters
-            /[A-Z]/,         // Uppercase letter
-            /[a-z]/,         // Lowercase letter
-            /\d/,            // Number
-            /[@$!%*#?&]/,    // Special character
-            /^\S*$/          // No spaces
-        ];
-        return requirements.every(regex => regex.test(password));
-    }
-
-    // DOM elements
-    const passwordInput = document.getElementById('newPassword');
-    const passwordRequirements = document.getElementById('passwordRequirements');
-    const confirmPasswordInput = document.getElementById('confirmPassword');
-    const passwordForm = document.getElementById('passwordForm');
-    const updatePasswordBtn = document.querySelector('button[name="update_password"]');
-    const requirementItems = document.querySelectorAll('.password-req li');
-
-    if (passwordInput && passwordRequirements) {
-        const requirements = [
-            {regex: /^.{8,}$/, index: 0}, // At least 8 characters
-            {regex: /[A-Z]/, index: 1},    // Uppercase letter
-            {regex: /[a-z]/, index: 2},    // Lowercase letter
-            {regex: /\d/, index: 3},       // Number
-            {regex: /[@$!%*#?&]/, index: 4}, // Special character
-            {regex: /^\S*$/, index: 5}     // No spaces
-        ];
-
-        // Show requirements on focus
-        passwordInput.addEventListener('focus', () => {
-            passwordRequirements.style.display = 'block';
-        });
-
-        // Hide requirements on blur
-        passwordInput.addEventListener('blur', () => {
-            setTimeout(() => {
-                if (!passwordRequirements.contains(document.activeElement)) {
-                    passwordRequirements.style.display = 'none';
-                }
-            }, 200);
-        });
-
-        // Real-time validation for new password
-        passwordInput.addEventListener('input', function() {
-            const password = this.value;
-            
-            // Update requirement indicators
-            requirements.forEach(req => {
-                const item = requirementItems[req.index];
-                const icon = item.querySelector('i');
-                const isValid = req.regex.test(password);
+        document.addEventListener('DOMContentLoaded', function() {
+            // ================== PASSWORD FEATURES ================== //
+            function setupPasswordToggle(passwordInputId, eyeIconId) {
+                const eyeIcon = document.getElementById(eyeIconId);
+                const passwordInput = document.getElementById(passwordInputId);
                 
-                icon.className = isValid ? 'fas fa-check-circle text-success' : 'fas fa-circle';
-                item.classList.toggle('valid', isValid);
-            });
-
-            validatePasswordFields();
-        });
-
-        // Real-time validation for confirm password
-        confirmPasswordInput.addEventListener('input', function() {
-            validatePasswordFields();
-        });
-
-        function validatePasswordFields() {
-            const newPassword = passwordInput.value;
-            const confirmPassword = confirmPasswordInput.value;
-            const currentPassword = currentPasswordInput?.value;
-            
-            // Clear previous errors
-            clearError(passwordInput);
-            clearError(confirmPasswordInput);
-            
-            // Validate new password requirements
-            if (newPassword && !validatePasswordRequirements(newPassword)) {
-                showError(passwordInput, 'Password must contain: 8+ chars, uppercase, lowercase, number, special char');
-                disableUpdateButton();
-                return;
-            }
-            
-            // Check if new password matches current password
-            if (newPassword && currentPassword && newPassword === currentPassword) {
-                showError(passwordInput, 'New password cannot be the same as current password');
-                disableUpdateButton();
-                return;
-            }
-            
-            // Check if passwords match
-            if (newPassword && confirmPassword && newPassword !== confirmPassword) {
-                showError(confirmPasswordInput, 'Passwords do not match');
-                disableUpdateButton();
-                return;
-            }
-            
-            // If all validations pass
-            if (newPassword && confirmPassword && 
-                newPassword === confirmPassword && 
-                validatePasswordRequirements(newPassword) &&
-                (!currentPassword || newPassword !== currentPassword)) {
-                enableUpdateButton();
-            } else {
-                disableUpdateButton();
-            }
-        }
-
-        function disableUpdateButton() {
-            if (updatePasswordBtn) {
-                updatePasswordBtn.disabled = true;
-                updatePasswordBtn.classList.add('disabled-btn');
-            }
-        }
-
-        function enableUpdateButton() {
-            if (updatePasswordBtn) {
-                updatePasswordBtn.disabled = false;
-                updatePasswordBtn.classList.remove('disabled-btn');
-            }
-        }
-
-        // Initial validation
-        validatePasswordFields();
-    }
-
-    // Form submission handler for password form
-    if (passwordForm) {
-        passwordForm.addEventListener('submit', function(e) {
-            if (!validatePasswordForm()) {
-                e.preventDefault();
-                const firstError = this.querySelector('.error-field');
-                if (firstError) {
-                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if (eyeIcon && passwordInput) {
+                    eyeIcon.addEventListener('click', function() {
+                        const type = passwordInput.type === 'password' ? 'text' : 'password';
+                        passwordInput.type = type;
+                        this.className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+                    });
                 }
             }
-        });
-    }
 
-    function validatePasswordForm() {
-        const newPassword = passwordInput.value;
-        const confirmPassword = confirmPasswordInput.value;
-        const currentPassword = currentPasswordInput?.value;
-        let isValid = true;
-        
-        // Clear all errors first
-        clearError(passwordInput);
-        clearError(confirmPasswordInput);
+            // Initialize password toggles
+            setupPasswordToggle('currentPassword', 'show-current-password');
+            setupPasswordToggle('newPassword', 'show-new-password');
+            setupPasswordToggle('confirmPassword', 'show-confirm-password');
 
-        // Validate new password exists
-        if (!newPassword.trim()) {
-            showError(passwordInput, 'New password is required');
-            isValid = false;
-        }
-        // Validate password requirements
-        else if (!validatePasswordRequirements(newPassword)) {
-            showError(passwordInput, 'Password must contain: 8+ chars, uppercase, lowercase, number, special char');
-            isValid = false;
-        }
-        // Check if matches current password
-        else if (currentPassword && newPassword === currentPassword) {
-            showError(passwordInput, 'New password cannot be the same as current password');
-            isValid = false;
-        }
-
-        // Validate confirm password
-        if (!confirmPassword.trim()) {
-            showError(confirmPasswordInput, 'Please confirm your password');
-            isValid = false;
-        } else if (confirmPassword !== newPassword) {
-            showError(confirmPasswordInput, 'Passwords do not match');
-            isValid = false;
-        }
-
-        return isValid;
-    }
-
-    // ================== GENERAL VALIDATION FUNCTIONS ================== //
-    function showError(field, message) {
-        field.classList.add('error-field');
-        let errorElement = field.nextElementSibling;
-        
-        if (!errorElement || !errorElement.classList.contains('error-message')) {
-            errorElement = document.createElement('div');
-            errorElement.className = 'error-message';
-            field.parentNode.insertBefore(errorElement, field.nextSibling);
-        }
-        
-        errorElement.textContent = message;
-    }
-
-    function clearError(field) {
-        field.classList.remove('error-field');
-        const errorElement = field.nextElementSibling;
-        if (errorElement?.classList.contains('error-message')) {
-            errorElement.remove();
-        }
-    }
-
-    // ================== PROFILE PHOTO UPLOAD ================== //
-    const profilePictureInput = document.getElementById('profile_picture');
-    if (profilePictureInput) {
-        profilePictureInput.addEventListener('change', function() {
-            if (this.files && this.files[0]) {
-                document.getElementById('upload_submit').click();
+            // Make current password display-only but viewable
+            const currentPasswordInput = document.querySelector('input[name="currentPassword"]');
+            if (currentPasswordInput) {
+                currentPasswordInput.readOnly = true; // Make it non-editable
+                currentPasswordInput.type = 'password'; // Start masked
+                const eyeIcon = document.getElementById('show-current-password');
+                if (eyeIcon) {
+                    eyeIcon.style.cursor = 'pointer'; // Show it's clickable
+                }
             }
-        });
-    }
 
-    // ================== PROFILE FORM VALIDATION ================== //
-    const profileForm = document.getElementById('profileForm');
-    if (profileForm) {
-        profileForm.addEventListener('submit', function(e) {
-            let isValid = true;
-            
-            // Validate name
+            function validatePasswordRequirements(password) {
+                const requirements = [
+                    /^.{8,}$/,      // At least 8 characters
+                    /[A-Z]/,         // Uppercase letter
+                    /[a-z]/,         // Lowercase letter
+                    /\d/,            // Number
+                    /[@$!%*#?&]/,    // Special character
+                    /^\S*$/          // No spaces
+                ];
+                return requirements.every(regex => regex.test(password));
+            }
+
+            // DOM elements
+            const passwordInput = document.getElementById('newPassword');
+            const passwordRequirements = document.getElementById('passwordRequirements');
+            const confirmPasswordInput = document.getElementById('confirmPassword');
+            const passwordForm = document.getElementById('passwordForm');
+            const updatePasswordBtn = document.querySelector('button[name="update_password"]');
+            const requirementItems = document.querySelectorAll('.password-req li');
+
+            if (passwordInput && passwordRequirements) {
+                const requirements = [
+                    {regex: /^.{8,}$/, index: 0}, // At least 8 characters
+                    {regex: /[A-Z]/, index: 1},    // Uppercase letter
+                    {regex: /[a-z]/, index: 2},    // Lowercase letter
+                    {regex: /\d/, index: 3},       // Number
+                    {regex: /[@$!%*#?&]/, index: 4}, // Special character
+                    {regex: /^\S*$/, index: 5}     // No spaces
+                ];
+
+                // Show requirements on focus
+                passwordInput.addEventListener('focus', () => {
+                    passwordRequirements.style.display = 'block';
+                });
+
+                // Hide requirements on blur
+                passwordInput.addEventListener('blur', () => {
+                    setTimeout(() => {
+                        if (!passwordRequirements.contains(document.activeElement)) {
+                            passwordRequirements.style.display = 'none';
+                        }
+                    }, 200);
+                });
+
+                // Real-time validation for new password
+                passwordInput.addEventListener('input', function() {
+                    const password = this.value;
+                    
+                    // Update requirement indicators
+                    requirements.forEach(req => {
+                        const item = requirementItems[req.index];
+                        const icon = item.querySelector('i');
+                        const isValid = req.regex.test(password);
+                        
+                        icon.className = isValid ? 'fas fa-check-circle text-success' : 'fas fa-circle';
+                        item.classList.toggle('valid', isValid);
+                    });
+
+                    validatePasswordFields();
+                });
+
+                // Real-time validation for confirm password
+                confirmPasswordInput.addEventListener('input', function() {
+                    validatePasswordFields();
+                });
+
+                function validatePasswordFields() {
+                    const newPassword = passwordInput.value;
+                    const confirmPassword = confirmPasswordInput.value;
+                    const currentPassword = currentPasswordInput?.value;
+                    
+                    // Clear previous errors
+                    clearError(passwordInput);
+                    clearError(confirmPasswordInput);
+                    
+                    // Validate new password requirements
+                    if (newPassword && !validatePasswordRequirements(newPassword)) {
+                        showError(passwordInput, 'Password must contain: 8+ chars, uppercase, lowercase, number, special char');
+                        disableUpdateButton();
+                        return;
+                    }
+                    
+                    // Check if new password matches current password
+                    if (newPassword && currentPassword && newPassword === currentPassword) {
+                        showError(passwordInput, 'New password cannot be the same as current password');
+                        disableUpdateButton();
+                        return;
+                    }
+                    
+                    // Check if passwords match
+                    if (newPassword && confirmPassword && newPassword !== confirmPassword) {
+                        showError(confirmPasswordInput, 'Passwords do not match');
+                        disableUpdateButton();
+                        return;
+                    }
+                    
+                    // If all validations pass
+                    if (newPassword && confirmPassword && 
+                        newPassword === confirmPassword && 
+                        validatePasswordRequirements(newPassword) &&
+                        (!currentPassword || newPassword !== currentPassword)) {
+                        enableUpdateButton();
+                    } else {
+                        disableUpdateButton();
+                    }
+                }
+
+                function disableUpdateButton() {
+                    if (updatePasswordBtn) {
+                        updatePasswordBtn.disabled = true;
+                        updatePasswordBtn.classList.add('disabled-btn');
+                    }
+                }
+
+                function enableUpdateButton() {
+                    if (updatePasswordBtn) {
+                        updatePasswordBtn.disabled = false;
+                        updatePasswordBtn.classList.remove('disabled-btn');
+                    }
+                }
+
+                // Initial validation
+                validatePasswordFields();
+            }
+
+            // Form submission handler for password form
+            if (passwordForm) {
+                passwordForm.addEventListener('submit', function(e) {
+                    if (!validatePasswordForm()) {
+                        e.preventDefault();
+                        const firstError = this.querySelector('.error-field');
+                        if (firstError) {
+                            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }
+                });
+            }
+
+            function validatePasswordForm() {
+                const newPassword = passwordInput.value;
+                const confirmPassword = confirmPasswordInput.value;
+                const currentPassword = currentPasswordInput?.value;
+                let isValid = true;
+                
+                // Clear all errors first
+                clearError(passwordInput);
+                clearError(confirmPasswordInput);
+
+                // Validate new password exists
+                if (!newPassword.trim()) {
+                    showError(passwordInput, 'New password is required');
+                    isValid = false;
+                }
+                // Validate password requirements
+                else if (!validatePasswordRequirements(newPassword)) {
+                    showError(passwordInput, 'Password must contain: 8+ chars, uppercase, lowercase, number, special char');
+                    isValid = false;
+                }
+                // Check if matches current password
+                else if (currentPassword && newPassword === currentPassword) {
+                    showError(passwordInput, 'New password cannot be the same as current password');
+                    isValid = false;
+                }
+
+                // Validate confirm password
+                if (!confirmPassword.trim()) {
+                    showError(confirmPasswordInput, 'Please confirm your password');
+                    isValid = false;
+                } else if (confirmPassword !== newPassword) {
+                    showError(confirmPasswordInput, 'Passwords do not match');
+                    isValid = false;
+                }
+
+                return isValid;
+            }
+
+            // ================== GENERAL VALIDATION FUNCTIONS ================== //
+            function showError(field, message) {
+                field.classList.add('error-field');
+                let errorElement = field.nextElementSibling;
+                
+                if (!errorElement || !errorElement.classList.contains('error-message')) {
+                    errorElement = document.createElement('div');
+                    errorElement.className = 'error-message';
+                    field.parentNode.insertBefore(errorElement, field.nextSibling);
+                }
+                
+                errorElement.textContent = message;
+            }
+
+            function clearError(field) {
+                field.classList.remove('error-field');
+                const errorElement = field.nextElementSibling;
+                if (errorElement?.classList.contains('error-message')) {
+                    errorElement.remove();
+                }
+            }
+
+            // ================== PROFILE PHOTO UPLOAD ================== //
+            const profilePictureInput = document.getElementById('profile_picture');
+            if (profilePictureInput) {
+                profilePictureInput.addEventListener('change', function() {
+                    if (this.files && this.files[0]) {
+                        document.getElementById('upload_submit').click();
+                    }
+                });
+            }
+
+            function addRealTimeValidation(inputElement, validationFn) {
+                inputElement.addEventListener('input', function () {
+                    clearError(this);
+                    const message = validationFn(this.value.trim());
+                    if (message) {
+                        showError(this, message);
+                    }
+                });
+            }
+
+            function validateName(value) {
+                if (!value) return 'Full name is required';
+                if (!/^[a-zA-Z\s]+$/.test(value)) return 'Name should contain only letters and spaces';
+                return '';
+            }
+
+            function validateEmail(value) {
+                if (!value) return 'Email is required';
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email address';
+                return '';
+            }
+
+            function validatePhone(value) {
+                if (!value) return 'Phone number is required';
+                if (!/^(\d{3}-\d{3} \d{4}|\d{3}-\d{4} \d{4})$/.test(value)) {
+                    return 'Please enter a valid phone number (XXX-XXX XXXX or XXX-XXXX XXXX)';
+                }
+                return '';
+            }
+
+            // ================== PROFILE FORM VALIDATION ================== //
+            const profileForm = document.getElementById('profileForm');
+            if (profileForm) {
+                profileForm.addEventListener('submit', function(e) {
+                    let isValid = true;
+                    
+                    // Validate name
+                    const nameError = validateName(nameInput.value.trim());
+                    if (nameError) {
+                        showError(nameInput, nameError);
+                        isValid = false;
+                    }
+                    const emailError = validateEmail(emailInput.value.trim());
+                    if (emailError) {
+                        showError(emailInput, emailError);
+                        isValid = false;
+                    }
+                    const phoneError = validatePhone(phoneInput.value.trim());
+                    if (phoneError) {
+                        showError(phoneInput, phoneError);
+                        isValid = false;
+                    }
+                    
+                    if (!isValid) {
+                        e.preventDefault();
+                        const firstError = this.querySelector('.error-field');
+                        if (firstError) {
+                            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }
+                });
+            }
             const nameInput = document.getElementById('name');
-            if (!nameInput.value.trim()) {
-                showError(nameInput, 'Full name is required');
-                isValid = false;  
-            } else if (!/^[a-zA-Z\s]+$/.test(nameInput.value)){
-                showError(nameInput, 'Name should contain only letters and spaces');
-                isValid = false;
-            }
-            
-            // Validate email
             const emailInput = document.getElementById('email');
-            if (!emailInput.value.trim()) {
-                showError(emailInput, 'Email is required');
-                isValid = false;
-            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value)) {
-                showError(emailInput, 'Please enter a valid email address');
-                isValid = false;
-            }
-            
-            // Validate phone
             const phoneInput = document.getElementById('phone');
-            if (!phoneInput.value.trim()) {
-                showError(phoneInput, 'Phone number is required');
-                isValid = false;
-            } else if (!/^(\d{3}-\d{3} \d{4}|\d{3}-\d{4} \d{4})$/.test(phoneInput.value)) {
-                showError(phoneInput, 'Please enter a valid phone number (XXX-XXX XXXX or XXX-XXXX XXXX)');
-                isValid = false;
-            }
-            
-            if (!isValid) {
-                e.preventDefault();
-                const firstError = this.querySelector('.error-field');
-                if (firstError) {
-                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }
+
+            addRealTimeValidation(nameInput, validateName);
+            addRealTimeValidation(emailInput, validateEmail);
+            addRealTimeValidation(phoneInput, validatePhone);
         });
-    }
-});
 </script>
 </body>
 </html>
