@@ -39,7 +39,6 @@ $products = $stmt->fetchAll();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Page</title>
-    <link rel="stylesheet" href="product.css">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -69,7 +68,7 @@ $products = $stmt->fetchAll();
             flex-direction: column;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             user-select: none;
-            max-height: 80vh; /* keep sidebar from growing too tall */
+            max-height: 80vh; 
         }
 
         .categories h2 {
@@ -87,7 +86,7 @@ $products = $stmt->fetchAll();
             list-style: none;
             padding-left: 10px;
             margin: 0;
-            overflow-y: auto; /* enable vertical scrolling */
+            overflow-y: auto; 
             flex-grow: 1;
             scrollbar-width: thin;
             scrollbar-color: #007BFF #f0f0f0;
@@ -141,10 +140,7 @@ $products = $stmt->fetchAll();
             border-bottom: 1px solid #eee;
             cursor: pointer;
             user-select: none;
-        }
-
-        .category-header {
-            margin-left: 12px;
+            margin-left: -45px;
         }
 
         .arrow-icon {
