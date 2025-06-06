@@ -386,9 +386,8 @@ input.error, select.error {
         const form = document.getElementById("reset-form");
         const currentPasswordError = document.getElementById("current-password-error");
         
-        // Current password check is handled server-side only
-        // This is just for UI validation
-        const currentPassword = ""; // We don't expose the current password to client-side
+        // Current password from PHP
+        const currentPassword = "<?php echo $current_password; ?>"; 
 
         const requirements = [
             {regex: /\S{8,}/, index: 0},
@@ -411,6 +410,14 @@ input.error, select.error {
                 requirementItem.classList.toggle("valid", isValid);
             });
             
+            // Check if matches current password
+            if (e.target.value === currentPassword) {
+                currentPasswordError.textContent = "This password is the same as your current password";
+                currentPasswordError.style.display = "block";
+            } else {
+                currentPasswordError.style.display = "none";
+            }
+
             // Check password match
             checkPasswordMatch();
         });
@@ -455,6 +462,13 @@ input.error, select.error {
         form.addEventListener("submit", function(e) {
             let isValid = true;
             
+            // Check if password matches current
+            if (passwordInput.value === currentPassword) {
+                currentPasswordError.textContent = "New password cannot be the same as current password";
+                currentPasswordError.style.display = "block";
+                isValid = false;
+            }
+
             // Check password requirements
             requirements.forEach(item => {
                 if (!item.regex.test(passwordInput.value)) {
