@@ -15,7 +15,7 @@ body {
     min-height: 80vh; 
 }
 
-.categories {
+.brands {
     flex: 1;
     background-color: #fff;
     padding: 20px 15px;
@@ -28,7 +28,7 @@ body {
     max-height: 80vh; /* keep sidebar from growing too tall */
 }
 
-.categories h2 {
+.brands h2 {
     margin: 0 0 12px 0;
     font-size: 22px;
     font-weight: 700;
@@ -38,7 +38,7 @@ body {
     letter-spacing: 0.02em;
 }
 
-.categories ul {
+.brands ul {
     list-style: none;
     padding-left: 10px;
     margin: 0;
@@ -50,25 +50,25 @@ body {
 }
 
 /* For WebKit browsers */
-.categories ul::-webkit-scrollbar {
+.brands ul::-webkit-scrollbar {
     width: 8px;
 }
 
-.categories ul::-webkit-scrollbar-track {
+.brands ul::-webkit-scrollbar-track {
     background: #f0f0f0;
     border-radius: 4px;
 }
 
-.categories ul::-webkit-scrollbar-thumb {
+.brands ul::-webkit-scrollbar-thumb {
     background-color: #007BFF;
     border-radius: 4px;
 }
 
-.categories ul li {
+.brands ul li {
     margin-bottom: 10px;
 }
 
-.categories ul li a {
+.brands ul li a {
     display: block;
     text-decoration: none;
     color: #444;
@@ -78,14 +78,14 @@ body {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.categories ul li a:hover,
-.categories ul li a:focus {
+.brands ul li a:hover,
+.brands ul li a:focus {
     color: #fff;
     background-color: #007BFF;
     outline: none;
     box-shadow: 0 0 5px rgba(0, 123, 255, 0.6);
 }
-        
+
 /* Sidebar toggle headers (Category/Brand) */
 .category-header, .brand-header {
     display: flex;
@@ -96,7 +96,7 @@ body {
     cursor: pointer;
     user-select: none;
 }
-        
+
 .brand-header h2 {
     margin-top: 15px; 
 }
@@ -124,7 +124,7 @@ body {
     opacity: 0;
 }
 
-.categories ul:not(.hidden) {
+.brands ul:not(.hidden) {
     max-height: 300px; /* max height for the open lists */
     opacity: 1;
 }
@@ -229,5 +229,5 @@ body {
 .pagination .page:hover {
     background-color: #007BFF;
     color: #fff;
-    border-color: #007BFF;
+    border-color: #007BFF;
 }

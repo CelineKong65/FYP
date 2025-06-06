@@ -1,0 +1,206 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #f5f5f5;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    width: 250px;
+    height: 100%;
+    background-color: #007BFF;
+    position: fixed;
+    top: 0;
+    left: 0;
+    padding-top: 80px;
+    color: white;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+}
+
+.sidebar-header {
+    padding: 20px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.sidebar-header h2 {
+    margin: 0;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.sidebar-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-menu li {
+    padding: 15px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    transition: background-color 0.3s;
+}
+
+.sidebar-menu li:hover {
+    background-color: rgba(255,255,255,0.1);
+}
+
+.sidebar-menu li.active {
+    background-color: rgba(255,255,255,0.2);
+}
+
+.sidebar-menu li a {
+    color: white;
+    text-decoration: none;
+    display: block;
+}
+
+.sidebar-menu li i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+}
+
+.sidebar-footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    padding: 20px;
+    text-align: center;
+}
+
+.logout-btn {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.logout-btn:hover {
+    background-color: #c0392b;
+}
+
+.container {
+    margin-top: 50px;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+.voucher-list {
+    margin-left: 270px;
+    padding: 20px;
+    margin-top: 100px;
+    margin-bottom: 50px;
+}
+
+.voucher-card {
+    display: flex;
+    align-items: flex-start;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    background-color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease;
+    position: relative;
+}
+
+.voucher-card:hover {
+    transform: translateY(-3px);
+}
+
+.voucher-card.valid {
+    border-left: 5px solid #28a745;
+}
+
+.voucher-card.expired {
+    border-left: 5px solid #dc3545;
+    opacity: 0.7;
+}
+
+.voucher-image {
+    flex: 0 0 320px;
+    margin-right: 15px;
+}
+
+.voucher-image img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid #ccc;
+}
+
+.voucher-details {
+    flex: 1;
+}
+
+.voucher-code {
+    margin-top: 8px;
+    font-weight: bold;
+    font-size: 23px;
+    color: #007bff;
+    margin-bottom: 5px;
+}
+
+.voucher-desc {
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.discount-value {
+    color: #28a745;
+    font-weight: bold;
+    font-size: 20px;
+    margin-bottom: 8px;
+}
+
+.text-danger {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.alert {
+    margin-top: 150px;
+    margin-left: 500px;
+    padding: 15px 20px;
+    border-radius: 8px;
+    max-width: 900px;
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+    text-align: center;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.voucher-details a.delete-button {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 6px 12px;
+    border-radius: 5px;
+    background-color: #dc3545;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+.voucher-details a.delete-button:hover {
+    background-color: #bd2130;
+}
