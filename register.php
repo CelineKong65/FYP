@@ -63,7 +63,6 @@ if (isset($_POST['check_availability'])) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && $step == 1) {
-    // Sanitize other inputs (excluding those checked in real-time)
     $custPassword = $_POST['custPassword'];
     $custName = $_POST['custName'];
     $custEmail = $_POST['custEmail'];

@@ -221,7 +221,7 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('email', emailValue);
         }
 
-        fetch(window.location.href, { // Send request to the same register.php file
+        fetch(window.location.href, {
             method: 'POST',
             body: formData,
         })
