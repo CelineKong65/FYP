@@ -47,6 +47,17 @@ if (isset($_POST['check_availability'])) {
         }
     }
 
+    if ($type === 'username') {
+    $email = $_POST['email'] ?? '';
+    $stmt = $conn->prepare("SELECT CustName FROM customer WHERE CustName = ? AND CustEmail = ?");
+    $stmt->execute([$value, $email]);
+    
+    echo json_encode([
+        'exists' => ($stmt->rowCount() > 0),
+        'message' => ($stmt->rowCount() > 0) ? 'This name is already used with this email account' : ''
+    ]);
+    exit();
+}
     echo json_encode(['exists' => $exists, 'valid_format' => $is_valid_format, 'message' => $error_message]);
     exit();
 }
@@ -64,12 +75,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $step == 1) {
     } elseif (!preg_match("/^[a-zA-Z\s]+$/", $custName)) {
         $errors['custName'] = "Name can only contain letters and spaces";
     } else {
-        // Existing username availability check
-        $stmt = $conn->prepare("SELECT CustName FROM customer WHERE CustName = ?");
-        $stmt->execute([$custName]);
-        $exists = $stmt->rowCount() > 0;
-        if ($exists) {
-            $errors['custName'] = "Username already exists";
+        // Check if name exists with the same email
+        $stmt = $conn->prepare("SELECT CustName FROM customer WHERE CustName = ? AND CustEmail = ?");
+        $stmt->execute([$custName, $custEmail]);
+        if ($stmt->rowCount() > 0) {
+            $errors['custName'] = "This name is already used with this email account";
         }
     }
     

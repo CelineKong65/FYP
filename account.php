@@ -46,10 +46,21 @@ if (isset($_POST['ajax_check'])) {
                 }
                 
             } else {
-                // Other field validations (email, username, etc.)
                 $stmt = $conn->prepare("SELECT CustID FROM customer WHERE $field = ? AND CustID != ?");
                 $stmt->execute([$value, $userId]);
                 $response['available'] = ($stmt->rowCount() === 0);
+            }
+
+            if ($field === 'CustName') {
+                $email = $_POST['email'] ?? '';
+                
+                $stmt = $conn->prepare("SELECT CustID FROM customer WHERE CustName = ? AND CustEmail = ? AND CustID != ?");
+                $stmt->execute([$value, $email, $userId]);
+                
+                $response = [
+                    'available' => ($stmt->rowCount() === 0),
+                    'message' => ($stmt->rowCount() > 0) ? 'This name is already used with this email account' : ''
+                ];
             }
         } catch (PDOException $e) {
             error_log("Database error: " . $e->getMessage());
@@ -134,10 +145,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
         $errors['custName'] = "Name can only contain letters and spaces";
     } else {
         // Check if name is already taken
-        $stmt = $conn->prepare("SELECT CustID FROM customer WHERE CustName = ? AND CustID != ?");
-        $stmt->execute([$custName, $user_id]);
+        $stmt = $conn->prepare("SELECT CustID FROM customer WHERE CustName = ? AND CustEmail = ? AND CustID != ?");
+        $stmt->execute([$custName, $custEmail, $user_id]);
         if ($stmt->rowCount() > 0) {
-            $errors['custName'] = "The name \"$custName\" is already taken. Please choose a different name.";
+            $errors['custName'] = "This name is already used with this gmail account";
         }
     }
     
@@ -714,30 +725,47 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-const nameInput = document.querySelector('input[name="custName"]');
+    const nameInput = document.querySelector('input[name="custName"]');
+    const emailInput = document.querySelector('input[name="custEmail"]');
 
-if (nameInput) {
-    nameInput.addEventListener('input', function() {
-        const value = this.value;
-        const errorElement = this.nextElementSibling?.classList.contains('error-message') ? 
-            this.nextElementSibling : 
-            this.parentNode.querySelector('.error-message');
-        
-        // Remove non-letter characters in real-time
-        this.value = value.replace(/[^a-zA-Z\s]/g, '');
-        
-        // Show error if invalid characters were attempted
-        if (/[^a-zA-Z\s]/.test(value)) {
-            if (errorElement) {
-                errorElement.textContent = 'Name can only contain letters and spaces';
-                this.classList.add('error-field');
+    if (nameInput && emailInput) {
+        nameInput.addEventListener('blur', function() {
+            const nameValue = this.value.trim();
+            const emailValue = emailInput.value.trim();
+            
+            if (nameValue && emailValue) {
+                const formData = new FormData();
+                formData.append('ajax_check', 'true');
+                formData.append('field', 'CustName');
+                formData.append('value', nameValue);
+                formData.append('email', emailValue);
+                formData.append('user_id', <?= $user_id ?>);
+                
+                fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const errorElement = this.nextElementSibling?.classList.contains('error-message') ? 
+                        this.nextElementSibling : 
+                        this.parentNode.querySelector('.error-message');
+                    
+                    if (!data.available) {
+                        if (errorElement) {
+                            errorElement.textContent = data.message || 'Name is already taken';
+                            this.classList.add('error-field');
+                        }
+                    } else {
+                        if (errorElement) {
+                            errorElement.textContent = '';
+                            this.classList.remove('error-field');
+                        }
+                    }
+                });
             }
-        } else if (errorElement) {
-            errorElement.textContent = '';
-            this.classList.remove('error-field');
-        }
-    });
-}
+        });
+    }
 </script>
 </body>
 </html>

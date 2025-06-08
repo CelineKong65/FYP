@@ -146,15 +146,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
             $errors['phone'] = 'Invalid phone number format. Use XXX-XXX XXXX or XXX-XXXX XXXX.';
         }
 
-        $name_check_query = "SELECT AdminID FROM admin WHERE AdminName = ? AND AdminID != ?";
-        $stmt = $conn->prepare($name_check_query);
-        $stmt->bind_param("si", $name, $admin_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
+        // $name_check_query = "SELECT AdminID FROM admin WHERE AdminName = ? AND AdminID != ?";
+        // $stmt = $conn->prepare($name_check_query);
+        // $stmt->bind_param("si", $name, $admin_id);
+        // $stmt->execute();
+        // $result = $stmt->get_result();
 
-        if ($result->num_rows > 0) {
-            $errors['name'] = "The name \"$name\" is already taken. Please choose a different name.";
-        }
+        // if ($result->num_rows > 0) {
+        //     $errors['name'] = "The name \"$name\" is already taken. Please choose a different name.";
+        // }
 
         $email_check_query = "SELECT AdminID FROM admin WHERE AdminEmail = ? AND AdminID != ?";
         $stmt = $conn->prepare($email_check_query);

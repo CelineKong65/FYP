@@ -89,10 +89,43 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Real-time check for email
     if (emailInput) {
+        emailInput.addEventListener('input', function() {
+            const nameError = document.getElementById('custName-error');
+            if (nameError && nameError.textContent.includes('already used with this email account')) {
+                nameError.textContent = '';
+                nameError.style.display = 'none';
+                document.getElementById('custName').classList.remove('error');
+            }
+        });
+
         emailInput.addEventListener('blur', function() {
+            // First validate email format
+            const emailReq = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+            if (!emailReq.test(this.value)) {
+                document.getElementById('custEmail-error').textContent = "Please enter a valid gmail address";
+                document.getElementById('custEmail-error').style.display = 'block';
+                this.classList.add('error');
+                return;
+            }
+
+            document.getElementById('custEmail-error').textContent = '';
+            document.getElementById('custEmail-error').style.display = 'none';
+            this.classList.remove('error');
+            
             checkAvailability('email', this.value, 'custEmail-error');
+            
+            const nameError = document.getElementById('custName-error');
+            if (nameError && nameError.textContent.includes('already used with this email account')) {
+                const nameValue = document.getElementById('custName').value.trim();
+                if (nameValue) {
+                    checkAvailability('username', nameValue, 'custName-error');
+                } else {
+                    nameError.textContent = '';
+                    nameError.style.display = 'none';
+                    document.getElementById('custName').classList.remove('error');
+                }
+            }
         });
     }
 
@@ -183,6 +216,11 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('type', type);
         formData.append('value', value);
 
+        if (type === 'username') {
+            const emailValue = document.getElementById('custEmail').value;
+            formData.append('email', emailValue);
+        }
+
         fetch(window.location.href, { // Send request to the same register.php file
             method: 'POST',
             body: formData,
@@ -190,7 +228,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.exists) {
-                document.getElementById(errorId).textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} already exists`;
+                document.getElementById(errorId).textContent = data.message || `${type.charAt(0).toUpperCase() + type.slice(1)} already exists`;
                 document.getElementById(errorId).style.display = 'block';
                 document.getElementById(errorId.replace('-error', '')).classList.add('error');
             } else {
