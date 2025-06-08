@@ -173,15 +173,22 @@ body {
 
 .pass-field {
     position: relative;
+    width: 96%;
+}
+
+.pass-field input {
+    width: 100%;
+    padding-right: 30px;
 }
 
 .pass-field i {
     position: absolute;
-    right: 10px;
+    right: -15px;
     top: 50%;
     transform: translateY(-50%);
     cursor: pointer;
     color: #7f8c8d;
+    z-index: 2;
 }
 
 .update-btn {

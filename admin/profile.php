@@ -337,10 +337,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
                     <h3>Change Password</h3>
                     <div class="form-group">
                         <label for="current_password" class="required">Current Password</label>
-                        <div class="pass-field">
-                            <input type="password" name="currentPassword" id="currentPassword" value="<?= htmlspecialchars($admin['AdminPassword'] ?? 'Not provided') ?>" required
+                        <div class="pass-field">   
+                        <input type="password" name="currentPassword" id="currentPassword" value="<?= htmlspecialchars($admin['AdminPassword'] ?? 'Not provided') ?>" required
                                    class="<?= isset($errors['currentPassword']) ? 'error-field' : '' ?>">
-                            <i class="fas fa-eye" id="show-current-password"></i>
+                        <i class="fas fa-eye" id="show-current-password"></i>
                         </div>
                         <?php if (isset($errors['currentPassword'])): ?>
                             <div class="error-message"><?= htmlspecialchars($errors['currentPassword']) ?></div>
