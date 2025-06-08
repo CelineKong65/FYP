@@ -12,7 +12,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     });
 
-    // --- Form Submission Enhancement ---
     const loginForm = document.querySelector('form');
     if (loginForm) {
         loginForm.addEventListener('submit', function(e) {
@@ -22,7 +21,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (!email || !password) {
                 e.preventDefault();
-                // Error messages will be handled by PHP
             }
         });
     }
