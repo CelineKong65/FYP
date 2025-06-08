@@ -146,16 +146,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_account'])) {
             $errors['phone'] = 'Invalid phone number format. Use XXX-XXX XXXX or XXX-XXXX XXXX.';
         }
 
-        // $name_check_query = "SELECT AdminID FROM admin WHERE AdminName = ? AND AdminID != ?";
-        // $stmt = $conn->prepare($name_check_query);
-        // $stmt->bind_param("si", $name, $admin_id);
-        // $stmt->execute();
-        // $result = $stmt->get_result();
-
-        // if ($result->num_rows > 0) {
-        //     $errors['name'] = "The name \"$name\" is already taken. Please choose a different name.";
-        // }
-
         $email_check_query = "SELECT AdminID FROM admin WHERE AdminEmail = ? AND AdminID != ?";
         $stmt = $conn->prepare($email_check_query);
         $stmt->bind_param("si", $email, $admin_id);
@@ -396,12 +386,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
                 }
             }
 
-            // Initialize password toggles
             setupPasswordToggle('currentPassword', 'show-current-password');
             setupPasswordToggle('newPassword', 'show-new-password');
             setupPasswordToggle('confirmPassword', 'show-confirm-password');
 
-            // Make current password display-only but viewable
             const currentPasswordInput = document.querySelector('input[name="currentPassword"]');
             if (currentPasswordInput) {
                 currentPasswordInput.readOnly = true; // Make it non-editable
@@ -424,7 +412,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
                 return requirements.every(regex => regex.test(password));
             }
 
-            // DOM elements
             const passwordInput = document.getElementById('newPassword');
             const passwordRequirements = document.getElementById('passwordRequirements');
             const confirmPasswordInput = document.getElementById('confirmPassword');
@@ -442,12 +429,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
                     {regex: /^\S*$/, index: 5}     // No spaces
                 ];
 
-                // Show requirements on focus
                 passwordInput.addEventListener('focus', () => {
                     passwordRequirements.style.display = 'block';
                 });
 
-                // Hide requirements on blur
                 passwordInput.addEventListener('blur', () => {
                     setTimeout(() => {
                         if (!passwordRequirements.contains(document.activeElement)) {
@@ -456,11 +441,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
                     }, 200);
                 });
 
-                // Real-time validation for new password
                 passwordInput.addEventListener('input', function() {
                     const password = this.value;
                     
-                    // Update requirement indicators
                     requirements.forEach(req => {
                         const item = requirementItems[req.index];
                         const icon = item.querySelector('i');
@@ -473,7 +456,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
                     validatePasswordFields();
                 });
 
-                // Real-time validation for confirm password
                 confirmPasswordInput.addEventListener('input', function() {
                     validatePasswordFields();
                 });
@@ -483,32 +465,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
                     const confirmPassword = confirmPasswordInput.value;
                     const currentPassword = currentPasswordInput?.value;
                     
-                    // Clear previous errors
                     clearError(passwordInput);
                     clearError(confirmPasswordInput);
                     
-                    // Validate new password requirements
                     if (newPassword && !validatePasswordRequirements(newPassword)) {
                         showError(passwordInput, 'Password must contain: 8+ chars, uppercase, lowercase, number, special char');
                         disableUpdateButton();
                         return;
                     }
                     
-                    // Check if new password matches current password
                     if (newPassword && currentPassword && newPassword === currentPassword) {
                         showError(passwordInput, 'New password cannot be the same as current password');
                         disableUpdateButton();
                         return;
                     }
                     
-                    // Check if passwords match
                     if (newPassword && confirmPassword && newPassword !== confirmPassword) {
                         showError(confirmPasswordInput, 'Passwords do not match');
                         disableUpdateButton();
                         return;
                     }
                     
-                    // If all validations pass
                     if (newPassword && confirmPassword && 
                         newPassword === confirmPassword && 
                         validatePasswordRequirements(newPassword) &&
@@ -533,11 +510,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
                     }
                 }
 
-                // Initial validation
                 validatePasswordFields();
             }
 
-            // Form submission handler for password form
             if (passwordForm) {
                 passwordForm.addEventListener('submit', function(e) {
                     if (!validatePasswordForm()) {
@@ -556,27 +531,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
                 const currentPassword = currentPasswordInput?.value;
                 let isValid = true;
                 
-                // Clear all errors first
                 clearError(passwordInput);
                 clearError(confirmPasswordInput);
 
-                // Validate new password exists
                 if (!newPassword.trim()) {
                     showError(passwordInput, 'New password is required');
                     isValid = false;
                 }
-                // Validate password requirements
                 else if (!validatePasswordRequirements(newPassword)) {
                     showError(passwordInput, 'Password must contain: 8+ chars, uppercase, lowercase, number, special char');
                     isValid = false;
                 }
-                // Check if matches current password
                 else if (currentPassword && newPassword === currentPassword) {
                     showError(passwordInput, 'New password cannot be the same as current password');
                     isValid = false;
                 }
 
-                // Validate confirm password
                 if (!confirmPassword.trim()) {
                     showError(confirmPasswordInput, 'Please confirm your password');
                     isValid = false;

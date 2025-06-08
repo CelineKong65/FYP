@@ -10,7 +10,6 @@ include 'db_connection.php';
 
 $rating_filter = isset($_GET['rating']) ? trim($_GET['rating']) : '';
 
-// Base query
 $product_feedback_query = "
     SELECT 
         pf.ProductID, 
@@ -22,7 +21,6 @@ $product_feedback_query = "
     GROUP BY pf.ProductID
 ";
 
-// Add HAVING clause if a filter is selected
 if ($rating_filter !== '') {
     $having_clause = "";
     switch ($rating_filter) {
@@ -40,11 +38,9 @@ if ($rating_filter !== '') {
             break;
     }
     
-    // Insert the HAVING clause before the ORDER BY
     $product_feedback_query = str_replace("GROUP BY pf.ProductID", "GROUP BY pf.ProductID " . $having_clause, $product_feedback_query);
 }
 
-// Add ORDER BY
 $product_feedback_query .= " ORDER BY AverageRating DESC";
 
 $product_feedback_result = $conn->query($product_feedback_query);

@@ -137,7 +137,6 @@ if (isset($_POST['add_voucher'])) {
     $expire_date = $_POST['expire_date'] ?: null;
     $admin_id = $_SESSION['AdminID'];
 
-    // Validate inputs
     $code_error = validateVoucherCode($voucher_code);
     $value_error = validateDiscountValue($discount_value);
     $min_error = validateMinPurchase($min_purchase);
@@ -148,7 +147,6 @@ if (isset($_POST['add_voucher'])) {
         exit();
     }
 
-    // Check if voucher code exists
     $check_query = "SELECT VoucherID FROM voucher WHERE VoucherCode = ?";
     $stmt = $conn->prepare($check_query);
     $stmt->bind_param("s", $voucher_code);
@@ -161,7 +159,6 @@ if (isset($_POST['add_voucher'])) {
     }
     $stmt->close();
 
-    // Handle image upload
     $voucher_picture = $_FILES['voucher_picture']['name'] ?? null;
     $voucher_picture_tmp = $_FILES['voucher_picture']['tmp_name'] ?? null;
     $image_name = null;
@@ -192,7 +189,6 @@ if (isset($_POST['add_voucher'])) {
         exit();
     }
 
-    // Insert new voucher
     $insert_query = "INSERT INTO voucher (VoucherCode, VoucherPicture, VoucherDesc, DiscountValue, MinPurchase, ExpireDate, AdminID) 
                     VALUES (?, ?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($insert_query);
@@ -230,7 +226,6 @@ if (isset($_POST['edit_voucher'])) {
         exit();
     }
 
-    // Validate inputs
     $code_error = validateVoucherCode($voucher_code);
     $value_error = validateDiscountValue($discount_value);
     $min_error = validateMinPurchase($min_purchase);
@@ -242,7 +237,6 @@ if (isset($_POST['edit_voucher'])) {
         exit();
     }
 
-    // Check if voucher code exists (excluding current voucher)
     $stmt = $conn->prepare("SELECT VoucherID FROM voucher WHERE VoucherCode = ? AND VoucherID != ?");
     $stmt->bind_param("si", $voucher_code, $voucher_id);
     $stmt->execute();
@@ -253,7 +247,6 @@ if (isset($_POST['edit_voucher'])) {
     }
     $stmt->close();
 
-    // Get current image
     $stmt = $conn->prepare("SELECT VoucherPicture FROM voucher WHERE VoucherID = ?");
     $stmt->bind_param("i", $voucher_id);
     $stmt->execute();
@@ -261,7 +254,6 @@ if (isset($_POST['edit_voucher'])) {
     $stmt->fetch();
     $stmt->close();
 
-    // Handle image upload
     $target_dir = "../image/voucher/";
     $new_image_uploaded = !empty($_FILES['voucher_picture']['name']);
     
@@ -326,7 +318,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     $voucher_id = (int)$_POST['voucher_id'];
     $currentStatus = strtolower($_POST['current_status']);
     
-    // First check if the voucher is expired
     $stmt = $conn->prepare("SELECT VoucherStatus FROM voucher WHERE VoucherID = ?");
     $stmt->bind_param("i", $voucher_id);
     $stmt->execute();
@@ -795,7 +786,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         const discount = discountInput.value.trim();
         let isValid = true;
 
-        // Validate code
         const codeError = validateVoucherCode(code);
         if (codeError) {
             document.getElementById('edit-code-error').textContent = codeError;
@@ -803,7 +793,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
             isValid = false;
         }
 
-        // Validate discount
         const discountError = validateDiscountValue(discount);
         if (discountError) {
             document.getElementById('edit-discount-error').textContent = discountError;
@@ -850,7 +839,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         isAddMinPurchaseValid = false;
         isAddImageValid = false;
         
-        // Trigger initial validation
         validateCodeInRealTime('', 'add');
         validateDescInRealTime('', 'add');
         validateDiscountInRealTime('', 'add');
@@ -870,7 +858,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
 
     // ================== EVENT LISTENERS ==================
     document.addEventListener('DOMContentLoaded', function () {
-        // Add event listeners for required fields
         document.getElementById('add-voucher-picture').addEventListener('change', function() {
             validateImageInRealTime(this, 'add');
         });
@@ -885,7 +872,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
 
         document.getElementById('addVoucherForm').addEventListener('submit', async function (e) {
             e.preventDefault();
-            // Validate all required fields
             validateCodeInRealTime(document.getElementById('add-code').value, 'add');
             validateDescInRealTime(document.getElementById('add-desc').value, 'add');
             validateDiscountInRealTime(document.getElementById('add-discount').value, 'add');

@@ -374,7 +374,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
             const city = document.getElementById('city');
             const state = document.getElementById('state');
 
-            // First clear all previous errors
             const fields = [street, postcode, city, state];
             fields.forEach(field => {
                 const errorElement = document.getElementById(`${field.id}-error`);
@@ -390,7 +389,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
             const cityVal = city.value.trim();
             const stateVal = state.value.trim();
 
-            // Make all address fields required (like name, email, phone)
             if (!streetVal) {
                 document.getElementById('street-error').textContent = 'Street address is required';
                 document.getElementById('street-error').style.display = 'block';
@@ -433,7 +431,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 isValid = false;
             }
 
-            // Validate postcode format if postcode exists
             if (postcodeVal && !/^\d{5}$/.test(postcodeVal)) {
                 document.getElementById('postcode-error').textContent = 'Postcode must be 5 digits';
                 document.getElementById('postcode-error').style.display = 'block';
@@ -448,7 +445,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
             let isValid = true;
             const requiredFields = ['name', 'email', 'phone', 'street', 'postcode', 'city', 'state'];
             
-            // Check all required fields (including address fields)
             requiredFields.forEach(field => {
                 const fieldValue = document.getElementById(field).value.trim();
                 const errorElement = document.getElementById(`${field}-error`);
@@ -474,7 +470,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 isValid = false;
             }
 
-            // Validate email format
             const email = document.getElementById('email').value.trim();
             if (email && !/^[^\s@]+@[^\s@]+\.com$/.test(email)) {
                 document.getElementById('email-error').textContent = 'Invalid email format (must end with .com)';
@@ -484,7 +479,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 isValid = false;
             }
 
-            // Validate phone format
             const phone = document.getElementById('phone').value.trim();
             if (phone && !/^\d{3}-\d{3,4} \d{4}$/.test(phone)) {
                 document.getElementById('phone-error').textContent = 'Phone must be in XXX-XXX XXXX or XXX-XXXX XXXX format';
@@ -494,7 +488,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 isValid = false;
             }
 
-            // Validate postcode format
             const postcode = document.getElementById('postcode').value.trim();
             if (postcode && !/^\d{5}$/.test(postcode)) {
                 document.getElementById('postcode-error').textContent = 'Postcode must be 5 digits';
@@ -507,7 +500,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
             return isValid;
         }
 
-        // Add event listeners to all fields for real-time validation
         ['name', 'email', 'phone', 'street', 'postcode', 'city'].forEach(field => {
             document.getElementById(field).addEventListener('blur', function() {
                 if (field === 'street' || field === 'postcode' || field === 'city' || field === 'state') {
@@ -553,7 +545,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
             validateAddressFields();
         });
 
-        // Form submission handler
         document.getElementById('editCustomerForm').addEventListener('submit', function(e) {
             if (!validateForm()) {
                 e.preventDefault();
@@ -582,12 +573,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
             const errorElement = document.getElementById(`${type}-error`);
             const inputField = document.getElementById(type);
             
-            // Clear previous states
             errorElement.textContent = '';
             errorElement.style.display = 'none';
             inputField.classList.remove('error-field', 'valid-field');
 
-            // Check for empty required fields
             if (!value.trim() && (type === 'name' || type === 'email' || type === 'phone')) {
                 errorElement.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} is required`;
                 errorElement.style.display = 'block';
@@ -595,7 +584,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 return;
             }
 
-            // Validate format
             let isValidFormat = true;
             let formatErrorMessage = '';
             
@@ -620,11 +608,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 errorElement.textContent = formatErrorMessage;
                 errorElement.style.display = 'block';
                 inputField.classList.add('error-field');
-                inputField.classList.remove('valid-field'); // Explicitly remove valid state
+                inputField.classList.remove('valid-field'); 
                 return;
             }
 
-            // Check availability via AJAX
             const formData = new FormData();
             formData.append('check_availability', 'true');
             formData.append('type', type);

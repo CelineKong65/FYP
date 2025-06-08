@@ -740,7 +740,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name']))
                 return;
             }
             
-            // Check for duplicate name via AJAX
             checkProductNameAvailability(value, isEdit ? document.getElementById('product_id').value : 0, isEdit)
                 .then(isAvailable => {
                     isProductNameValid = isAvailable;
@@ -783,7 +782,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name']))
             submitButton.disabled = !isProductNameValid;
         }
 
-        // For add form
         document.getElementById('add_product_form').addEventListener('submit', function(e) {
             if (!isProductNameValid) {
                 e.preventDefault();
@@ -791,7 +789,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name']))
             }
         });
 
-        // For edit form
         document.getElementById('edit_product_form').addEventListener('submit', function(e) {
             if (!isProductNameValid) {
                 e.preventDefault();
@@ -838,14 +835,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name']))
                 }
             }
             
-            // Reset validation state
             isProductNameValid = true;
         }
 
         function closeModal() {
             clearAllErrors();
             document.getElementById('editModal').style.display = 'none';
-            // Reset validation state
             isProductNameValid = false;
         }
 
@@ -854,7 +849,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name']))
             document.getElementById('add_size_fields').style.display = hasSizes ? 'block' : 'none';
             document.getElementById('add_no_size_field').style.display = hasSizes ? 'none' : 'block';
 
-            // Toggle required attributes
             document.getElementById('add_stock').required = !hasSizes;
             document.getElementById('add_stock_S').required = hasSizes;
             document.getElementById('add_stock_M').required = hasSizes;
@@ -863,27 +857,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name']))
         }
 
         function openAddModal() {
-            // Clear any existing errors
             clearAllErrors();
             
-            // Reset the form when opening
             document.getElementById('add_has_sizes').checked = false;
             toggleAddSizeFields();
             document.getElementById('addModal').style.display = 'block';
             
-            // Reset validation state
             isProductNameValid = false;
         }
 
         function closeAddModal() {
             clearAllErrors();
             document.getElementById('addModal').style.display = 'none';
-            // Reset validation state
             isProductNameValid = false;
         }
 
         function clearAllErrors() {
-            // Clear edit modal errors
             const editError = document.getElementById('edit-name-error');
             if (editError) {
                 editError.textContent = '';
@@ -894,7 +883,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_product_name']))
                 editInput.classList.remove('error-field', 'valid-field');
             }
             
-            // Clear add modal errors
             const addError = document.getElementById('add-name-error');
             if (addError) {
                 addError.textContent = '';

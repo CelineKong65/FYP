@@ -25,7 +25,6 @@ if (!$product) {
     exit();
 }
 
-// UPDATED: Also select OrderID
 $feedback_query = "
     SELECT pf.OrderID, pf.Rating, pf.Feedback AS Comment, pf.FeedbackDate, c.CustID, c.CustName,p.ProductPicture
     FROM product_feedback pf

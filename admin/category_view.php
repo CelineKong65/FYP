@@ -369,7 +369,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     let isEditNameValid = false;
     let originalEditName = '';
 
-    // ================== SHARED FUNCTIONS ==================
     async function validateNameInRealTime(value, prefix) {
         const errorElement = document.getElementById(`${prefix}-name-error`);
         const inputField = document.getElementById(`${prefix}-name`);
@@ -479,18 +478,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         });
     }
 
-    // ================== EDIT CATEGORY SPECIFIC ==================
     function validateEditForm() {
         const nameInput = document.getElementById('edit-name');
         const name = nameInput.value.trim();
         const imageInput = document.getElementById('edit-profile-picture');
         let isValid = true;
 
-        // Clear previous errors
         document.getElementById('edit-name-error').textContent = '';
         nameInput.classList.remove('error-field');
 
-        // Validate name
         const nameError = validateCategoryName(name);
         if (nameError) {
             document.getElementById('edit-name-error').textContent = nameError;
@@ -498,7 +494,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
             isValid = false;
         }
 
-        // Validate image if changed
         if (imageInput.files.length > 0) {
             const file = imageInput.files[0];
             const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
@@ -526,7 +521,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         document.getElementById("editModal").style.display = "none";
     }
 
-    // ================== ADD CATEGORY SPECIFIC ==================
     function openAddModal() {
         document.getElementById("addModal").style.display = "block";
         isAddNameValid = false;
@@ -540,7 +534,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         clearErrors('add');
     }
 
-    // ================== EVENT LISTENERS ==================
     document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('add-profile-picture').addEventListener('change', function () {
             updateSubmitButton('add');
@@ -566,7 +559,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
                 alert('Please fix all errors before submitting.');
                 return;
             }
-            // If valid, form will submit normally
         });
 
         const searchInput = document.querySelector('input[name="search"]');

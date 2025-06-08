@@ -8,17 +8,14 @@ if (!isset($_SESSION['AdminID'])) {
 
 include 'db_connection.php';
 
-// Pagination logic
 $ordersPerPage = 10; // Number of orders per page
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($page - 1) * $ordersPerPage;
 
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-// Base query for counting total orders
 $count_query = "SELECT COUNT(*) FROM orderpayment o";
 
-// Base query for fetching orders
 $order_query = "
     SELECT o.OrderID, o.ReceiverName, o.ReceiverContact, o.StreetAddress, o.City, o.Postcode, o.State, 
            o.OrderDate, o.OrderStatus, o.TotalPrice 
@@ -29,7 +26,6 @@ $where_clauses = [];
 $params = [];
 $types = '';
 
-// Search filter
 if (!empty($search_query)) {
     $where_clauses[] = "(o.ReceiverName LIKE ? OR o.ReceiverContact LIKE ? OR o.OrderID LIKE ?)";
     $searchTerm = '%' . $search_query . '%';
@@ -46,18 +42,14 @@ if (!empty($where_clauses)) {
 
 $order_query .= " ORDER BY o.OrderDate DESC";
 
-// Add LIMIT clause for pagination
 $order_query .= " LIMIT ? OFFSET ?";
-$types .= 'ii'; // Add types for limit and offset
+$types .= 'ii';
 $params[] = $ordersPerPage;
 $params[] = $offset;
 
-// Get total number of orders for pagination
 $stmt_count = $conn->prepare($count_query);
 if (!empty($where_clauses)) {
-    // Remove last 2 types (limit and offset) for count query
     $count_types = substr($types, 0, -2);
-    // Remove last 2 params (limit and offset) for count query
     $count_params = array_slice($params, 0, -2);
     
     $stmt_count->bind_param($count_types, ...$count_params);
@@ -68,7 +60,6 @@ $stmt_count->close();
 
 $totalPages = ceil($totalOrders / $ordersPerPage);
 
-// Prepare and execute the order query
 $stmt = $conn->prepare($order_query);
 if (!empty($params)) {
     $stmt->bind_param($types, ...$params);
@@ -228,7 +219,6 @@ if (isset($_POST['edit_status'])) {
             
             if (searchInput && searchForm) {
                 searchInput.addEventListener('input', function() {
-                    // If search input is empty, submit the form to show all results
                     if (this.value.trim() === '') {
                         searchForm.submit();
                     }

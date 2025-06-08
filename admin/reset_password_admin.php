@@ -6,7 +6,6 @@ if(!isset($_SESSION['reset_email'])){
     exit();
 }
 
-// Get current password for comparison
 include 'db_connection.php';
 $sql = "SELECT AdminPassword FROM admin WHERE AdminEmail = ?";
 $stmt = $conn->prepare($sql);

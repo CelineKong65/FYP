@@ -198,13 +198,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         if (in_array($dataType, ['orders', 'sales_report', 'top_selling'])) {
-            // Add the total row as part of the table
             $pdf->SetFont('Arial','B',10);
             $x = $pdf->GetX();
             $y = $pdf->GetY();
             $totalWidth = 0;
         
-            // Calculate the width of all columns except the last one
             $i = 0;
             $columnCount = count($columns);
             foreach ($columns as $col) {
@@ -214,14 +212,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         
-            // Get the width of the last column
             $lastColumnWidth = end($columns)['width'];
         
-            // Draw the "Total" label cell
             $pdf->SetXY($x, $y);
             $pdf->Cell($totalWidth, 7, 'Total:', 1, 0, 'R');
         
-            // Draw the total value cell
             $pdf->SetXY($x + $totalWidth, $y);
             if ($dataType === 'orders') {
                 $pdf->Cell($lastColumnWidth, 7, number_format($totalPriceSum, 2), 1, 1, 'R');
@@ -247,7 +242,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit();
         }
     
-        // Define columns with widths (same as PDF version)
         if ($dataType === 'orders') {
             $columns = [
                 'OrderID' => ['width' => 15, 'title' => 'ID'],
@@ -303,7 +297,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $monthlySalesSum = 0;
         $totalSalesValue = 0;
 
-        // Prepare headers for HTML table to be opened in Excel
         header("Content-Type: application/vnd.ms-excel");
         header("Content-Disposition: attachment; filename=\"$filename.xls\"");
         header("Pragma: no-cache");
@@ -319,24 +312,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo "<body>";
         echo "<table border='1' style='border-collapse: collapse; font-family: Arial, sans-serif; width: 100%;'>";
     
-        // Report Title
         echo "<tr><td colspan='" . count($columns) . "' style='font-weight: bold; font-size: 16px; text-align: center;'>$title</td></tr>";
         echo "<tr><td colspan='" . count($columns) . "' style='text-align: center;'>Date Range: $startDate to $endDate</td></tr>";
         echo "<tr><td colspan='" . count($columns) . "'>&nbsp;</td></tr>";
     
-        // Column Headers
         echo "<tr>";
         foreach ($columns as $field => $col) {
-            $width = $col['width'] * 5; // Convert to approximate pixels
+            $width = $col['width'] * 5;
             echo "<th style='background-color: #d9d9d9; font-weight: bold; text-align: center; padding: 5px; width: {$width}px;'>{$col['title']}</th>";
         }
         echo "</tr>";
     
-        // Data Rows
         while ($row = $result->fetch_assoc()) {
             echo "<tr>";
             foreach ($columns as $field => $col) {
-                // Handle special fields
                 if ($dataType === 'orders' && $field === 'ReceiverInfo') {
                     $value = $row['ReceiverName']."\n".$row['ReceiverContact']."\n".$row['ReceiverEmail'];
                 } elseif ($dataType === 'orders' && $field === 'FullAddress') {
@@ -345,12 +334,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $value = $row[$field] ?? '';
                 }
 
-                // Format numeric fields
                 if (in_array($field, ['TotalPrice', 'monthly_sales', 'total_sales_value'])) {
                     $rawValue = (float)$value;
                     echo "<td style='mso-number-format:\"0\.00\"; padding: 5px;'>" . number_format($rawValue, 2) . "</td>";
                     
-                    // Accumulate totals (only once per field)
                     if ($dataType === 'orders' && $field === 'TotalPrice') {
                         $totalPriceSum += $rawValue;
                     } elseif ($dataType === 'sales_report' && $field === 'monthly_sales') {
@@ -460,25 +447,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const endDate = document.getElementById('endDate').value;
             let isValid = true;
             
-            // Clear previous errors
             document.getElementById('startDateError').style.display = 'none';
             document.getElementById('endDateError').style.display = 'none';
             
-            // Validate start date
             if (!startDate) {
                 document.getElementById('startDateError').textContent = 'Please select a start date';
                 document.getElementById('startDateError').style.display = 'block';
                 isValid = false;
             }
             
-            // Validate end date
             if (!endDate) {
                 document.getElementById('endDateError').textContent = 'Please select an end date';
                 document.getElementById('endDateError').style.display = 'block';
                 isValid = false;
             }
             
-            // Validate date range if both dates exist
             if (startDate && endDate) {
                 const start = new Date(startDate);
                 const end = new Date(endDate);
@@ -495,7 +478,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         });
         
-        // Real-time validation
         document.getElementById('startDate').addEventListener('change', validateDates);
         document.getElementById('endDate').addEventListener('change', validateDates);
         
@@ -503,7 +485,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const startDate = document.getElementById('startDate').value;
             const endDate = document.getElementById('endDate').value;
             
-            // Clear previous errors
             document.getElementById('startDateError').style.display = 'none';
             document.getElementById('endDateError').style.display = 'none';
             
@@ -517,7 +498,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
-        // Restrict both start and end dates to today
         window.addEventListener('DOMContentLoaded', function() {
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('startDate').setAttribute('max', today);

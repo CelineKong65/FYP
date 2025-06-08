@@ -24,7 +24,6 @@ $adminData = $result->fetch_assoc();
 $loggedInPosition = $adminData['AdminPosition'];
 $stmt->close();
 
-// Function to generate random password
 function generateRandomPassword($length = 8) {
     $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()';
     $password = '';
@@ -235,7 +234,7 @@ if (isset($_POST['add_admin'])) {
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
-            $mail->Username = 'lawrencetan20050429@gmail.com'; //Your Gmail
+            $mail->Username = 'lawrencetan20050429@gmail.com'; //Gmail
             $mail->Password = 'khzd gkui ieyv aadf'; //Gmail App Password
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port = 587;
@@ -516,13 +515,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
     </div>
 
     <script>
-        // Common validation function for both add and edit forms
         function validateForm(formType = 'edit') {
             let isValid = true;
             const prefix = formType === 'add' ? 'add-' : '';
             const requiredFields = ['name', 'email', 'phone'];
             
-            // Check all required fields
             requiredFields.forEach(field => {
                 const fieldId = prefix + field;
                 const fieldValue = document.getElementById(fieldId).value.trim();
@@ -538,7 +535,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 }
             });
 
-            // Validate name format
             const name = document.getElementById(prefix + 'name').value.trim();
             if (name && !/^[a-zA-Z\s]+$/.test(name)) {
                 document.getElementById(prefix + 'name-error').textContent = 'Name should contain only letters and spaces';
@@ -548,7 +544,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 isValid = false;
             }
 
-            // Validate email format
             const email = document.getElementById(prefix + 'email').value.trim();
             if (email && !/^[^\s@]+@[^\s@]+\.com$/.test(email)) {
                 document.getElementById(prefix + 'email-error').textContent = 'Invalid email format (must end with .com)';
@@ -558,7 +553,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 isValid = false;
             }
 
-            // Validate phone format
             const phone = document.getElementById(prefix + 'phone').value.trim();
             if (phone && !/^\d{3}-\d{3,4} \d{4}$/.test(phone)) {
                 document.getElementById(prefix + 'phone-error').textContent = 'Phone must be in XXX-XXX XXXX or XXX-XXXX XXXX format';
@@ -571,21 +565,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
             return isValid;
         }
 
-        // Add event listeners for real-time validation (edit form)
         ['name', 'email', 'phone'].forEach(field => {
             document.getElementById(field).addEventListener('blur', function() {
                 validateField(field, this.value.trim(), '');
             });
         });
 
-        // Add event listeners for real-time validation (add form)
         ['name', 'email', 'phone'].forEach(field => {
             document.getElementById('add-' + field).addEventListener('blur', function() {
                 validateField(field, this.value.trim(), 'add-');
             });
         });
 
-        // Common field validation function
         function validateField(field, value, prefix = '') {
             const fieldId = prefix + field;
             const errorElement = document.getElementById(`${fieldId}-error`);
@@ -602,7 +593,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 return;
             }
 
-            // Additional validation for specific fields
             if (field === 'name' && !/^[a-zA-Z\s]+$/.test(value)) {
                 errorElement.textContent = 'Name should contain only letters and spaces';
                 errorElement.style.display = 'block';
@@ -624,7 +614,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
             }
         }
 
-        // Form submission handler for edit form
         document.getElementById('editAdminForm').addEventListener('submit', function(e) {
             if (!validateForm('edit')) {
                 e.preventDefault();
@@ -647,7 +636,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
             }
         });
 
-        // Form submission handler for add form
         document.getElementById('addAdminForm').addEventListener('submit', function(e) {
             if (!validateForm('add')) {
                 e.preventDefault();
@@ -670,19 +658,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
             }
         });
 
-        // Common availability check function
         function checkAvailability(type, value, prefix = '') {
             const adminId = prefix === '' ? document.getElementById('admin_id')?.value : 0;
             const fieldId = prefix + type;
             const errorElement = document.getElementById(`${fieldId}-error`);
             const inputField = document.getElementById(fieldId);
             
-            // Clear previous states
             errorElement.textContent = '';
             errorElement.style.display = 'none';
             inputField.classList.remove('error-field', 'valid-field');
 
-            // Check for empty required fields
             if (!value.trim()) {
                 errorElement.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} is required`;
                 errorElement.style.display = 'block';
@@ -690,7 +675,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 return;
             }
 
-            // Validate format
             let isValidFormat = true;
             let formatErrorMessage = '';
             
@@ -719,7 +703,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 return;
             }
 
-            // Check availability via AJAX
             const formData = new FormData();
             formData.append('check_availability', 'true');
             formData.append('type', type);
@@ -755,9 +738,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
             });
         }
 
-        // Function to open edit modal
         function openEditModal(adminData) {
-            // Clear all errors first
             document.querySelectorAll('#editModal .error-message').forEach(el => {
                 el.textContent = '';
                 el.style.display = 'none';
@@ -766,13 +747,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 el.classList.remove('error-field', 'valid-field');
             });
             
-            // Set form values
             document.getElementById('admin_id').value = adminData.id;
             document.getElementById('name').value = adminData.name;
             document.getElementById('email').value = adminData.email;
             document.getElementById('phone').value = adminData.phone;
             
-            // Handle position field based on admin type
             const positionContainer = document.getElementById('position-container');
             if (adminData.position === 'superadmin') {
                 positionContainer.innerHTML = `
@@ -788,18 +767,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
                 `;
             }
 
-            // Show the modal
             document.getElementById('editModal').style.display = 'block';
         }
 
-        // Function to close edit modal
         function closeModal() {
             document.getElementById('editModal').style.display = 'none';
         }
 
-        // Function to open add modal
         function openAddModal() {
-            // Clear all errors and fields
             document.querySelectorAll('#addModal .error-message').forEach(el => {
                 el.textContent = '';
                 el.style.display = 'none';
@@ -809,28 +784,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['check_availability']))
             });
             document.getElementById('addAdminForm').reset();
             
-            // Show the modal
             document.getElementById('addModal').style.display = 'block';
         }
 
-        // Function to close add modal
         function closeAddModal() {
             document.getElementById('addModal').style.display = 'none';
         }
 
-        // Event listeners for modals
         document.addEventListener('DOMContentLoaded', function() {
-            // Close modals when clicking outside
-            window.addEventListener('click', function(event) {
-                if (event.target === document.getElementById('editModal')) {
-                    closeModal();
-                }
-                if (event.target === document.getElementById('addModal')) {
-                    closeAddModal();
-                }
-            });
             
-            // Search functionality
             const searchInput = document.querySelector('input[name="search"]');
             const searchForm = document.querySelector('.search');
             if (searchInput && searchForm) {
