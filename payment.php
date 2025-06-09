@@ -205,6 +205,11 @@ if ($appliedVoucher || isset($_SESSION['applied_voucher'])) {
     $appliedVoucher = $appliedVoucher ?? $_SESSION['applied_voucher'];
     $discountAmount = $appliedVoucher['DiscountValue'];
     $grandTotalWithDelivery -= $discountAmount;
+    
+    // Ensure the total doesn't go below 0
+    if ($grandTotalWithDelivery < 0) {
+        $grandTotalWithDelivery = 0;
+    }
 }
 
 // Handle form submission (for actual payment)
@@ -399,6 +404,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['applyVoucher']) && !
         $conn->beginTransaction();
         
         try {
+            // Calculate the amount to charge (can't be negative)
+            $amountToCharge = max(0, $grandTotalWithDelivery);
+            
             // Insert payment information
             $insertQuery = "INSERT INTO orderpayment 
                 (CustID, ReceiverName, ReceiverContact, ReceiverEmail, StreetAddress, City, Postcode, State, 
@@ -417,14 +425,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['applyVoucher']) && !
             $insertStmt->bindParam(':city', $finalCity, PDO::PARAM_STR);
             $insertStmt->bindParam(':postcode', $finalPostcode, PDO::PARAM_STR);
             $insertStmt->bindParam(':state', $finalState, PDO::PARAM_STR);
-            $insertStmt->bindParam(':totalPrice', $grandTotalWithDelivery, PDO::PARAM_STR);
+            $insertStmt->bindParam(':totalPrice', $amountToCharge, PDO::PARAM_STR);
             $insertStmt->bindParam(':paymentMethod', $paymentMethod, PDO::PARAM_STR);
             
             $voucherIDToBind = $appliedVoucher['VoucherID'] ?? null;
             $insertStmt->bindParam(':voucherID', $voucherIDToBind, PDO::PARAM_INT);
 
             // For E-wallet, store the remaining balance after payment
-            $remainingBalance = ($paymentMethod === 'E-wallet') ? ($eWalletBalance - $grandTotalWithDelivery) : NULL;
+            $remainingBalance = ($paymentMethod === 'E-wallet') ? ($eWalletBalance - $amountToCharge) : NULL;
            
             // Only bind card details if payment method is credit card or debit card
             $cardNameToBind = ($paymentMethod === 'Credit Card' || $paymentMethod === 'Debit Card') ? $cardName : NULL;
@@ -490,7 +498,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['applyVoucher']) && !
 
                 // Update E-wallet balance if payment method is E-wallet
                 if ($paymentMethod === 'E-wallet') {
-                    $remainingBalance = $eWalletBalance - $grandTotalWithDelivery;
+                    $remainingBalance = $eWalletBalance - $amountToCharge;
                     $updateBalanceQuery = "UPDATE customer SET EWalletBalance = :newBalance WHERE CustID = :custID";
                     $updateBalanceStmt = $conn->prepare($updateBalanceQuery);
                     $updateBalanceStmt->bindParam(':newBalance', $remainingBalance, PDO::PARAM_STR);
@@ -611,11 +619,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['applyVoucher']) && !
                     <?php endif; ?>
                 </div>
 
-                <div class="total">
-                    <span>Subtotal:</span>
-                    <span class="total-price">RM <?= number_format($subtotal, 2) ?></span>
-                </div>
-
                 <?php if ($appliedVoucher): ?>
                     <div class="total">
                         <span>Voucher Discount (<?= htmlspecialchars($appliedVoucher['VoucherCode']) ?>):</span>
@@ -625,16 +628,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['applyVoucher']) && !
 
                 <div class="total">
                     <span>Total (Incl. Delivery):</span>
-                    <span id="total" class="total-price">RM <?= number_format($grandTotalWithDelivery, 2) ?></span>
+                    <span id="total" class="total-price">RM <?= number_format(max(0, $grandTotalWithDelivery), 2) ?></span>
                 </div>
                 
                 <?php if ($paymentMethod === 'E-wallet' || (isset($_SESSION['topup_success']) && $_SESSION['topup_success'])): ?>
                     <div class="e-wallet-info">
                         <p>Your E-wallet balance: RM <?= number_format($eWalletBalance, 2) ?></p>
-                        <?php if ($eWalletBalance < $grandTotalWithDelivery): ?>
+                        <?php if ($eWalletBalance < max(0, $grandTotalWithDelivery)): ?>
                             <p class="text-danger">Insufficient balance. Please top up your E-wallet.</p>
                         <?php else: ?>
-                            <p>Remaining balance after payment: RM <?= number_format($eWalletBalance - $grandTotalWithDelivery, 2) ?></p>
+                            <p>Remaining balance after payment: RM <?= number_format($eWalletBalance - max(0, $grandTotalWithDelivery), 2) ?></p>
                         <?php endif; ?>
                     </div>
                     <?php unset($_SESSION['topup_success']); ?>
