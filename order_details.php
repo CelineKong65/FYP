@@ -15,7 +15,7 @@ if (!isset($_GET['order_id'])) {
 $order_id = $_GET['order_id'];
 
 try {
-    $order_query_sql = "SELECT op.*, v.VoucherCode, v.DiscountValue 
+    $order_query_sql = "SELECT op.*, v.VoucherCode
                         FROM orderpayment op
                         LEFT JOIN voucher v ON op.VoucherID = v.VoucherID
                         WHERE op.OrderID = ?";
@@ -104,8 +104,10 @@ try {
                     <!-- Order Items -->
                     <?php 
                     $counter = 1;
+                    $total_items_price = 0;
                     foreach ($order_details as $orderdetails): 
-                        $total_item = $orderdetails['ProductPrice'] * $orderdetails['Quantity'];
+                        $item_total = $orderdetails['ProductPrice'] * $orderdetails['Quantity'];
+                        $total_items_price += $item_total;
                     ?>
                     <tr>
                         <td><?php echo $counter++; ?></td>
@@ -123,14 +125,16 @@ try {
                         </td>
                         <td><?php echo number_format($orderdetails['ProductPrice'], 2); ?></td>
                         <td>&times <?php echo htmlspecialchars($orderdetails['Quantity']); ?></td>
-                        <td style="text-align: right;"><?php echo number_format($total_item, 2); ?></td>
+                        <td style="text-align: right;"><?php echo number_format($item_total, 2); ?></td>
                     </tr>
                     <?php endforeach; ?>
 
-                    <?php if ($orderpayment['VoucherID'] !== null): ?>
+                    <?php if ($orderpayment['VoucherID'] !== null):
+                        $discount_value = $total_items_price - $orderpayment['TotalPrice'];
+                    ?>
                     <tr class="voucher-row">
                         <td colspan="5" class="total-label">Voucher Discount (<?php echo htmlspecialchars($orderpayment['VoucherCode']); ?>):</td>
-                        <td class="total-value">-RM <?php echo number_format($orderpayment['DiscountValue'], 2); ?></td>
+                        <td class="total-value">-RM <?php echo number_format($discount_value, 2); ?></td>
                     </tr>
                     <?php endif; ?>
 
