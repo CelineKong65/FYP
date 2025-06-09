@@ -266,7 +266,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $columns = [
                 'ProductFeedbackID' => ['width' => 15, 'title' => 'ID'],
                 'CustName' => ['width' => 40, 'title' => 'Customer Name'],
-                'ProductID' => ['width' => 20, 'title' => 'Prod_ID'],
+                'ProductID' => ['width' => 20, 'title' => 'Prod ID'],
                 'ProductName' => ['width' => 60, 'title' => 'Product Name'],
                 'Rating' => ['width' => 20, 'title' => 'Rating'],
                 'Feedback' => ['width' => 80, 'title' => 'Feedback'],
