@@ -56,12 +56,12 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
                 $mail->isSMTP();
                 $mail->Host = 'smtp.gmail.com';
                 $mail->SMTPAuth = true;
-                $mail->Username = 'lawrencetan20050429@gmail.com'; //Gmail
-                $mail->Password = 'khzd gkui ieyv aadf'; //Gmail App Password
+                $mail->Username = 'lawrencetan20050429@gmail.com';
+                $mail->Password = 'khzd gkui ieyv aadf';
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                 $mail->Port = 587;
     
-                $mail->setFrom('lawrencetan20050429@gmail.com', 'WaterSport_Equipment');//Your Gmail
+                $mail->setFrom('lawrencetan20050429@gmail.com', 'WaterSport_Equipment');
     
                 $mail->addAddress($_SESSION['reset_email']);
     
@@ -84,7 +84,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
 <html>
 <head>
     <title>Verify OTP</title>
-    <link rel="stylesheet" type="text/css" href="OTPverify.css">
+    <link rel="stylesheet" type="text/css" href="OTPverify_admin.css">
     <script src="https://kit.fontawesome.com/c2f7d169d6.js" crossorigin="anonymous"></script>
     <script>
         // Automatic move to next box
