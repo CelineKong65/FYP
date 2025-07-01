@@ -3,22 +3,24 @@ include 'config.php';
 include 'header.php';
 
 // Pagination logic
+// Set how many products to display per page
 $productsPerPage = 6;
+// Get current page number from URL (default to 1)
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($page - 1) * $productsPerPage;
 
-// Fetch total number of active products with active brands
+// Get total number of products with 'active' status and whose brands are also active
 $stmt = $conn->query("
     SELECT COUNT(*) 
     FROM product p
     JOIN brand b ON p.BrandID = b.BrandID
     WHERE p.ProductStatus = 'active' 
     AND b.BrandStatus = 'Active'
-");
-$totalProducts = $stmt->fetchColumn();
-$totalPages = ceil($totalProducts / $productsPerPage);
+"); 
+$totalProducts = $stmt->fetchColumn();  // Get the total product count
+$totalPages = ceil($totalProducts / $productsPerPage);  // Calculate total pages
 
-// Fetch products with active brands for the current page
+// Get the products for the current page only
 $stmt = $conn->prepare("
     SELECT p.* 
     FROM product p
@@ -362,6 +364,7 @@ $products = $stmt->fetchAll();
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            // Highlight clicked pagination button
             const pages = document.querySelectorAll(".pagination .page");
 
             pages.forEach(page => {
@@ -374,6 +377,7 @@ $products = $stmt->fetchAll();
                 });
             });
         });
+        // Expand/collapse category and brand lists
         function toggleList(listId, arrowId) {
             const list = document.getElementById(listId);
             const arrow = document.getElementById(arrowId);

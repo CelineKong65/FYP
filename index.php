@@ -19,7 +19,7 @@ try {
     $vouchers = $voucher_stmt->fetchAll(PDO::FETCH_ASSOC);
 
     
-    // Fetch top selling products with status checks
+    // Fetch top 5 best-selling products (with joined category & brand status check)
     $top_products_stmt = $conn->prepare("
         SELECT 
             p.ProductID,
@@ -299,7 +299,7 @@ try {
     </section>
 
     <script>
-        // Slideshow functionality
+        // Auto slideshow functionality
         let slideIndex = 0;
         showSlides();
 

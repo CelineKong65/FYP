@@ -1,16 +1,18 @@
 <?php
+// Start output buffering to allow header redirects after output
 ob_start();
 include 'config.php'; 
 include 'header.php';
 
+// Check if the user is logged in, if not redirect to login page
 if (!isset($_SESSION["user_id"])) {
     header("Location: login.php");
     exit();
 }
-
+// Get the logged-in user's ID from the session
 $user_id = $_SESSION['user_id']; 
 
-// Fetch wishlist items with size information
+// Fetch wishlist items with size information (joined with product details)
 $query = "SELECT 
             w.WishID,
             w.ProductID,
@@ -28,22 +30,25 @@ $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
 $stmt->execute();
 $wishlistItems = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// For each wishlist item, fetch available sizes and stock
+// For each item, fetch available sizes and current stock of selected size
 foreach ($wishlistItems as &$item) {
+    // Fetch all sizes and stock for the product
     $sizeQuery = "SELECT Size, Stock FROM product_size WHERE ProductID = :product_id";
     $sizeStmt = $conn->prepare($sizeQuery);
     $sizeStmt->bindParam(':product_id', $item['ProductID'], PDO::PARAM_INT);
     $sizeStmt->execute();
     $item['sizes'] = $sizeStmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Get stock for the currently selected size (handling NULL sizes properly)
+    // Determine stock for the currently selected size (including Standard Only / NULL)
     $currentSizeQuery = "SELECT Stock FROM product_size WHERE ProductID = :product_id AND 
                         (Size = :size OR (Size IS NULL AND (:size IS NULL OR :size = 'Standard Only')))";
     $currentSizeStmt = $conn->prepare($currentSizeQuery);
     $currentSizeStmt->bindParam(':product_id', $item['ProductID'], PDO::PARAM_INT);
+    // Handle 'Standard Only' case as NULL 
     $currentSize = ($item['Size'] === 'Standard Only' || $item['Size'] === null) ? null : $item['Size'];
     $currentSizeStmt->bindParam(':size', $currentSize);
     $currentSizeStmt->execute();
+    // Get the current stock for this size
     $currentStock = $currentSizeStmt->fetchColumn();
     $item['current_stock'] = $currentStock !== false ? $currentStock : 0;
 }
@@ -62,9 +67,11 @@ unset($item); // Break the reference
     <div class="wishlist-div">
         <h2>My Wishlist</h2>
 
+        <!-- If wishlist is empty -->
         <?php if (empty($wishlistItems)): ?>
             <p class="empty-message">Your wishlist is empty. Start adding your favorite products!</p>
         <?php else: ?>
+            <!-- Wishlist Table -->
             <table>
                 <thead>
                     <tr>
@@ -79,16 +86,20 @@ unset($item); // Break the reference
                     <?php foreach ($wishlistItems as $item): ?>
                     <tr>
                         <td>
+                            <!-- Product Image -->
                             <img src="image/<?php echo htmlspecialchars($item['ProductPicture'] ?? 'default-image.png'); ?>" 
                                  alt="<?php echo htmlspecialchars($item['ProductName']); ?>">
                         </td>
                         <td>
+                            <!-- Product Name -->
                             <?php echo htmlspecialchars($item['ProductName']); ?>
+                            <!-- Stock Info -->
                             <div id="stock-info-<?php echo $item['WishID']; ?>" class="stock-info <?php echo ($item['current_stock'] > 0) ? 'in-stock' : 'out-of-stock'; ?>">
                                 <?php echo ($item['current_stock'] > 0) ? 'In Stock' : 'Out of Stock'; ?>
                             </div>
                         </td>
                         <td><?php echo number_format($item['ProductPrice'], 2); ?></td>
+                        <!-- Size Selector -->
                         <td>
                             <form action="update_wishlist_size.php" method="POST" id="sizeForm-<?php echo $item['WishID']; ?>">
                                 <input type="hidden" name="wish_id" value="<?php echo $item['WishID']; ?>">
@@ -111,6 +122,7 @@ unset($item); // Break the reference
                                 </select>
                             </form>
                         </td>
+                        <!-- Action Buttons -->
                         <td>
                             <div class="action-buttons">
                                 <!-- Remove from Wishlist Form -->
@@ -134,6 +146,7 @@ unset($item); // Break the reference
             </table>
         <?php endif; ?>
     </div>
+    <!-- Updates stock status when size is changed -->
     <script>
         function updateStockStatus(wishId, sizeSelect) {
             const selectedOption = sizeSelect.options[sizeSelect.selectedIndex];

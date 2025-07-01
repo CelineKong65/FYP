@@ -2,6 +2,7 @@
 include 'config.php';
 session_start();
 
+// Check if the form is submitted via POST and contains a valid CartID
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['CartID'])) {
     $cartID = $_POST['CartID'];
     $success = false;
@@ -10,20 +11,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['CartID'])) {
         // Begin transaction
         $conn->beginTransaction();
 
+        // 1. Handle Size Change
         // Check if Size is set
         if (isset($_POST['Size'])) {
             $newSize = trim($_POST['Size']);
-            // Remove any stock information that might have been included
+            // Remove any text like " - 3 available" from the size string
             $newSize = preg_replace('/\s*\d+ available.*/', '', $newSize);
+            // Convert empty size to 'Standard Only'
             $newSize = trim($newSize) === '' ? 'Standard Only' : trim($newSize);
 
+            // Update the cart's size
             $query = "UPDATE cart SET Size = :size WHERE CartID = :cartID";
             $stmt = $conn->prepare($query);
             $stmt->bindParam(':size', $newSize, PDO::PARAM_STR);
             $stmt->bindParam(':cartID', $cartID, PDO::PARAM_INT);
             $stmt->execute();
 
-            // If size changed, we should reset quantity to 1 to prevent stock issues
+            // If the size changed, reset quantity to 1 to avoid stock mismatch
             if ($stmt->rowCount() > 0) {
                 $query = "UPDATE cart SET Quantity = 1 WHERE CartID = :cartID";
                 $stmt = $conn->prepare($query);
@@ -35,11 +39,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['CartID'])) {
             }
         }
 
+        // 2. Handle Quantity Change
         // Check if Quantity is set
         if (isset($_POST['Quantity']) && is_numeric($_POST['Quantity'])) {
             $newQuantity = intval($_POST['Quantity']);
 
-            // Get ProductID and current Size from cart
+            // Get the current product ID and size from the cart
             $stmt = $conn->prepare("SELECT ProductID, Size FROM cart WHERE CartID = :cartID");
             $stmt->bindParam(':cartID', $cartID, PDO::PARAM_INT);
             $stmt->execute();
@@ -49,7 +54,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['CartID'])) {
                 $productID = $cartItem['ProductID'];
                 $size = $cartItem['Size'];
                 
-                // Clean the size value for comparison
+                // Clean the size value for comparison (remove text like " - 3 available")
                 $cleanSize = preg_replace('/\s*\d+ available.*/', '', $size);
                 $cleanSize = trim($cleanSize) === '' ? 'Standard Only' : trim($cleanSize);
 
@@ -67,7 +72,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['CartID'])) {
                 
                 $availableStock = $stockData['Stock'] ?? 0;
 
-                // Validate quantity
+                // Validate the quantity input
                 if ($newQuantity < 1) {
                     $_SESSION['error'] = "Quantity must be at least 1";
                     $conn->rollBack();
@@ -94,7 +99,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['CartID'])) {
                 }
             }
         }
-
+        // Commit transaction if everything is successful
         $conn->commit();
         
         if (!$success && !isset($_SESSION['error'])) {
@@ -106,7 +111,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['CartID'])) {
         $_SESSION['error'] = "An error occurred: " . $e->getMessage();
     }
 }
-
+// Redirect back to shopping cart page
 header("Location: shopping_cart.php");
 exit;
 ?>

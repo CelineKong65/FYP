@@ -2,29 +2,32 @@
 include 'config.php'; 
 include 'header.php';
 
+// Check if the user is logged in, if not redirect to login page
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit();
 }
-
+// Get the logged-in user's ID from the session
 $user_id = $_SESSION['user_id'];
+// Variables to store messages
 $error = null;
 $success = null;
 
-// Handle form submission
+// If the form was submitted
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Get values from form
     $productId = (int)($_POST['product_id'] ?? 0);
     $orderId = (int)($_POST['order_id'] ?? 0);
     $size = trim($_POST['size'] ?? '');
     $rating = (int)($_POST['rating'] ?? 0);
     $feedback = trim($_POST['feedback'] ?? '');
-    $isAnonymous = isset($_POST['is_anonymous']) ? 1 : 0;
+    $isAnonymous = isset($_POST['is_anonymous']) ? 1 : 0;  // Anonymous option
 
     // Validate input
     if ($productId <= 0 || $orderId <= 0) {
-        $error = 'Invalid product or order reference.';
+      $error = 'Invalid product or order reference.';
     } elseif ($rating < 1 || $rating > 5) {
-        $error = 'Rating must be between 1 and 5 stars.';
+      $error = 'Rating must be between 1 and 5 stars.';
     }
 
     if (!$error) {
@@ -47,10 +50,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     AND pf.CustID = op.CustID
               )
         ";
-        
+        // Prepare and run the verification query
         $stmt = $conn->prepare($verificationSql);
         $stmt->execute([$orderId, $user_id, $productId, $size]);
         
+        // If no matching order found, block review
         if ($stmt->rowCount() === 0) {
             $error = 'You can only review delivered products you\'ve purchased in this specific size.';
         } else {
@@ -71,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Fetch all delivered purchased products not yet reviewed, grouped by size
+// Get list of delivered products not yet reviewed by the user
 $listSql = "
     SELECT 
       op.OrderID,
@@ -94,6 +98,7 @@ $listSql = "
     ORDER BY op.OrderDate DESC, p.ProductName, od.Size
 ";
 
+// Prepare and run the query to get reviewable products
 $stmt = $conn->prepare($listSql);
 $stmt->execute([$user_id]);
 $ordersResult = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -133,11 +138,13 @@ $ordersResult = $stmt->fetchAll(PDO::FETCH_ASSOC);
       <div class="alert error"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
 
+    <!-- If no products to rate -->
     <?php if (empty($ordersResult)): ?>
       <div class="alert info">
         You don't have any delivered products to review at this time.
       </div>
     <?php else: ?>
+      <!-- Loop through products to rate -->
       <div class="product-grid">
         <?php 
         $currentProduct = null;
@@ -160,12 +167,12 @@ $ordersResult = $stmt->fetchAll(PDO::FETCH_ASSOC);
               <strong>Size:</strong> <?= htmlspecialchars($order['Size']) ?><br>
               Order #<?= htmlspecialchars($order['OrderID']) ?> - <?= date('M d, Y', strtotime($order['OrderDate'])) ?>
             </div>
-
+            <!-- Feedback form -->
             <form method="post" action="rate_products.php">
               <input type="hidden" name="product_id" value="<?= htmlspecialchars($order['ProductID']) ?>">
               <input type="hidden" name="order_id" value="<?= htmlspecialchars($order['OrderID']) ?>">
               <input type="hidden" name="size" value="<?= htmlspecialchars($order['Size']) ?>">
-
+              <!-- Star rating -->
               <label class="rating-label">Your Rating:</label>
               <div class="rating-stars">
                 <?php for ($i = 1; $i <= 5; $i++): ?>
@@ -173,15 +180,15 @@ $ordersResult = $stmt->fetchAll(PDO::FETCH_ASSOC);
                   <label for="<?= $uniquePrefix . '_star' . $i ?>" class="rating-star">★</label>
                 <?php endfor; ?>
               </div>
-
+              <!-- Optional feedback -->
               <label class="feedback-label">Your Feedback (optional):</label>
               <textarea name="feedback" placeholder="Share your experience..."></textarea>
-              
+              <!-- Anonymous checkbox -->
               <div class="anonymous-checkbox">
                 <input type="checkbox" id="<?= $uniquePrefix . '_anonymous' ?>" name="is_anonymous" value="1">
                 <label for="<?= $uniquePrefix . '_anonymous' ?>">Post anonymously</label>
               </div>
-
+              <!-- Submit review -->
               <button type="submit" class="submit-btn">Submit Review</button>
             </form>
         </div>
@@ -195,7 +202,7 @@ $ordersResult = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
   <script>
   document.addEventListener('DOMContentLoaded', () => {
-    // Handle star rating interactions
+    // When a star is clicked
     document.querySelectorAll('.rating-star').forEach(star => {
       star.addEventListener('click', function() {
         // Get all stars in this group
@@ -204,7 +211,7 @@ $ordersResult = $stmt->fetchAll(PDO::FETCH_ASSOC);
         const input = document.getElementById(inputId);
         const ratingValue = parseInt(input.value);
         
-        // Update visual state
+        // When a star is clicked
         stars.forEach((s, index) => {
           const starInputId = s.getAttribute('for');
           const starInput = document.getElementById(starInputId);
@@ -219,7 +226,7 @@ $ordersResult = $stmt->fetchAll(PDO::FETCH_ASSOC);
       });
     });
 
-    // Highlight stars on hover
+    // When mouse hovers over stars
     document.querySelectorAll('.rating-star').forEach(star => {
       star.addEventListener('mouseover', function() {
         const stars = this.parentElement.querySelectorAll('.rating-star');
@@ -240,7 +247,7 @@ $ordersResult = $stmt->fetchAll(PDO::FETCH_ASSOC);
         });
       });
 
-      // Reset to selected state when mouse leaves
+      // When mouse leaves the star group
       star.parentElement.addEventListener('mouseleave', function() {
         const stars = this.querySelectorAll('.rating-star');
         const checkedInput = this.querySelector('input:checked');

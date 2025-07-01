@@ -1,9 +1,9 @@
 <?php
 include 'config.php'; 
 include 'header.php'; 
-
+// Get the logged-in user's ID from the session
 $custID = $_SESSION["user_id"] ?? null;
-
+// Check if the user is logged in, if not redirect to login page
 if (!$custID) {
     $_SESSION['error'] = "Please login to view your cart.";
     header("Location: login.php");
@@ -11,6 +11,7 @@ if (!$custID) {
 }
 
 if ($custID) {
+    // Get all items in the user's cart along with product details
     $query = "SELECT cart.*, product.ProductName, product.ProductPicture, product.ProductID, product.ProductPrice
               FROM cart 
               JOIN product ON cart.ProductID = product.ProductID
@@ -21,7 +22,7 @@ if ($custID) {
     $stmt->execute();
     $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Pre-fetch stock information for all products in cart
+    // Get stock availability for each product and size
     $productStocks = [];
     foreach ($result as $row) {
         if (!isset($productStocks[$row['ProductID']])) {
@@ -35,7 +36,7 @@ if ($custID) {
     $result = [];
     $productStocks = [];
 }
-
+// Calculate total cart value
 $totalPrice = 0;
 foreach ($result as $row) {
     $currentProductStocks = $productStocks[$row['ProductID']] ?? [];
@@ -43,8 +44,10 @@ foreach ($result as $row) {
 }
 $grandTotal = $totalPrice;
 
+// Store subtotal in session
 $_SESSION['subtotal'] = $totalPrice; 
 
+// Store cart items in session for later use (like during checkout)
 $_SESSION['cart_items'] = [];
 foreach ($result as $row) {
     $_SESSION['cart_items'][] = [
@@ -55,7 +58,7 @@ foreach ($result as $row) {
     ];
 }
 
-// Update cart count
+// Get the total number of unique items in cart
 $stmt = $conn->prepare("SELECT COUNT(DISTINCT ProductID) AS total FROM cart WHERE CustID = ?");
 $stmt->execute([$custID]);
 $row = $stmt->fetch();
@@ -82,9 +85,11 @@ $cartCount = $row['total'] ?? 0;
             <?php unset($_SESSION['success']); ?>
         <?php endif; ?>
 
+        <!-- If cart is empty -->
         <?php if (empty($result)): ?>
             <p class = "empty-message">No items in cart</p>
         <?php else: ?>
+            <!-- Display cart table -->
             <table>
                 <thead>
                     <tr>
@@ -99,6 +104,7 @@ $cartCount = $row['total'] ?? 0;
                 </thead>
                 <tbody>
                     <?php foreach ($result as $row): 
+                        // Get all available sizes and stock for current product
                         $currentProductStocks = $productStocks[$row['ProductID']] ?? [];
                         $sizeStockMap = [];
                         foreach ($currentProductStocks as $stock) {
@@ -113,6 +119,7 @@ $cartCount = $row['total'] ?? 0;
                     <tr>
                         <td><img src="image/<?= htmlspecialchars($row['ProductPicture']) ?>" alt="<?= htmlspecialchars($row['ProductName']) ?>"></td>
                         <td><?= htmlspecialchars($row['ProductName']) ?></td>
+                        <!-- Size dropdown -->
                         <td>
                             <?php if (empty($sizeStockMap)): ?>
                                 <span>Standard Only</span>
@@ -153,12 +160,12 @@ $cartCount = $row['total'] ?? 0;
                     <?php endforeach; ?>
                 </tbody>
             </table>
-        
+            <!-- Cart buttons (continue shopping, clear cart) -->
             <div class="cart-buttons">
                 <button class="continue" onclick="window.location.href='product.php'">Continue Shopping</button>
                 <button class="update" onclick="window.location.href='clear_cart.php'">Clear Cart</button>
             </div>
-
+            <!-- Summary and checkout button -->
             <div class="cart-summary">
                 <div class="summary-details">
                     <p><strong>TOTAL</strong> <span class="grand-total">RM <?= number_format($grandTotal, 2) ?></span></p>

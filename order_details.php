@@ -2,19 +2,21 @@
 include 'config.php'; 
 include 'header.php';
 
+// Check if the user is logged in, if not redirect to login page
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
 }
-
+// If order_id is not passed via GET, redirect to order history
 if (!isset($_GET['order_id'])) {
     header("Location: order_history.php");
     exit();
 }
-
+// Get the order ID from the GET parameter
 $order_id = $_GET['order_id'];
 
 try {
+    // Retrieve order payment info and voucher code (if applied)
     $order_query_sql = "SELECT op.*, v.VoucherCode
                         FROM orderpayment op
                         LEFT JOIN voucher v ON op.VoucherID = v.VoucherID
@@ -23,6 +25,7 @@ try {
     $stmt->execute([$order_id]);
     $orderpayment = $stmt->fetch(PDO::FETCH_ASSOC);
 
+    // Retrieve order item details and product pictures
     $order_details_query = "SELECT od.*, p.ProductPicture 
                             FROM orderdetails od
                             LEFT JOIN product p ON od.ProductID = p.ProductID
@@ -31,6 +34,7 @@ try {
     $stmt->execute([$order_id]);
     $order_details = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // Get customer information based on CustID
     $cust_id = $orderpayment['CustID'];
     $customer_query = "SELECT CustID, CustName, CustEmail FROM customer WHERE CustID = ?";
     $stmt = $conn->prepare($customer_query);
@@ -38,6 +42,7 @@ try {
     $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 } catch (PDOException $e) {
+    // Display error if database access fails
     die("Database error: " . $e->getMessage());
 }
 ?>
@@ -114,6 +119,7 @@ try {
                         <td colspan="2">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <?php
+                                // Set product image path
                                 $imageSrc = $orderdetails['ProductPicture'] ? 'image/' . htmlspecialchars($orderdetails['ProductPicture']) : null;
                             ?>
                              <img src="<?= $imageSrc ?>" alt="<?= $orderdetails['ProductName'] ?>" style="width: 90px;">
@@ -129,6 +135,7 @@ try {
                     </tr>
                     <?php endforeach; ?>
 
+                    <!-- Show voucher discount if voucher was applied -->
                     <?php if ($orderpayment['VoucherID'] !== null):
                         $discount_value = $total_items_price - $orderpayment['TotalPrice'];
                     ?>
@@ -138,6 +145,7 @@ try {
                     </tr>
                     <?php endif; ?>
 
+                    <!-- Show final total including delivery fee -->
                     <tr class="total-row">
                         <td colspan="5" class="total-label">Total (Incl. Delivery):</td>
                         <td class="total-value">RM <?php echo number_format($orderpayment['TotalPrice'], 2); ?></td>
@@ -149,6 +157,7 @@ try {
         </div>
     </div>
 
+    <!-- JavaScript function for print button -->
     <script>
         function printOrder() {
             window.print();
