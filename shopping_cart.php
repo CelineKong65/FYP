@@ -1,9 +1,9 @@
 <?php
 include 'config.php'; 
 include 'header.php'; 
-
+// Get the logged-in user's ID from the session
 $custID = $_SESSION["user_id"] ?? null;
-
+// Check if the user is logged in, if not redirect to login page
 if (!$custID) {
     $_SESSION['error'] = "Please login to view your cart.";
     header("Location: login.php");
@@ -11,7 +11,8 @@ if (!$custID) {
 }
 
 if ($custID) {
-    $query = "SELECT cart.*, product.ProductName, product.ProductPicture, product.ProductID, product.ProductPrice
+    // Get all items in the user's cart along with product details
+    $query = "SELECT cart.*, product.ProductName, product.ProductPicture, product.ProductID, product.ProductPrice, product.ProductStatus
               FROM cart 
               JOIN product ON cart.ProductID = product.ProductID
               WHERE cart.CustID = :custID";
@@ -21,7 +22,7 @@ if ($custID) {
     $stmt->execute();
     $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Pre-fetch stock information for all products in cart
+    // Get stock availability for each product and size
     $productStocks = [];
     foreach ($result as $row) {
         if (!isset($productStocks[$row['ProductID']])) {
@@ -36,15 +37,15 @@ if ($custID) {
     $productStocks = [];
 }
 
+// Calculate total cart value
 $totalPrice = 0;
 foreach ($result as $row) {
-    $currentProductStocks = $productStocks[$row['ProductID']] ?? [];
     $totalPrice += $row['ProductPrice'] * $row['Quantity'];
 }
 $grandTotal = $totalPrice;
 
+// Store subtotal and cart items in session
 $_SESSION['subtotal'] = $totalPrice; 
-
 $_SESSION['cart_items'] = [];
 foreach ($result as $row) {
     $_SESSION['cart_items'][] = [
@@ -55,11 +56,30 @@ foreach ($result as $row) {
     ];
 }
 
-// Update cart count
+// Get the total number of unique items in cart
 $stmt = $conn->prepare("SELECT COUNT(DISTINCT ProductID) AS total FROM cart WHERE CustID = ?");
 $stmt->execute([$custID]);
 $row = $stmt->fetch();
 $cartCount = $row['total'] ?? 0;
+
+// Check for any inactive or out-of-stock items to disable checkout
+$canCheckout = true;
+foreach ($result as $row) {
+    $currentProductStocks = $productStocks[$row['ProductID']] ?? [];
+    $sizeStockMap = [];
+    foreach ($currentProductStocks as $stock) {
+        $sizeValue = $stock['Size'] === null ? 'Standard Only' : $stock['Size'];
+        $sizeStockMap[$sizeValue] = $stock['Stock'];
+    }
+    $currentSize = preg_replace('/\s*\d+ available.*/', '', $row['Size']);
+    $currentSize = trim($currentSize) === '' ? 'Standard Only' : trim($currentSize);
+    $stockAvailable = $sizeStockMap[$currentSize] ?? 0;
+
+    if ($stockAvailable <= 0 || strtolower($row['ProductStatus']) !== 'active') {
+        $canCheckout = false;
+        break;
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -76,15 +96,17 @@ $cartCount = $row['total'] ?? 0;
             <div class="error-message"><?= $_SESSION['error'] ?></div>
             <?php unset($_SESSION['error']); ?>
         <?php endif; ?>
-        
+
         <?php if (isset($_SESSION['success'])): ?>
             <div class="success-message"><?= $_SESSION['success'] ?></div>
             <?php unset($_SESSION['success']); ?>
         <?php endif; ?>
-
+        
+        <!-- If cart is empty -->
         <?php if (empty($result)): ?>
             <p class = "empty-message">No items in cart</p>
         <?php else: ?>
+            <!-- Display cart table -->
             <table>
                 <thead>
                     <tr>
@@ -99,13 +121,13 @@ $cartCount = $row['total'] ?? 0;
                 </thead>
                 <tbody>
                     <?php foreach ($result as $row): 
+                        // Get all available sizes and stock for current product
                         $currentProductStocks = $productStocks[$row['ProductID']] ?? [];
                         $sizeStockMap = [];
                         foreach ($currentProductStocks as $stock) {
                             $sizeValue = $stock['Size'] === null ? 'Standard Only' : $stock['Size'];
                             $sizeStockMap[$sizeValue] = $stock['Stock'];
                         }
-                        
                         // Clean up the stored size value (remove stock info if present)
                         $currentSize = preg_replace('/\s*\d+ available.*/', '', $row['Size']);
                         $currentSize = trim($currentSize) === '' ? 'Standard Only' : trim($currentSize);
@@ -125,8 +147,7 @@ $cartCount = $row['total'] ?? 0;
                                             $selected = $currentSize === $size;
                                         ?>
                                             <option value="<?= htmlspecialchars($size) ?>" <?= $selected ? 'selected' : '' ?> <?= $disabled ? 'disabled' : '' ?>>
-                                                <?= htmlspecialchars($size) ?> 
-                                                (<?= $disabled ? 'Out of Stock' : "$stock available" ?>)
+                                                <?= htmlspecialchars($size) ?> (<?= $disabled ? 'Out of Stock' : "$stock available" ?>)
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
@@ -139,7 +160,7 @@ $cartCount = $row['total'] ?? 0;
                                 <input type="hidden" name="CartID" value="<?= $row['CartID'] ?>">
                                 <?php 
                                 // Get current size's stock
-                                $currentStock = $sizeStockMap[$currentSize] ?? 99; // Default to 99 if size not found
+                                $currentStock = $sizeStockMap[$currentSize] ?? 99;
                                 $maxQuantity = min($currentStock, 99);
                                 ?>
                                 <input type="number" name="Quantity" value="<?= htmlspecialchars($row['Quantity']) ?>" 
@@ -153,20 +174,29 @@ $cartCount = $row['total'] ?? 0;
                     <?php endforeach; ?>
                 </tbody>
             </table>
-        
+
+            <!-- Cart buttons (continue shopping, clear cart) -->
             <div class="cart-buttons">
                 <button class="continue" onclick="window.location.href='product.php'">Continue Shopping</button>
                 <button class="update" onclick="window.location.href='clear_cart.php'">Clear Cart</button>
             </div>
 
+            <!-- Summary and checkout button -->
             <div class="cart-summary">
                 <div class="summary-details">
                     <p><strong>TOTAL</strong> <span class="grand-total">RM <?= number_format($grandTotal, 2) ?></span></p>
                 </div>
-                <button class="checkout" onclick="window.location.href='payment.php'">PROCEED TO CHECK OUT</button>
+
+                <?php if ($canCheckout): ?>
+                    <button class="checkout" onclick="window.location.href='payment.php'">PROCEED TO CHECK OUT</button>
+                <?php else: ?>
+                    <button class="checkout" disabled style="background-color: grey; cursor: not-allowed;">CHECKOUT UNAVAILABLE</button>
+                    <p class="error-message" style="color: red; margin-top: 10px;">One or more items are out of stock or inactive. Please update your cart before proceeding.</p>
+                <?php endif; ?>
             </div>
         <?php endif; ?>
     </div>
+
     <script>
         // Add confirmation for remove item
         document.querySelectorAll('.remove').forEach(link => {
@@ -179,4 +209,5 @@ $cartCount = $row['total'] ?? 0;
     </script>
 </body>
 </html>
+
 <?php include 'footer.php'; ?>
