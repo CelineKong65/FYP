@@ -2,7 +2,7 @@
 // Start output buffering to allow header redirects after output
 ob_start();
 include 'config.php'; 
-include 'header.php';
+include 'header.php'; 
 
 // Check if the user is logged in, if not redirect to login page
 if (!isset($_SESSION["user_id"])) {
@@ -20,7 +20,8 @@ $query = "SELECT
             p.ProductName, 
             p.ProductPrice, 
             p.ProductPicture,
-            p.ProductDesc
+            p.ProductDesc,
+            p.ProductStatus
           FROM wishlist w
           JOIN product p ON w.ProductID = p.ProductID
           WHERE w.CustID = :user_id";
@@ -93,6 +94,10 @@ unset($item); // Break the reference
                         <td>
                             <!-- Product Name -->
                             <?php echo htmlspecialchars($item['ProductName']); ?>
+                            <?php if ($item['ProductStatus'] === 'Inactive'): ?>
+                                <span style="color:red; font-size: 12px;">(Inactive)</span>
+                            <?php endif; ?>
+
                             <!-- Stock Info -->
                             <div id="stock-info-<?php echo $item['WishID']; ?>" class="stock-info <?php echo ($item['current_stock'] > 0) ? 'in-stock' : 'out-of-stock'; ?>">
                                 <?php echo ($item['current_stock'] > 0) ? 'In Stock' : 'Out of Stock'; ?>
@@ -136,7 +141,10 @@ unset($item); // Break the reference
                                     <input type="hidden" name="productID" value="<?php echo $item['ProductID']; ?>">
                                     <input type="hidden" name="size" value="<?php echo htmlspecialchars($item['Size'] ?? null); ?>">
                                     <input type="hidden" name="qty" value="1">
-                                    <button type="submit" id="add-to-cart-<?php echo $item['WishID']; ?>" <?php echo ($item['current_stock'] <= 0) ? 'disabled' : ''; ?>>Add to Cart</button>
+                                    <button type="submit" id="add-to-cart-<?php echo $item['WishID']; ?>" 
+                                        <?php echo ($item['current_stock'] <= 0 || $item['ProductStatus'] === 'Inactive') ? 'disabled' : ''; ?>>
+                                        Add to Cart
+                                    </button>
                                 </form>
                             </div>
                         </td>
