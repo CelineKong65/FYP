@@ -8,19 +8,15 @@ if (!isset($_SESSION['AdminID'])) {
 
 include 'db_connection.php';
 
-// Get subject filter from URL (if any)
 $subject_filter = isset($_GET['subject']) ? trim($_GET['subject']) : '';
 
-// Base query
 $contact_query = "SELECT * FROM contact_record";
 
-// Add WHERE clause if a subject is selected
 if (!empty($subject_filter)) {
     $subject_filter = $conn->real_escape_string($subject_filter);
     $contact_query .= " WHERE Subject = '$subject_filter'";
 }
 
-// Order by latest
 $contact_query .= " ORDER BY Submission_date DESC";
 
 $contact_result = $conn->query($contact_query);
