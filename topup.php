@@ -63,11 +63,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['topup_amount'])) {
     if ($paymentMethod === 'Credit Card' || $paymentMethod === 'Debit Card') {
         // Card Name validation
         if (empty($cardName)) {
-            $errors[] = "Card type is required";
-            $fieldErrors['cname'] = "Please select a card type";
+            $errors[] = "Bank is required";
+            $fieldErrors['cname'] = "Please select a bank";
         }
 
-        
         // Card Number validation
         if (empty($cardNum)) {
             $errors[] = "Card number is required";
@@ -374,7 +373,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['topup_amount'])) {
             
             if (!field.value.trim()) {
                 field.classList.add('error-field');
-                errorElement.textContent = 'Card name is required';
+                errorElement.textContent = 'Bank is required';
                 return false;
             }
             

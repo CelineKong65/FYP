@@ -311,15 +311,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['applyVoucher']) && !
         $fieldErrors['state'] = "State is required";
     }
     
-    // Credit Card validations (only if payment method is credit card)
-    if ($paymentMethod === 'Credit Card') {
-        // Card Name validation
+    // Card validations 
+    if ($paymentMethod === 'Credit Card'|| $paymentMethod === 'Debit Card') {
+        // Bank validation
         if (empty($cardName)) {
-            $errors[] = "Card name is required";
-            $fieldErrors['cname'] = "Card name is required";
-        } elseif (!preg_match('/^[a-zA-Z\s]+$/', $cardName)) {
-            $errors[] = "Card name should contain only letters and spaces";
-            $fieldErrors['cname'] = "Should contain only letters and spaces";
+            $errors[] = "Bank is required";
+            $fieldErrors['cname'] = "Please select a Bank";
         }
         
         // Card Number validation
@@ -726,9 +723,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['applyVoucher']) && !
                                 <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard">
                             </div>
 
-                            <label for="cname"><b>Name on Card</b></label>
-                            <input type="text" id="cname" name="cname" placeholder="Enter name on card" value="<?= htmlspecialchars($cardName) ?>" <?= $paymentMethod === 'Credit Card' ? 'required' : '' ?>>
-                            <span class="error-text"><?= htmlspecialchars($fieldErrors['cname']) ?></span>
+                            <label for="cname" class="required-field">Bank</label>
+                            <select id="cname" name="cname" class="<?= isset($fieldErrors['cname']) ? 'error-field' : '' ?>">
+                                <option value="">-- Select Bank --</option>
+                                <option value="Maybank" <?= $cardName === 'Maybank' ? 'selected' : '' ?>>Maybank</option>
+                                <option value="CIMB Bank" <?= $cardName === 'CIMB Bank' ? 'selected' : '' ?>>CIMB Bank</option>
+                                <option value="Public Bank" <?= $cardName === 'Public Bank' ? 'selected' : '' ?>>Public Bank</option>
+                                <option value="OCBC Bank" <?= $cardName === 'OCBC Bank' ? 'selected' : '' ?>>OCBC Bank</option>
+                                <option value="RHB Bank" <?= $cardName === 'RHB Bank' ? 'selected' : '' ?>>RHB Bank</option>
+                                <option value="Hong Leong Bank" <?= $cardName === 'Hong Leong Bank' ? 'selected' : '' ?>>Hong Leong Bank</option>
+                                <option value="Bank Islam" <?= $cardName === 'Bank Islam' ? 'selected' : '' ?>>Bank Islam</option>
+                            </select>
+                            <span class="error-text" id="cname_error"><?= isset($fieldErrors['cname']) ? htmlspecialchars($fieldErrors['cname']) : '' ?></span>
 
                             <label for="ccnum"><b>Card Number</b></label>
                             <input type="text" id="ccnum" name="ccnum" placeholder="Enter card number" value="<?= htmlspecialchars($cardNum) ?>" <?= $paymentMethod === 'Credit Card' ? 'required' : '' ?>>
@@ -766,325 +772,335 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['applyVoucher']) && !
     </div>
     <script>
         // Check for voucher validity periodically
-function checkVoucherValidity() {
-    const voucherApplied = <?= isset($_SESSION['applied_voucher']) ? 'true' : 'false' ?>;
-    
-    if (voucherApplied) {
-        // Check every 30 seconds
-        setTimeout(() => {
-            fetch(window.location.href, {
-                headers: {
-                    'X-Voucher-Check': 'true'
-                }
-            })
-            .then(response => response.text())
-            .then(html => {
-                const doc = new DOMParser().parseFromString(html, 'text/html');
-                const voucherStillApplied = doc.querySelector('.voucher-success') !== null;
+        function checkVoucherValidity() {
+            const voucherApplied = <?= isset($_SESSION['applied_voucher']) ? 'true' : 'false' ?>;
+            
+            if (voucherApplied) {
+                // Check every 30 seconds
+                setTimeout(() => {
+                    fetch(window.location.href, {
+                        headers: {
+                            'X-Voucher-Check': 'true'
+                        }
+                    })
+                    .then(response => response.text())
+                    .then(html => {
+                        const doc = new DOMParser().parseFromString(html, 'text/html');
+                        const voucherStillApplied = doc.querySelector('.voucher-success') !== null;
+                        
+                        if (!voucherStillApplied) {
+                            window.location.reload();
+                        }
+                    });
+                }, 30000);
+            }
+        }
+
+        // Run on page load
+        window.addEventListener('load', function() {
+            checkVoucherValidity();
+            
+            // Also check when coming back to the page
+            window.addEventListener('focus', checkVoucherValidity);
+        });
+            // Function to validate required fields
+        function validateRequiredField(fieldId, fieldName) {
+            const field = document.getElementById(fieldId);
+            const errorElement = document.querySelector(`#${fieldId} + .error-text`);
+            
+            if (!field.value.trim()) {
+                errorElement.textContent = `${fieldName} is required`;
+                return false;
+            }
+            
+            errorElement.textContent = '';
+            return true;
+        }
+
+        // Field-specific validation functions
+        function validateFullName() {
+            const isValid = validateRequiredField('fullname', 'Full name');
+            if (!isValid) return false;
+            
+            return validateField('fullname', /^[a-zA-Z\s]+$/, 'Should contain only letters and spaces');
+        }
+
+        function validateContact() {
+            const isValid = validateRequiredField('contact', 'Contact number');
+            if (!isValid) return false;
+            
+            return validateField('contact', /^\d{3}-\d{3,4} \d{4}$/, 'Format: XXX-XXX XXXX or XXX-XXXX XXXX');
+        }
+
+        function validateEmail() {
+            const isValid = validateRequiredField('email', 'Email');
+            if (!isValid) return false;
+            
+            return validateField('email', /^[^@]+@[^@]+\.com$/, 'Must end with .com');
+        }
+
+        function validateAddress() {
+            const isValid = validateRequiredField('address', 'Street address');
+            if (!isValid) return false;
+            
+            return validateField('address', /^[a-zA-Z0-9\s\-,.]+$/, 'Only letters, numbers, spaces, hyphens, commas and periods allowed');
+        }
+
+        function validateCity() {
+            const isValid = validateRequiredField('city', 'City');
+            if (!isValid) return false;
+            
+            return validateField('city', /^[a-zA-Z\s]+$/, 'Should contain only letters and spaces');
+        }
+
+        function validatePostcode() {
+            const isValid = validateRequiredField('postcode', 'Postcode');
+            if (!isValid) return false;
+            
+            return validateField('postcode', /^\d{5}$/, 'Must be exactly 5 digits');
+        }
+
+        function validateCardName() {
+            // Only validate if Credit Card or Debit Card is selected
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
+            const field = document.getElementById('cname');
+            const errorElement = document.getElementById('cname_error');
+
+            if (!paymentMethod || (paymentMethod.value !== 'Credit Card' && paymentMethod.value !== 'Debit Card')) {
+                // Skip validation if no card method is selected
+                errorElement.textContent = '';
+                field.classList.remove('error-field');
+                return true;
+            }
+
+            if (!field.value.trim()) {
+                field.classList.add('error-field');
+                errorElement.textContent = 'Bank is required';
+                return false;
+            }
+
+            field.classList.remove('error-field');
+            errorElement.textContent = '';
+            return true;
+        }
+
+        function validateCardNumber() {
+            // Only validate if credit card or debit card is selected
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
+            if (!paymentMethod || (paymentMethod.value !== 'Credit Card' && paymentMethod.value !== 'Debit Card')) {
+                document.querySelector('#ccnum + .error-text').textContent = '';
+                return true;
+            }
+            
+            const isValid = validateRequiredField('ccnum', 'Card number');
+            if (!isValid) return false;
+            
+            return validateField('ccnum', /^\d{13,16}$/, 'Must be 13-16 digits');
+        }
+
+        function validateCVV() {
+            // Only validate if credit card or debit card is selected
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
+            if (!paymentMethod || (paymentMethod.value !== 'Credit Card' && paymentMethod.value !== 'Debit Card')) {
+                document.querySelector('#cvv + .error-text').textContent = '';
+                return true;
+            }
+            
+            const isValid = validateRequiredField('cvv', 'CVV');
+            if (!isValid) return false;
+            
+            return validateField('cvv', /^\d{3}$/, 'Must be exactly 3 digits');
+        }
+
+        function validateExpDate() {
+            // Only validate if credit card or debit card is selected
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
+            if (!paymentMethod || (paymentMethod.value !== 'Credit Card' && paymentMethod.value !== 'Debit Card')) {
+                document.querySelector('#expdate + .error-text').textContent = '';
+                return true;
+            }
+            
+            const expDateInput = document.getElementById('expdate');
+            const errorElement = document.querySelector('#expdate + .error-text');
+            
+            if (!expDateInput.value) {
+                errorElement.textContent = 'Expiry date is required';
+                return false;
+            }
+            
+            const selectedDate = new Date(expDateInput.value);
+            const currentDate = new Date();
+            
+            if (selectedDate.getFullYear() < currentDate.getFullYear() || 
+                (selectedDate.getFullYear() === currentDate.getFullYear() && 
+                selectedDate.getMonth() < currentDate.getMonth())) {
+                errorElement.textContent = 'Card has expired';
+                return false;
+            }
+            
+            errorElement.textContent = '';
+            return true;
+        }
+
+        function validatePaymentMethod() {
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
+            const errorElement = document.querySelector('.payment-method .error-text');
+            
+            if (!paymentMethod) {
+                errorElement.textContent = 'Payment method is required';
+                return false;
+            }
+            
+            // Remove the E-wallet balance check here since we want to show the top-up button
+            errorElement.textContent = '';
+            return true;
+        }
+
+        // Generic field validation function
+        function validateField(fieldId, regex, errorMessage) {
+            const field = document.getElementById(fieldId);
+            const errorElement = document.querySelector(`#${fieldId} + .error-text`);
+            
+            if (!regex.test(field.value)) {
+                errorElement.textContent = errorMessage;
+                return false;
+            }
+            
+            errorElement.textContent = '';
+            return true;
+        }
+
+        function togglePaymentSections() {
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
+            
+            if (paymentMethod) {
+                document.getElementById('creditCardSection').classList.remove('active');
+                document.getElementById('eWalletSection').classList.remove('active');
                 
-                if (!voucherStillApplied) {
-                    window.location.reload();
+                if (paymentMethod.value === 'Credit Card' || paymentMethod.value === 'Debit Card') {
+                    document.getElementById('creditCardSection').classList.add('active');
+                    // Make credit card fields required
+                    document.getElementById('cname').required = true;
+                    document.getElementById('ccnum').required = true;
+                    document.getElementById('expdate').required = true;
+                    document.getElementById('cvv').required = true;
+                } else if (paymentMethod.value === 'E-wallet') {
+                    document.getElementById('eWalletSection').classList.add('active');
+                    // Make credit card fields not required
+                    document.getElementById('cname').required = false;
+                    document.getElementById('ccnum').required = false;
+                    document.getElementById('expdate').required = false;
+                    document.getElementById('cvv').required = false;
                 }
+            }
+        }
+
+        // Set up event listeners for payment method radio buttons
+        document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                togglePaymentSections();
             });
-        }, 30000);
-    }
-}
+        });
 
-// Run on page load
-window.addEventListener('load', function() {
-    checkVoucherValidity();
-    
-    // Also check when coming back to the page
-    window.addEventListener('focus', checkVoucherValidity);
-});
-    // Function to validate required fields
-function validateRequiredField(fieldId, fieldName) {
-    const field = document.getElementById(fieldId);
-    const errorElement = document.querySelector(`#${fieldId} + .error-text`);
-    
-    if (!field.value.trim()) {
-        errorElement.textContent = `${fieldName} is required`;
-        return false;
-    }
-    
-    errorElement.textContent = '';
-    return true;
-}
+        // Set up event listeners for real-time validation
+        document.getElementById('fullname').addEventListener('input', validateFullName);
+        document.getElementById('contact').addEventListener('input', validateContact);
+        document.getElementById('email').addEventListener('input', validateEmail);
+        document.getElementById('address').addEventListener('input', validateAddress);
+        document.getElementById('city').addEventListener('input', validateCity);
+        document.getElementById('postcode').addEventListener('input', validatePostcode);
+        document.getElementById('cname').addEventListener('input', validateCardName);
+        document.getElementById('ccnum').addEventListener('input', validateCardNumber);
+        document.getElementById('cvv').addEventListener('input', validateCVV);
+        document.getElementById('expdate').addEventListener('change', validateExpDate);
 
-// Field-specific validation functions
-function validateFullName() {
-    const isValid = validateRequiredField('fullname', 'Full name');
-    if (!isValid) return false;
-    
-    return validateField('fullname', /^[a-zA-Z\s]+$/, 'Should contain only letters and spaces');
-}
+        // Form submission validation
+        document.getElementById('paymentForm').addEventListener('submit', function(e) {
+            let isValid = true;
+            
+            // Validate all required fields
+            isValid = validateFullName() && isValid;
+            isValid = validateContact() && isValid;
+            isValid = validateEmail() && isValid;
+            isValid = validateAddress() && isValid;
+            isValid = validateCity() && isValid;
+            isValid = validatePostcode() && isValid;
+            isValid = validatePaymentMethod() && isValid;
+            
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
+            if (paymentMethod && (paymentMethod.value === 'Credit Card' || paymentMethod.value === 'Debit Card')) {
+                isValid = validateCardName() && isValid;
+                isValid = validateCardNumber() && isValid;
+                isValid = validateExpDate() && isValid;
+                isValid = validateCVV() && isValid;
+            }
+            
+            // State is a select element, just check if it has a value
+            const stateSelect = document.getElementById('state');
+            const stateError = document.querySelector('#state + .error-text');
+            if (!stateSelect.value) {
+                stateError.textContent = 'State is required';
+                isValid = false;
+            } else {
+                stateError.textContent = '';
+            }
 
-function validateContact() {
-    const isValid = validateRequiredField('contact', 'Contact number');
-    if (!isValid) return false;
-    
-    return validateField('contact', /^\d{3}-\d{3,4} \d{4}$/, 'Format: XXX-XXX XXXX or XXX-XXXX XXXX');
-}
+            if (!isValid) {
+                e.preventDefault();
+                // Scroll to the first error
+                const firstError = document.querySelector('.error-text');
+                if (firstError && firstError.textContent) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        });
 
-function validateEmail() {
-    const isValid = validateRequiredField('email', 'Email');
-    if (!isValid) return false;
-    
-    return validateField('email', /^[^@]+@[^@]+\.com$/, 'Must end with .com');
-}
+        // Success Popup Functions
+        function showSuccessPopup() {
+                // Check if this was an E-wallet payment
+                const urlParams = new URLSearchParams(window.location.search);
+                const isEWalletPayment = urlParams.get('ewallet') === 'true';
+                const remainingBalance = urlParams.get('balance');
+                
+                let balanceHTML = '';
+                if (isEWalletPayment && remainingBalance) {
+                    balanceHTML = `
+                        <div class="remaining-balance">
+                            Your current E-wallet balance: RM ${parseFloat(remainingBalance).toFixed(2)}
+                        </div>
+                    `;
+                }
+                
+                const popupHTML = `
+                    <div class="simple-popup-overlay">
+                        <div class="simple-popup">
+                            <div class="popup-icon">✓</div>
+                            <h2>Payment Successful!</h2>
+                            <p>Thank you for your purchase. Your order has been placed successfully.</p>
+                            ${balanceHTML}
+                            <button class="simple-popup-btn" onclick="closePopup()">OK</button>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', popupHTML);
+        }   
 
-function validateAddress() {
-    const isValid = validateRequiredField('address', 'Street address');
-    if (!isValid) return false;
-    
-    return validateField('address', /^[a-zA-Z0-9\s\-,.]+$/, 'Only letters, numbers, spaces, hyphens, commas and periods allowed');
-}
 
-function validateCity() {
-    const isValid = validateRequiredField('city', 'City');
-    if (!isValid) return false;
-    
-    return validateField('city', /^[a-zA-Z\s]+$/, 'Should contain only letters and spaces');
-}
-
-function validatePostcode() {
-    const isValid = validateRequiredField('postcode', 'Postcode');
-    if (!isValid) return false;
-    
-    return validateField('postcode', /^\d{5}$/, 'Must be exactly 5 digits');
-}
-
-function validateCardName() {
-    // Only validate if credit card or debit card is selected
-    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
-    if (!paymentMethod || (paymentMethod.value !== 'Credit Card' && paymentMethod.value !== 'Debit Card')) {
-        document.querySelector('#cname + .error-text').textContent = '';
-        return true;
-    }
-    
-    const isValid = validateRequiredField('cname', 'Card name');
-    if (!isValid) return false;
-    
-    return validateField('cname', /^[a-zA-Z\s]+$/, 'Should contain only letters and spaces');
-}
-
-function validateCardNumber() {
-    // Only validate if credit card or debit card is selected
-    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
-    if (!paymentMethod || (paymentMethod.value !== 'Credit Card' && paymentMethod.value !== 'Debit Card')) {
-        document.querySelector('#ccnum + .error-text').textContent = '';
-        return true;
-    }
-    
-    const isValid = validateRequiredField('ccnum', 'Card number');
-    if (!isValid) return false;
-    
-    return validateField('ccnum', /^\d{13,16}$/, 'Must be 13-16 digits');
-}
-
-function validateCVV() {
-    // Only validate if credit card or debit card is selected
-    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
-    if (!paymentMethod || (paymentMethod.value !== 'Credit Card' && paymentMethod.value !== 'Debit Card')) {
-        document.querySelector('#cvv + .error-text').textContent = '';
-        return true;
-    }
-    
-    const isValid = validateRequiredField('cvv', 'CVV');
-    if (!isValid) return false;
-    
-    return validateField('cvv', /^\d{3}$/, 'Must be exactly 3 digits');
-}
-
-function validateExpDate() {
-    // Only validate if credit card or debit card is selected
-    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
-    if (!paymentMethod || (paymentMethod.value !== 'Credit Card' && paymentMethod.value !== 'Debit Card')) {
-        document.querySelector('#expdate + .error-text').textContent = '';
-        return true;
-    }
-    
-    const expDateInput = document.getElementById('expdate');
-    const errorElement = document.querySelector('#expdate + .error-text');
-    
-    if (!expDateInput.value) {
-        errorElement.textContent = 'Expiry date is required';
-        return false;
-    }
-    
-    const selectedDate = new Date(expDateInput.value);
-    const currentDate = new Date();
-    
-    if (selectedDate.getFullYear() < currentDate.getFullYear() || 
-        (selectedDate.getFullYear() === currentDate.getFullYear() && 
-        selectedDate.getMonth() < currentDate.getMonth())) {
-        errorElement.textContent = 'Card has expired';
-        return false;
-    }
-    
-    errorElement.textContent = '';
-    return true;
-}
-
-function validatePaymentMethod() {
-    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
-    const errorElement = document.querySelector('.payment-method .error-text');
-    
-    if (!paymentMethod) {
-        errorElement.textContent = 'Payment method is required';
-        return false;
-    }
-    
-    // Remove the E-wallet balance check here since we want to show the top-up button
-    errorElement.textContent = '';
-    return true;
-}
-
-// Generic field validation function
-function validateField(fieldId, regex, errorMessage) {
-    const field = document.getElementById(fieldId);
-    const errorElement = document.querySelector(`#${fieldId} + .error-text`);
-    
-    if (!regex.test(field.value)) {
-        errorElement.textContent = errorMessage;
-        return false;
-    }
-    
-    errorElement.textContent = '';
-    return true;
-}
-
-function togglePaymentSections() {
-    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
-    
-    if (paymentMethod) {
-        document.getElementById('creditCardSection').classList.remove('active');
-        document.getElementById('eWalletSection').classList.remove('active');
-        
-        if (paymentMethod.value === 'Credit Card' || paymentMethod.value === 'Debit Card') {
-            document.getElementById('creditCardSection').classList.add('active');
-            // Make credit card fields required
-            document.getElementById('cname').required = true;
-            document.getElementById('ccnum').required = true;
-            document.getElementById('expdate').required = true;
-            document.getElementById('cvv').required = true;
-        } else if (paymentMethod.value === 'E-wallet') {
-            document.getElementById('eWalletSection').classList.add('active');
-            // Make credit card fields not required
-            document.getElementById('cname').required = false;
-            document.getElementById('ccnum').required = false;
-            document.getElementById('expdate').required = false;
-            document.getElementById('cvv').required = false;
+        function closePopup() {
+            const popup = document.querySelector('.simple-popup-overlay');
+            if (popup) popup.remove();
+            window.location.href = 'index.php';
         }
-    }
-}
 
-// Set up event listeners for payment method radio buttons
-document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-        togglePaymentSections();
-    });
-});
-
-// Set up event listeners for real-time validation
-document.getElementById('fullname').addEventListener('input', validateFullName);
-document.getElementById('contact').addEventListener('input', validateContact);
-document.getElementById('email').addEventListener('input', validateEmail);
-document.getElementById('address').addEventListener('input', validateAddress);
-document.getElementById('city').addEventListener('input', validateCity);
-document.getElementById('postcode').addEventListener('input', validatePostcode);
-document.getElementById('cname').addEventListener('input', validateCardName);
-document.getElementById('ccnum').addEventListener('input', validateCardNumber);
-document.getElementById('cvv').addEventListener('input', validateCVV);
-document.getElementById('expdate').addEventListener('change', validateExpDate);
-
-// Form submission validation
-document.getElementById('paymentForm').addEventListener('submit', function(e) {
-    let isValid = true;
-    
-    // Validate all required fields
-    isValid = validateFullName() && isValid;
-    isValid = validateContact() && isValid;
-    isValid = validateEmail() && isValid;
-    isValid = validateAddress() && isValid;
-    isValid = validateCity() && isValid;
-    isValid = validatePostcode() && isValid;
-    isValid = validatePaymentMethod() && isValid;
-    
-    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
-    if (paymentMethod && (paymentMethod.value === 'Credit Card' || paymentMethod.value === 'Debit Card')) {
-        isValid = validateCardName() && isValid;
-        isValid = validateCardNumber() && isValid;
-        isValid = validateExpDate() && isValid;
-        isValid = validateCVV() && isValid;
-    }
-    
-    // State is a select element, just check if it has a value
-    const stateSelect = document.getElementById('state');
-    const stateError = document.querySelector('#state + .error-text');
-    if (!stateSelect.value) {
-        stateError.textContent = 'State is required';
-        isValid = false;
-    } else {
-        stateError.textContent = '';
-    }
-
-    if (!isValid) {
-        e.preventDefault();
-        // Scroll to the first error
-        const firstError = document.querySelector('.error-text');
-        if (firstError && firstError.textContent) {
-            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }
-});
-
-// Success Popup Functions
-function showSuccessPopup() {
-        // Check if this was an E-wallet payment
-        const urlParams = new URLSearchParams(window.location.search);
-        const isEWalletPayment = urlParams.get('ewallet') === 'true';
-        const remainingBalance = urlParams.get('balance');
-        
-        let balanceHTML = '';
-        if (isEWalletPayment && remainingBalance) {
-            balanceHTML = `
-                <div class="remaining-balance">
-                    Your current E-wallet balance: RM ${parseFloat(remainingBalance).toFixed(2)}
-                </div>
-            `;
-        }
-        
-        const popupHTML = `
-            <div class="simple-popup-overlay">
-                <div class="simple-popup">
-                    <div class="popup-icon">✓</div>
-                    <h2>Payment Successful!</h2>
-                    <p>Thank you for your purchase. Your order has been placed successfully.</p>
-                    ${balanceHTML}
-                    <button class="simple-popup-btn" onclick="closePopup()">OK</button>
-                </div>
-            </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', popupHTML);
-}   
-
-
-function closePopup() {
-    const popup = document.querySelector('.simple-popup-overlay');
-    if (popup) popup.remove();
-    window.location.href = 'index.php';
-}
-
-// Check for success parameter in URL and show popup
-window.addEventListener('load', function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('payment') === 'success') {
-        showSuccessPopup();
-    }
-    togglePaymentSections();
-});
-</script>
+        // Check for success parameter in URL and show popup
+        window.addEventListener('load', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('payment') === 'success') {
+                showSuccessPopup();
+            }
+            togglePaymentSections();
+        });
+    </script>
 </body>
 </html>
 
