@@ -63,12 +63,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['topup_amount'])) {
     if ($paymentMethod === 'Credit Card' || $paymentMethod === 'Debit Card') {
         // Card Name validation
         if (empty($cardName)) {
-            $errors[] = "Card name is required";
-            $fieldErrors['cname'] = "Card name is required";
-        } elseif (!preg_match('/^[a-zA-Z\s]+$/', $cardName)) {
-            $errors[] = "Card name should contain only letters and spaces";
-            $fieldErrors['cname'] = "Should contain only letters and spaces";
+            $errors[] = "Card type is required";
+            $fieldErrors['cname'] = "Please select a card type";
         }
+
         
         // Card Number validation
         if (empty($cardNum)) {
@@ -158,6 +156,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['topup_amount'])) {
     <title>E-wallet Top Up</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="topup.css">
+    <style>
+        input[type="number"], input[type="text"], input[type="month"], select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+    </style>
 </head>
 <body>
     <div class="sidebar">
@@ -248,10 +255,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['topup_amount'])) {
                     </div>
 
                     <div class="form-group">
-                        <label for="cname" class="required-field">Name on Card</label>
-                        <input type="text" id="cname" name="cname" placeholder="Enter name on card" 
-                               value="<?= htmlspecialchars($cardName) ?>" 
-                               class="<?= isset($fieldErrors['cname']) ? 'error-field' : '' ?>">
+                        <label for="cname" class="required-field">Bank</label>
+                        <select id="cname" name="cname" class="<?= isset($fieldErrors['cname']) ? 'error-field' : '' ?>">
+                            <option value="">-- Select Bank --</option>
+                            <option value="Maybank" <?= $cardName === 'Maybank' ? 'selected' : '' ?>>Maybank</option>
+                            <option value="CIMB Bank" <?= $cardName === 'CIMB Bank' ? 'selected' : '' ?>>CIMB Bank</option>
+                            <option value="Public Bank" <?= $cardName === 'Public Bank' ? 'selected' : '' ?>>Public Bank</option>
+                            <option value="OCBC Bank" <?= $cardName === 'OCBC Bank' ? 'selected' : '' ?>>OCBC Bank</option>
+                            <option value="RHB Bank" <?= $cardName === 'RHB Bank' ? 'selected' : '' ?>>RHB Bank</option>
+                            <option value="Hong Leong Bank" <?= $cardName === 'Hong Leong Bank' ? 'selected' : '' ?>>Hong Leong Bank</option>
+                            <option value="Bank Islam" <?= $cardName === 'Bank Islam' ? 'selected' : '' ?>>Bank Islam</option>
+                        </select>
                         <span class="error-text" id="cname_error"><?= isset($fieldErrors['cname']) ? htmlspecialchars($fieldErrors['cname']) : '' ?></span>
                     </div>
 

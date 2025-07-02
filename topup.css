@@ -52,7 +52,7 @@ label {
     font-weight: bold;
 }
 
-input[type="number"], input[type="text"], input[type="month"] {
+input[type="number"], input[type="text"], input[type="month"], select {
     width: 100%;
     padding: 10px;
     border: 1px solid #ddd;
