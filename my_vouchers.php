@@ -1,24 +1,26 @@
 <?php
 include 'config.php';
 include 'header.php'; 
+// Check if the user is logged in, if not redirect to login page
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
 }
-
+// Get the logged-in user's ID from the session
 $custID = $_SESSION['user_id'];
 
-// Get customer data
+// Get customer data from `customer` table
 $stmt = $conn->prepare("SELECT * FROM customer WHERE CustID = ?");
 $stmt->execute([$custID]);
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
+// If customer not found, redirect to login
 if (!$customer) {
     header("Location: login.php");
     exit();
 }
 
-// Get all vouchers claimed by the customer
+// Get all vouchers claimed by the customer (not yet used)
 $stmt = $conn->prepare("
     SELECT vu.UsageID, v.VoucherID, v.VoucherCode, v.VoucherDesc, v.DiscountValue, 
            v.MinPurchase, v.ExpireDate, v.VoucherPicture, vu.ClaimedAt, 
@@ -34,7 +36,7 @@ $stmt = $conn->prepare("
 ");
 $stmt->execute([$custID]);
 $vouchers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+// Get and clear any success or error messages stored in session
 $success_message = $_SESSION['success'] ?? '';
 $error_message = $_SESSION['error'] ?? '';
 unset($_SESSION['success'], $_SESSION['error']);

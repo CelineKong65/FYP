@@ -1,4 +1,5 @@
 <?php
+// Start output buffering
 ob_start();
 include 'config.php'; 
 include 'header.php';

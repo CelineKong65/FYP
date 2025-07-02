@@ -2,27 +2,29 @@
 include 'config.php';
 include 'header.php';
 
-// Check login
+// Check if user is logged in
 $isLoggedIn = isset($_SESSION['user_id']);
 
-// Fetch cart & wishlist counts
+// Set default values for cart and wishlist counts
 $cartCount = 0;
 $wishlistCount = 0;
 
+// If user is logged in, count items in cart and wishlist
 if ($isLoggedIn) {
+    // Count cart items
     $stmt = $conn->prepare("SELECT COUNT(*) AS total FROM cart WHERE CustID = ?");
     $stmt->execute([$_SESSION['user_id']]);
     $cartCount = $stmt->fetch()['total'] ?? 0;
-
+    // Count wishlist items
     $wishlistStmt = $conn->prepare("SELECT COUNT(*) AS total FROM wishlist WHERE CustID = ?");
     $wishlistStmt->execute([$_SESSION['user_id']]);
     $wishlistCount = $wishlistStmt->fetch()['total'] ?? 0;
 }
 
-// Get search query
+// Get the search keyword from the URL
 $query = isset($_GET['query']) ? trim($_GET['query']) : '';
 
-// Redirect if query is empty
+// If no keyword entered, go back to product page
 if (empty($query)) {
     header("Location: product.php");
     exit();
@@ -41,6 +43,7 @@ $stmt = $conn->prepare("
 ");
 $searchTerm = '%' . $query . '%';
 $stmt->execute([$searchTerm]);
+// Get all matching products
 $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
