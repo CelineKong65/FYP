@@ -1,9 +1,9 @@
 <?php
 include 'config.php'; 
 include 'header.php'; 
-// Get the logged-in user's ID from the session// Get the logged-in user's ID from the session
+// Get the logged-in user's ID from the session
 $custID = $_SESSION["user_id"] ?? null;
-// Check if the user is logged in, if not redirect to login page// Check if the user is logged in, if not redirect to login page
+// Check if the user is logged in, if not redirect to login page
 if (!$custID) {
     $_SESSION['error'] = "Please login to view your cart.";
     header("Location: login.php");
@@ -11,7 +11,6 @@ if (!$custID) {
 }
 
 if ($custID) {
-    // Get all items in the user's cart along with product details
     // Get all items in the user's cart along with product details
     $query = "SELECT cart.*, product.ProductName, product.ProductPicture, product.ProductID, product.ProductPrice, product.ProductStatus
               FROM cart 
@@ -23,7 +22,6 @@ if ($custID) {
     $stmt->execute();
     $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Get stock availability for each product and size
     // Get stock availability for each product and size
     $productStocks = [];
     foreach ($result as $row) {
@@ -38,7 +36,7 @@ if ($custID) {
     $result = [];
     $productStocks = [];
 }
-// Calculate total cart value
+
 // Calculate total cart value
 $totalPrice = 0;
 foreach ($result as $row) {
@@ -47,9 +45,7 @@ foreach ($result as $row) {
 $grandTotal = $totalPrice;
 
 // Store subtotal and cart items in session
-// Store subtotal in session
 $_SESSION['subtotal'] = $totalPrice; 
-// Store cart items in session for later use (like during checkout)
 $_SESSION['cart_items'] = [];
 foreach ($result as $row) {
     $_SESSION['cart_items'][] = [
@@ -60,7 +56,6 @@ foreach ($result as $row) {
     ];
 }
 
-// Get the total number of unique items in cart
 // Get the total number of unique items in cart
 $stmt = $conn->prepare("SELECT COUNT(DISTINCT ProductID) AS total FROM cart WHERE CustID = ?");
 $stmt->execute([$custID]);
@@ -108,11 +103,9 @@ foreach ($result as $row) {
         <?php endif; ?>
         
         <!-- If cart is empty -->
-        <!-- If cart is empty -->
         <?php if (empty($result)): ?>
             <p class = "empty-message">No items in cart</p>
         <?php else: ?>
-            <!-- Display cart table -->
             <!-- Display cart table -->
             <table>
                 <thead>
@@ -128,21 +121,34 @@ foreach ($result as $row) {
                 </thead>
                 <tbody>
                     <?php foreach ($result as $row): 
-                        // Get all available sizes and stock for current product
-                        // Get all available sizes and stock for current product
+                        // Get available sizes and stock for current product
                         $currentProductStocks = $productStocks[$row['ProductID']] ?? [];
                         $sizeStockMap = [];
                         foreach ($currentProductStocks as $stock) {
                             $sizeValue = $stock['Size'] === null ? 'Standard Only' : $stock['Size'];
                             $sizeStockMap[$sizeValue] = $stock['Stock'];
                         }
-                        // Clean up the stored size value (remove stock info if present)
+
+                        // Clean size value
                         $currentSize = preg_replace('/\s*\d+ available.*/', '', $row['Size']);
                         $currentSize = trim($currentSize) === '' ? 'Standard Only' : trim($currentSize);
+
+                        // Stock check
+                        $currentStock = $sizeStockMap[$currentSize] ?? 0;
+                        $isInactive = strtolower($row['ProductStatus']) !== 'active';
+                        $isOutOfStock = $currentStock <= 0;
                     ?>
                     <tr>
                         <td><img src="image/<?= htmlspecialchars($row['ProductPicture']) ?>" alt="<?= htmlspecialchars($row['ProductName']) ?>"></td>
-                        <td><?= htmlspecialchars($row['ProductName']) ?></td>
+                        <td>
+                            <?= htmlspecialchars($row['ProductName']) ?>
+                            <?php if ($isInactive): ?>
+                                <span class="status-badge inactive">Inactive</span>
+                            <?php endif; ?>
+                            <?php if ($isOutOfStock): ?>
+                                <span class="status-badge out-of-stock">Out of Stock</span>
+                            <?php endif; ?>
+                        </td>
                         <!-- Size dropdown -->
                         <td>
                             <?php if (empty($sizeStockMap)): ?>
@@ -168,13 +174,11 @@ foreach ($result as $row) {
                             <form action="update_cart.php" method="POST" class="quantity-form">
                                 <input type="hidden" name="CartID" value="<?= $row['CartID'] ?>">
                                 <?php 
-                                // Get current size's stock
-                                $currentStock = $sizeStockMap[$currentSize] ?? 99;
                                 $maxQuantity = min($currentStock, 99);
                                 ?>
                                 <input type="number" name="Quantity" value="<?= htmlspecialchars($row['Quantity']) ?>" 
-                                       min="1" max="<?= $maxQuantity ?>" 
-                                       onchange="if(this.value >= 1 && this.value <= <?= $maxQuantity ?>) { this.form.submit(); } else { this.value = <?= $row['Quantity'] ?>; alert('Quantity must be between 1 and <?= $maxQuantity ?>'); }">
+                                    min="1" max="<?= $maxQuantity ?>" 
+                                    onchange="if(this.value >= 1 && this.value <= <?= $maxQuantity ?>) { this.form.submit(); } else { this.value = <?= $row['Quantity'] ?>; alert('Quantity must be between 1 and <?= $maxQuantity ?>'); }">
                             </form>
                         </td>
                         <td class="total">RM <?= number_format($row['ProductPrice'] * $row['Quantity'], 2) ?></td>
@@ -182,14 +186,15 @@ foreach ($result as $row) {
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
+
             </table>
-    <!-- Cart buttons (continue shopping, clear cart) -->
+
             <!-- Cart buttons (continue shopping, clear cart) -->
             <div class="cart-buttons">
                 <button class="continue" onclick="window.location.href='product.php'">Continue Shopping</button>
                 <button class="update" onclick="window.location.href='clear_cart.php'">Clear Cart</button>
             </div>
-            <!-- Summary and checkout button -->
+
             <!-- Summary and checkout button -->
             <div class="cart-summary">
                 <div class="summary-details">

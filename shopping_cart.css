@@ -127,3 +127,19 @@ select[name="Size"] option:disabled {
     font-size: 18px; 
     font-weight: bold;
 }
+.status-badge {
+    font-size: 12px;
+    font-weight: bold;
+    padding: 2px 6px;
+    margin-left: 8px;
+    border-radius: 12px;
+    color: white;
+}
+
+.status-badge.inactive {
+    background-color: #d9534f; 
+}
+
+.status-badge.out-of-stock {
+    background-color: #f0ad4e; 
+}
