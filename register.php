@@ -39,9 +39,7 @@ if (isset($_POST['check_availability'])) {
                 } else {
                     $stmt = $conn->prepare("SELECT CustPhoneNum FROM customer WHERE REPLACE(REPLACE(CustPhoneNum, '-', ''), ' ', '') = ?");
                     $stmt->execute([$cleanPhone]);
-                    if ($stmt->rowCount() > 0) {
-                        $errors['custPhoneNum'] = "Phone number already exists";
-                    }
+                    $exists = $stmt->rowCount() > 0;
                 }
             }
         }

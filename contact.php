@@ -10,25 +10,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $message = $_POST['message'] ?? '';
     $submission_date = date('Y-m-d H:i:s');
     
-    try {
-        $stmt = $conn->prepare("INSERT INTO contact_record 
-                              (CustName, CustEmail, CustPhoneNum, Subject, Message, Submission_date) 
-                              VALUES (:name, :email, :phone, :subject, :message, :submission_date)");
-        
-        $stmt->bindParam(':name', $name);
-        $stmt->bindParam(':email', $email);
-        $stmt->bindParam(':phone', $phone);
-        $stmt->bindParam(':subject', $subject);
-        $stmt->bindParam(':message', $message);
-        $stmt->bindParam(':submission_date', $submission_date);
-        
-        $stmt->execute();
-        
-        // Success message
-        echo '<script>alert("Thanks for your message, we will read it carefully and reply as early as we could")</script>';
-    } catch (PDOException $e) {
-        // Error message
-        echo '<script>alert("Your message is fail when submiting, please submit again your message. Thanks for your understanding.")</script>';
+    // Server-side validation
+    $errors = [];
+    
+    // Name validation (letters and spaces only)
+    if (!preg_match("/^[a-zA-Z\s]+$/", $name)) {
+        $errors['name'] = "Name can only contain letters and spaces";
+    }
+    
+    // Email validation (must be gmail)
+    if (!preg_match("/^[a-zA-Z0-9._%+-]+@gmail\.com$/i", $email)) {
+        $errors['email'] = "Please enter a valid Gmail address";
+    }
+    
+    // Phone validation
+    if (!empty($phone) && !preg_match('/^\d{3}-\d{3,4} \d{4}$/', $phone)) {
+        $errors['phone'] = "Phone format: XXX-XXX XXXX or XXX-XXXX XXXX";
+    }
+    
+    if (empty($errors)) {
+        try {
+            $stmt = $conn->prepare("INSERT INTO contact_record 
+                                  (CustName, CustEmail, CustPhoneNum, Subject, Message, Submission_date) 
+                                  VALUES (:name, :email, :phone, :subject, :message, :submission_date)");
+            
+            $stmt->bindParam(':name', $name);
+            $stmt->bindParam(':email', $email);
+            $stmt->bindParam(':phone', $phone);
+            $stmt->bindParam(':subject', $subject);
+            $stmt->bindParam(':message', $message);
+            $stmt->bindParam(':submission_date', $submission_date);
+            
+            $stmt->execute();
+            
+            // Success message
+            echo '<script>alert("Thanks for your message, we will read it carefully and reply as early as we could")</script>';
+        } catch (PDOException $e) {
+            // Error message
+            echo '<script>alert("Your message failed to submit. Please try again. Thanks for your understanding.")</script>';
+        }
+    } else {
+        // Store errors in session to display them
+        $_SESSION['form_errors'] = $errors;
+        $_SESSION['form_data'] = $_POST;
     }
 }
 
@@ -195,19 +219,22 @@ $faqs = [
                 <form action="contact.php" method="POST">
                     <div class="form-group">
                         <label for="name">Full Name</label>
-                        <input type="text" id="name" name="name" required>
+                        <input type="text" id="name" name="name" value="<?= htmlspecialchars($_SESSION['form_data']['name'] ?? '') ?>" required>
+                        <div class="error-message"></div>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="email">Email Address</label>
-                        <input type="email" id="email" name="email" required>
+                        <input type="email" id="email" name="email" value="<?= htmlspecialchars($_SESSION['form_data']['email'] ?? '') ?>" required>
+                        <div class="error-message"></div>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="phone">Phone Number</label>
-                        <input type="tel" id="phone" name="phone">
+                        <input type="tel" id="phone" name="phone" value="<?= htmlspecialchars($_SESSION['form_data']['phone'] ?? '') ?>">
+                        <div class="error-message"></div>
                     </div>
-                    
+                                        
                     <div class="form-group">
                         <label for="subject">Subject</label>
                         <select id="subject" name="subject" required>
@@ -264,6 +291,121 @@ $faqs = [
                     answer.style.display = 'none';
                 }
             });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            const nameInput = document.getElementById('name');
+            const emailInput = document.getElementById('email');
+            const phoneInput = document.getElementById('phone');
+
+            // Real-time name validation
+            nameInput.addEventListener('input', function() {
+                // Remove any non-letter characters
+                this.value = this.value.replace(/[^a-zA-Z\s]/g, '');
+                validateName();
+            });
+
+            // Real-time email validation
+            emailInput.addEventListener('input', validateEmail);
+
+            // Real-time phone validation
+            phoneInput.addEventListener('input', function() {
+                let value = this.value.replace(/\D/g, '');
+                
+                if (value.length > 3) {
+                    value = value.substring(0, 3) + '-' + value.substring(3);
+                }
+                if (value.length > 7) {
+                    value = value.substring(0, 7) + ' ' + value.substring(7);
+                }
+                if (value.length > 12) {
+                    value = value.substring(0, 12);
+                }
+                
+                this.value = value;
+                validatePhone();
+            });
+
+            // Form submission validation
+            form.addEventListener('submit', function(e) {
+                const isNameValid = validateName();
+                const isEmailValid = validateEmail();
+                const isPhoneValid = validatePhone();
+                
+                if (!isNameValid || !isEmailValid || !isPhoneValid) {
+                    e.preventDefault();
+                }
+            });
+
+            function validateName() {
+                const isValid = /^[a-zA-Z\s]+$/.test(nameInput.value);
+                const errorElement = nameInput.nextElementSibling;
+                
+                if (!isValid && nameInput.value) {
+                    showError(nameInput, "Name can only contain letters and spaces");
+                    return false;
+                } else {
+                    clearError(nameInput);
+                    return true;
+                }
+            }
+
+            function validateEmail() {
+                const isValid = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(emailInput.value);
+                const errorElement = emailInput.nextElementSibling;
+                
+                if (!isValid && emailInput.value) {
+                    showError(emailInput, "Please enter a valid Gmail address");
+                    return false;
+                } else {
+                    clearError(emailInput);
+                    return true;
+                }
+            }
+
+            function validatePhone() {
+                const isValid = phoneInput.value === '' || /^\d{3}-\d{3,4} \d{4}$/.test(phoneInput.value);
+                const errorElement = phoneInput.nextElementSibling;
+                
+                if (!isValid && phoneInput.value) {
+                    showError(phoneInput, "Phone format: XXX-XXX XXXX or XXX-XXXX XXXX");
+                    return false;
+                } else {
+                    clearError(phoneInput);
+                    return true;
+                }
+            }
+
+            function showError(input, message) {
+                let errorElement = input.nextElementSibling;
+                
+                while (errorElement && !errorElement.classList.contains('error-message')) {
+                    errorElement = errorElement.nextElementSibling;
+                }
+                
+                if (!errorElement) {
+                    errorElement = document.createElement('div');
+                    errorElement.className = 'error-message';
+                    input.parentNode.insertBefore(errorElement, input.nextSibling);
+                }
+                
+                errorElement.textContent = message;
+                input.classList.add('error-field');
+            }
+
+            function clearError(input) {
+                let errorElement = input.nextElementSibling;
+                
+                while (errorElement && !errorElement.classList.contains('error-message')) {
+                    errorElement = errorElement.nextElementSibling;
+                }
+                
+                if (errorElement) {
+                    errorElement.textContent = '';
+                }
+                input.classList.remove('error-field');
+            }
         });
     </script>
 </body>

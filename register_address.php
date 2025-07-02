@@ -1,5 +1,4 @@
 <?php
-// register_address.php
 if (!isset($_SESSION['register_data'])) {
     header("Location: register.php?step=1");
     exit();
@@ -55,6 +54,63 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 ?>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const postcodeInput = document.querySelector('input[name="postcode"]');
+    
+    if (postcodeInput) {
+        // Create error message element if it doesn't exist
+        if (!postcodeInput.nextElementSibling || !postcodeInput.nextElementSibling.classList.contains('error-message')) {
+            const errorElement = document.createElement('div');
+            errorElement.className = 'error-message';
+            errorElement.style.display = 'none';
+            errorElement.style.color = 'red';
+            errorElement.style.marginTop = '5px';
+            postcodeInput.parentNode.insertBefore(errorElement, postcodeInput.nextSibling);
+        }
+        
+        postcodeInput.addEventListener('input', function() {
+            // Remove any non-digit characters
+            this.value = this.value.replace(/\D/g, '');
+            
+            // Limit to 5 digits
+            if (this.value.length > 5) {
+                this.value = this.value.slice(0, 5);
+            }
+            
+            // Get the error element
+            const errorElement = this.nextElementSibling;
+            
+            // Validate in real-time
+            if (this.value.length > 0 && this.value.length < 5) {
+                errorElement.textContent = "Postcode must be exactly 5 digits";
+                errorElement.style.display = 'block';
+                this.style.borderColor = 'red';
+            } else if (this.value.length === 5) {
+                errorElement.textContent = '';
+                errorElement.style.display = 'none';
+                this.style.borderColor = '';
+            } else if (this.value.length === 0) {
+                errorElement.textContent = '';
+                errorElement.style.display = 'none';
+                this.style.borderColor = '';
+            }
+        });
+
+        // Validate on blur (when leaving the field)
+        postcodeInput.addEventListener('blur', function() {
+            const errorElement = this.nextElementSibling;
+            
+            if (this.value.length > 0 && this.value.length < 5) {
+                errorElement.textContent = "Postcode must be exactly 5 digits";
+                errorElement.style.display = 'block';
+                this.style.borderColor = 'red';
+            }
+        });
+    }
+});
+</script>
+
 <form method="POST" action="register.php?step=2" id="address-form">
     <label>Street Address:</label>
     <input type="text" name="custAddress" placeholder="4, Jalan Melodies 8, Taman Rainbow" value="<?php echo isset($_POST['custAddress']) ? htmlspecialchars($_POST['custAddress']) : ''; ?>" required>
@@ -67,7 +123,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <input type="text" name="city" placeholder="Johor Bahru" value="<?php echo isset($_POST['city']) ? htmlspecialchars($_POST['city']) : ''; ?>" required><br>
 
     <label>Postcode:</label>
-    <input type="text" name="postcode" placeholder="80100" value="<?php echo isset($_POST['postcode']) ? htmlspecialchars($_POST['postcode']) : ''; ?>" required>
+    <input type="text" name="postcode" placeholder="80100" value="<?php echo isset($_POST['postcode']) ? htmlspecialchars($_POST['postcode']) : ''; ?>" required maxlength="5">
     <?php if (isset($errors['postcode'])): ?>
         <div class="error-message"><?php echo $errors['postcode']; ?></div>
     <?php endif; ?>
