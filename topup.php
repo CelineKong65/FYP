@@ -378,12 +378,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['topup_amount'])) {
                 return false;
             }
             
-            if (!/^[a-zA-Z\s]+$/.test(field.value)) {
-                field.classList.add('error-field');
-                errorElement.textContent = 'Should contain only letters and spaces';
-                return false;
-            }
-            
             field.classList.remove('error-field');
             errorElement.textContent = '';
             return true;
