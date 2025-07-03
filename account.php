@@ -408,9 +408,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
                                    class="<?= isset($errors['currentPassword']) ? 'error-field' : '' ?>">
                             <i class="fas fa-eye" id="show-current-password"></i>
                         </div>
-                        <?php if (isset($errors['currentPassword'])): ?>
-                            <div class="error-message"><?= htmlspecialchars($errors['currentPassword']) ?></div>
-                        <?php endif; ?>
                     </div>
                     
                     <div class="form-group">
