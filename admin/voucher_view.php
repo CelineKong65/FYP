@@ -110,7 +110,7 @@ function validateDiscountValue($value) {
     if ($value <= 0) {
         return 'Discount value must be greater than 0';
     }
-    if ($value > 99999999.99) {
+    if ($value >500) {
         return 'Discount value is too large';
     }
     return '';
@@ -123,7 +123,7 @@ function validateMinPurchase($value) {
     if ($value < 0) {
         return 'Minimum purchase cannot be negative';
     }
-    if ($value > 99999999.99) {
+    if ($value >1000) {
         return 'Minimum purchase is too large';
     }
     return '';
@@ -752,14 +752,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
         if (!value) return 'Discount value is required';
         if (isNaN(value)) return 'Discount value must be a number';
         if (value <= 0) return 'Discount value must be greater than 0';
-        if (value > 99999999.99) return 'Discount value is too large';
+        if (value >500) return 'Discount value is too large';
         return '';
     }
 
     function validateMinPurchase(value) {
         if (isNaN(value)) return 'Minimum purchase must be a number';
         if (value < 0) return 'Minimum purchase cannot be negative';
-        if (value > 99999999.99) return 'Minimum purchase is too large';
+        if (value >1000) return 'Minimum purchase is too large';
         return '';
     }
 
