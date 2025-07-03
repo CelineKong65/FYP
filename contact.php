@@ -311,19 +311,10 @@ $faqs = [
 
             // Real-time phone validation
             phoneInput.addEventListener('input', function() {
-                let value = this.value.replace(/\D/g, '');
+                validatePhone();
+            });
                 
-                if (value.length > 3) {
-                    value = value.substring(0, 3) + '-' + value.substring(3);
-                }
-                if (value.length > 7) {
-                    value = value.substring(0, 7) + ' ' + value.substring(7);
-                }
-                if (value.length > 12) {
-                    value = value.substring(0, 12);
-                }
-                
-                this.value = value;
+            phoneInput.addEventListener('blur', function(){
                 validatePhone();
             });
 
@@ -365,7 +356,8 @@ $faqs = [
             }
 
             function validatePhone() {
-                const isValid = phoneInput.value === '' || /^\d{3}-\d{3,4} \d{4}$/.test(phoneInput.value);
+                const value = phoneInput.value;
+                const isValid = phoneInput.value === '' || /^\d{3}-\d{3,4} \d{4}$/.test(value);
                 const errorElement = phoneInput.nextElementSibling;
                 
                 if (!isValid && phoneInput.value) {

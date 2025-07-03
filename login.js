@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.querySelector('form');
     if (loginForm) {
         loginForm.addEventListener('submit', function(e) {
-            // You can add client-side validation here if needed
             const email = this.querySelector('input[name="email"]').value.trim();
             const password = this.querySelector('input[name="password"]').value.trim();
             
