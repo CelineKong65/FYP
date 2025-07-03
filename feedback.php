@@ -75,8 +75,8 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                 </div>
 
                 <div class="feedback-form-group">
-                    <label class="feedback-label" for="feedback">Your Feedback (Optional)</label>
-                    <textarea id="feedback" name="feedback" class="feedback-textarea" placeholder="Tell us about your experience..."></textarea>
+                    <label class="feedback-label" for="feedback">Your Feedback</label>
+                    <textarea id="feedback" name="feedback" class="feedback-textarea" placeholder="Tell us about your experience..." required></textarea>
                 </div>
 
                 <button type="submit" class="feedback-submit-btn">Submit Feedback</button>
