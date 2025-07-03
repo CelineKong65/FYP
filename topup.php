@@ -264,6 +264,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['topup_amount'])) {
                             <option value="RHB Bank" <?= $cardName === 'RHB Bank' ? 'selected' : '' ?>>RHB Bank</option>
                             <option value="Hong Leong Bank" <?= $cardName === 'Hong Leong Bank' ? 'selected' : '' ?>>Hong Leong Bank</option>
                             <option value="Bank Islam" <?= $cardName === 'Bank Islam' ? 'selected' : '' ?>>Bank Islam</option>
+                            <option value="BSN" <?= $cardName === 'BSN Bank' ? 'selected' : '' ?>>BSN Bank</option>
                         </select>
                         <span class="error-text" id="cname_error"><?= isset($fieldErrors['cname']) ? htmlspecialchars($fieldErrors['cname']) : '' ?></span>
                     </div>

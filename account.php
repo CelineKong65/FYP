@@ -452,7 +452,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
             
             <div class="welcome-message">
                 <h3>Welcome to Watersport Equipment</h3>
-                <p>Last updated: <?= date('F j, Y, g:i a', strtotime($customer['updated_at'] ?? 'now')) ?></p>
             </div>
         </div>
     </div>
